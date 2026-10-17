@@ -34,7 +34,8 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+::placeholder{color:var(--muted);opacity:1}
 :focus-visible{outline:3px solid var(--clock);outline-offset:2px}
 
 /* Header: the board */
@@ -133,6 +134,22 @@ details.more summary{cursor:pointer;font-weight:600}
 .spots input{width:100%;min-width:0;text-align:center;padding:8px 2px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:lowercase}
 .spots input:disabled{opacity:.35}
 
+/* Word search */
+.ws-upload{display:block;text-align:center}
+.ws-board{margin-top:14px;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px}
+.ws-board svg{display:block;width:100%;height:auto}
+.ws-board text{font-family:var(--ui);font-weight:700;fill:var(--ink)}
+.ws-board text.unk{fill:var(--bad)}
+.ws-text{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase}
+textarea.field{resize:vertical;line-height:1.5}
+.ws-list{list-style:none;padding:0;margin:14px 0 0}
+.ws-list li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.ws-list .dot{flex:none;width:12px;height:12px;border-radius:50%;transform:translateY(1px)}
+.ws-list b{letter-spacing:.04em}
+.ws-list small{color:var(--muted)}
+.ws-list .miss b{color:var(--bad)}
+.chip.on{background:var(--clock);color:#1c2e5a;border-color:var(--clock)}
+
 /* Numbers round */
 .target{font-size:clamp(2.6rem,14vw,4rem);font-weight:800;letter-spacing:.08em;text-align:center;color:var(--clock);
   background:#0b1430;border-radius:10px;padding:6px 0;margin-bottom:14px;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -165,7 +182,7 @@ details.more summary{cursor:pointer;font-weight:600}
     <nav role="tablist">
       <button role="tab" aria-selected="true" data-tab="define">Define</button>
       <button role="tab" aria-selected="false" data-tab="unscramble">Unscramble</button>
-      <button role="tab" aria-selected="false" data-tab="crossword">Crossword</button>
+      <button role="tab" aria-selected="false" data-tab="crossword">Puzzles</button>
       <button role="tab" aria-selected="false" data-tab="countdown">Countdown</button>
     </nav>
   </div>
@@ -202,8 +219,13 @@ details.more summary{cursor:pointer;font-weight:600}
     <div id="unOut"></div>
   </section>
 
-  <!-- CROSSWORD -->
+  <!-- PUZZLES: crossword + word search -->
   <section id="tab-crossword" hidden>
+    <div class="seg">
+      <button aria-pressed="true" data-pz="crossword">Crossword</button>
+      <button aria-pressed="false" data-pz="wordsearch">Word search</button>
+    </div>
+    <div id="pz-crossword">
     <form class="row" autocomplete="off" onsubmit="return false">
       <input class="field" id="cwInput" type="text" placeholder="Pattern, e.g. c?o?s?o?d" autocapitalize="none" spellcheck="false" maxlength="20" enterkeyhint="search">
       <button class="btn" id="cwBtn">Find words</button>
@@ -221,6 +243,27 @@ details.more summary{cursor:pointer;font-weight:600}
     </details>
     <div class="opts"><label><input type="checkbox" id="cwCommon"> Common words only</label></div>
     <div id="cwOut"></div>
+    </div>
+
+    <div id="pz-wordsearch" hidden>
+      <label class="btn ws-upload" for="wsFile">Photo of a word search</label>
+      <input id="wsFile" type="file" accept="image/*" hidden>
+      <p class="hint">Take the photo straight on, in good light, with the whole grid in shot. Or type the grid in below.</p>
+      <div class="status" id="wsStatus" role="status"></div>
+      <div class="ws-board" id="wsBoard" hidden></div>
+      <details class="more" id="wsFix">
+        <summary>Check or type the grid</summary>
+        <p class="hint">One row per line. Fix any letter the camera got wrong; a ? marks one it couldn't read.</p>
+        <textarea class="field small ws-text" id="wsText" rows="8" autocapitalize="characters" spellcheck="false" placeholder="SZBOOKCASE&#10;SIDEBOARDT&#10;..."></textarea>
+      </details>
+      <label class="lbl" for="wsWords">Words to find</label>
+      <textarea class="field small" id="wsWords" rows="3" autocapitalize="none" spellcheck="false" placeholder="bookcase, sideboard, cabinet"></textarea>
+      <div class="row cd-controls">
+        <button class="btn" id="wsFind">Find them</button>
+        <button class="btn ghost" id="wsAuto">Find every word</button>
+      </div>
+      <div id="wsOut"></div>
+    </div>
   </section>
 
   <!-- COUNTDOWN -->
@@ -395,7 +438,7 @@ function renderGroups(target, results, total, opts = {}){
   if (!results.length) { target.innerHTML = `<p class="status">No words found. Try more letters, a blank (?), or a shorter minimum length.</p>`; return; }
   const groups = new Map();
   for (const r of results) { if (!groups.has(r.w.length)) groups.set(r.w.length, []); groups.get(r.w.length).push(r); }
-  let html = `<p class="status">${results.length.toLocaleString("en-GB")} words. ${KEY_TEXT}</p>`;
+  let html = `<p class="status">${results.length.toLocaleString("en-GB")} words. ${opts.note || ""}${KEY_TEXT}</p>`;
   let g = 0;
   for (const [len, list] of groups) {
     if (opts.maxGroups && g++ >= opts.maxGroups) break;
@@ -614,8 +657,13 @@ async function unscramble(){
   if (letters.length + blanks < 2) { out.innerHTML = `<p class="status">Enter at least 2 letters.</p>`; return; }
   if (!await needLists(out)) return;
   let results = solveLetters(letters, blanks, +$("minLen").value);
-  if ($("commonOnly").checked) results = results.filter(r => r.rank !== Infinity);
-  renderGroups(out, results, letters.length + blanks);
+  let note = "";
+  if ($("commonOnly").checked) {
+    const common = results.filter(r => r.rank !== Infinity);
+    if (common.length) results = common;
+    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+  }
+  renderGroups(out, results, letters.length + blanks, { note });
 }
 $("unBtn").addEventListener("click", unscramble);
 $("unInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); unscramble(); } });
@@ -661,11 +709,16 @@ async function crossword(){
     for (const c in need) { let n = 0; for (const x of w) if (x === c) n++; if (n < need[c]) continue outer; }
     results.push({ w, blanks: [], rank: rankOf(w) });
   }
-  let list = $("cwCommon").checked ? results.filter(r => r.rank !== Infinity) : results;
+  let list = results, note = "";
+  if ($("cwCommon").checked) {
+    const common = results.filter(r => r.rank !== Infinity);
+    if (common.length) list = common;
+    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+  }
   list.sort((a, b) => a.rank - b.rank || (a.w < b.w ? -1 : 1));
   if (!list.length) { out.innerHTML = `<p class="status">No words match. Check the pattern, or remove a clue.</p>`; return; }
   const cap = 150;
-  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} matches. ${KEY_TEXT}</p>
+  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} matches. ${note}${KEY_TEXT}</p>
     <div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>
     ${list.length > cap ? `<button class="btn ghost more" id="cwMoreBtn">Show all ${list.length.toLocaleString("en-GB")}</button>` : ""}`;
   if (list.length > cap) $("cwMoreBtn").addEventListener("click", e => {
@@ -676,6 +729,331 @@ $("cwBtn").addEventListener("click", crossword);
 ["cwInput","cwHas","cwNot"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } }));
 $("cwSpots").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } });
 $("cwCommon").addEventListener("change", () => { if ($("cwOut").innerHTML) crossword(); });
+
+/* ================= PUZZLES: switch ================= */
+function showPz(mode){
+  document.querySelectorAll("[data-pz]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pz === mode));
+  $("pz-crossword").hidden = mode !== "crossword";
+  $("pz-wordsearch").hidden = mode !== "wordsearch";
+  store.set("bd-pz", mode);
+}
+document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
+
+/* ================= WORD SEARCH ================= */
+const TESS = {
+  script: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+  worker: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  core:   "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+  lang:   "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"
+};
+const WS_COLOURS = ["#f2c230", "#5cc489", "#6aa8ff", "#ff8fa3", "#c49bff", "#ffa94d", "#4fd1c5", "#e57373"];
+const DIRS = [[0,1,"left to right"],[0,-1,"right to left"],[1,0,"downwards"],[-1,0,"upwards"],
+              [1,1,"diagonal, down and right"],[-1,-1,"diagonal, up and left"],[1,-1,"diagonal, down and left"],[-1,1,"diagonal, up and right"]];
+let wsGrid = [];          // array of row strings, "?" = unread letter
+let wsHits = [];          // [{word, cells:[[r,c]..], dir, colour, guessed, asked, on}]
+let tessPromise = null, tessWorker = null;
+
+function wsStatus(msg, err){ const el = $("wsStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function saveWS(){ store.set("bd-ws", { grid: wsGrid, words: $("wsWords").value }); }
+
+function loadTesseract(){
+  if (!tessPromise) tessPromise = new Promise((res, rej) => {
+    if (window.Tesseract) return res(window.Tesseract);
+    const s = document.createElement("script");
+    s.src = TESS.script;
+    s.onload = () => res(window.Tesseract);
+    s.onerror = () => { tessPromise = null; rej(new Error("Couldn't load the text reader")); };
+    document.head.appendChild(s);
+  });
+  return tessPromise;
+}
+async function getWorker(){
+  if (tessWorker) return tessWorker;
+  const T = await loadTesseract();
+  tessWorker = await T.createWorker("eng", 1, { workerPath: TESS.worker, corePath: TESS.core, langPath: TESS.lang });
+  return tessWorker;
+}
+async function ocr(canvas, psm){
+  const w = await getWorker();
+  await w.setParameters({ tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", tessedit_pageseg_mode: String(psm) });
+  const { data } = await w.recognize(canvas, {}, { blocks: true, text: true });
+  const syms = [];
+  for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const wd of l.words || []) for (const s of wd.symbols || [])
+    if (/^[A-Z]$/.test(s.text)) syms.push({ t: s.text, x: (s.bbox.x0 + s.bbox.x1) / 2, y: (s.bbox.y0 + s.bbox.y1) / 2, w: s.bbox.x1 - s.bbox.x0, h: s.bbox.y1 - s.bbox.y0 });
+  return syms;
+}
+
+/* Photo → clean black-and-white canvas (adaptive threshold copes with shadows) */
+async function photoToBinary(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = url; });
+    const big = Math.max(img.naturalWidth, img.naturalHeight);
+    const sc = Math.min(2, 1600 / big);
+    const W = Math.round(img.naturalWidth * sc), H = Math.round(img.naturalHeight * sc);
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    const id = ctx.getImageData(0, 0, W, H), d = id.data;
+    const g = new Float64Array(W * H);
+    for (let i = 0; i < W * H; i++) g[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
+    // Bradley adaptive threshold using an integral image
+    const I = new Float64Array((W + 1) * (H + 1));
+    for (let y = 0; y < H; y++) { let row = 0; for (let x = 0; x < W; x++) { row += g[y*W + x]; I[(y+1)*(W+1) + x + 1] = I[y*(W+1) + x + 1] + row; } }
+    const r = Math.max(8, Math.round(Math.max(W, H) / 16));
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const x0 = Math.max(0, x - r), x1 = Math.min(W, x + r + 1), y0 = Math.max(0, y - r), y1 = Math.min(H, y + r + 1);
+      const sum = I[y1*(W+1) + x1] - I[y0*(W+1) + x1] - I[y1*(W+1) + x0] + I[y0*(W+1) + x0];
+      const v = g[y*W + x] * (x1 - x0) * (y1 - y0) < sum * 0.85 ? 0 : 255;
+      d[i4(x, y, W)] = d[i4(x, y, W) + 1] = d[i4(x, y, W) + 2] = v;
+    }
+    ctx.putImageData(id, 0, 0);
+    return cv;
+  } finally { URL.revokeObjectURL(url); }
+}
+const i4 = (x, y, W) => (y * W + x) * 4;
+const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+/* Group positions into evenly spaced rows/columns; keep the longest regular run */
+function lattice(values, gap, minCount){
+  const v = [...values].sort((a, b) => a - b);
+  const groups = [[v[0]]];
+  for (let i = 1; i < v.length; i++) (v[i] - groups[groups.length - 1].slice(-1)[0] < gap) ? groups[groups.length - 1].push(v[i]) : groups.push([v[i]]);
+  let centres = groups.filter(g => g.length >= minCount).map(median);
+  if (centres.length < 3) return centres;
+  const sp = median(centres.slice(1).map((c, i) => c - centres[i]));
+  let best = [centres[0]], cur = [centres[0]];
+  for (let i = 1; i < centres.length; i++) {
+    const step = centres[i] - centres[i - 1];
+    if (Math.abs(step - sp) < sp * 0.35) cur.push(centres[i]); else cur = [centres[i]];
+    if (cur.length > best.length) best = cur.slice();
+  }
+  return best;
+}
+
+async function readWordSearch(file){
+  wsStatus("Loading the text reader (about 5 MB, first time only)…");
+  try { await getWorker(); } catch { wsStatus("Couldn't download the text reader. Check your connection and try again.", true); return; }
+  wsStatus("Cleaning up the photo…");
+  const bin = await photoToBinary(file);
+
+  wsStatus("Finding the grid…");
+  let syms = await ocr(bin, 6);
+  if (syms.length < 9) { wsStatus("Couldn't find a grid of letters in that photo. Try a closer, straighter shot, or type the grid in.", true); $("wsFix").open = true; return; }
+  const h = median(syms.map(s => s.h));
+  syms = syms.filter(s => s.h < 1.6 * h && s.h > 0.4 * h);
+  const rowsY = lattice(syms.map(s => s.y), h * 0.6, 3);
+  const colsX = lattice(syms.map(s => s.x), h * 0.6, Math.max(2, rowsY.length / 3));
+  if (rowsY.length < 3 || colsX.length < 3) { wsStatus("Couldn't line up the rows and columns. Try a straighter photo, or type the grid in.", true); $("wsFix").open = true; return; }
+
+  // Re-draw every cell, evenly spaced and the same size, then read them all in one go
+  wsStatus(`Reading ${rowsY.length * colsX.length} letters…`);
+  const sp = Math.min(median(colsX.slice(1).map((c, i) => c - colsX[i])), median(rowsY.slice(1).map((c, i) => c - rowsY[i])));
+  const half = sp * 0.42, scale = 40 / h, cw = Math.max(16, Math.round(2 * half * scale)), G = cw;
+  const R = rowsY.length, C = colsX.length;
+  const re = document.createElement("canvas");
+  re.width = C * (cw + G) + G; re.height = R * (cw + G) + G;
+  const rx = re.getContext("2d", { willReadFrequently: true });
+  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
+  rx.imageSmoothingEnabled = true;
+  // Photos are rarely perfectly flat, so centre each cell on the nearest letter actually seen there
+  const centreOf = (r, c) => {
+    let best = null, bd = sp * 0.35;
+    for (const s of syms) { const d = Math.hypot(s.x - colsX[c], s.y - rowsY[r]); if (d < bd) { bd = d; best = s; } }
+    return best ? [best.x, best.y] : [colsX[c], rowsY[r]];
+  };
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const [cx, cy] = centreOf(r, c);
+    rx.drawImage(bin, cx - half, cy - half, 2 * half, 2 * half, G + c * (cw + G), G + r * (cw + G), cw, cw);
+  }
+  // Wipe anything touching a cell's edge (the puzzle's border line, bits of neighbours), keeping the letter in the middle
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const im = rx.getImageData(X, Y, cw, cw), q = im.data, orig = new Uint8ClampedArray(q);
+    const dark = i => q[i * 4] < 128, stack = [];
+    for (let k = 0; k < cw; k++) stack.push(k, (cw - 1) * cw + k, k * cw, k * cw + cw - 1);
+    while (stack.length) {
+      const i = stack.pop();
+      if (!dark(i)) continue;
+      q[i*4] = q[i*4+1] = q[i*4+2] = 255;
+      const x = i % cw, y = (i - x) / cw;
+      if (x > 0) stack.push(i - 1); if (x < cw - 1) stack.push(i + 1);
+      if (y > 0) stack.push(i - cw); if (y < cw - 1) stack.push(i + cw);
+    }
+    let ink = 0;
+    for (let i = 0; i < cw * cw; i++) if (dark(i)) ink++;
+    if (ink < cw * cw * 0.01) q.set(orig); // wiped the letter itself, so put it back
+    rx.putImageData(im, X, Y);
+  }
+  const grid = Array.from({ length: R }, () => Array(C).fill("?"));
+  for (const s of await ocr(re, 6)) {
+    const c = Math.floor((s.x - G / 2) / (cw + G)), r = Math.floor((s.y - G / 2) / (cw + G));
+    if (r >= 0 && r < R && c >= 0 && c < C && grid[r][c] === "?") grid[r][c] = s.t;
+  }
+
+  // A tall thin stroke can only be an I (the reader often mistakes it for T or misses it)
+  const missing = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const px = rx.getImageData(X, Y, cw, cw).data;
+    let x0 = cw, x1 = -1, y0 = cw, y1 = -1;
+    for (let y = 0; y < cw; y++) for (let x = 0; x < cw; x++) if (px[(y * cw + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= 0 && (y1 - y0 + 1) > cw * 0.4 && (x1 - x0 + 1) < (y1 - y0 + 1) * 0.4) grid[r][c] = "I";
+    else if (grid[r][c] === "?" && x1 >= 0) missing.push([r, c]);
+  }
+  // Second look at anything still unread: read that cell on its own
+  if (missing.length) wsStatus(`Double-checking ${missing.length} letter${missing.length === 1 ? "" : "s"}…`);
+  for (const [r, c] of missing) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const one = document.createElement("canvas"); one.width = one.height = cw + 40;
+    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
+    ox.drawImage(re, X, Y, cw, cw, 20, 20, cw, cw);
+    const got = await ocr(one, 10);
+    if (got.length) grid[r][c] = got[0].t;
+  }
+
+  wsGrid = grid.map(r => r.join(""));
+  $("wsText").value = wsGrid.join("\n");
+  const unread = wsGrid.join("").split("?").length - 1;
+  wsStatus(`Read a ${C} × ${R} grid. ${unread ? `${unread} letter${unread === 1 ? "" : "s"} couldn't be read (shown as red ?). ` : ""}Give it a quick check against the puzzle; you can fix any letter under “Check or type the grid”.`);
+  if (unread) $("wsFix").open = true;
+  saveWS();
+  wsRun();
+}
+
+$("wsFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { await readWordSearch(f); }
+  catch (err) { console.warn(err); wsStatus("Something went wrong reading that photo. Try again, or type the grid in.", true); $("wsFix").open = true; }
+});
+
+function parseGridText(t){
+  return t.toUpperCase().split(/\r?\n/).map(l => l.replace(/[^A-Z?]/g, "")).filter(Boolean);
+}
+function parseWords(t){
+  const parts = /[\n,;]/.test(t.trim()) ? t.split(/[\n,;]+/) : t.split(/\s+/);
+  return [...new Set(parts.map(w => w.toUpperCase().replace(/[^A-Z]/g, "")).filter(w => w.length >= 2))];
+}
+
+function findInGrid(word, allowGuess){
+  const R = wsGrid.length;
+  for (let r = 0; r < R; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
+    let guesses = 0, cells = [];
+    for (let k = 0; k < word.length; k++) {
+      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
+      if (ch === word[k]) cells.push([rr, cc]);
+      else if (allowGuess && ch === "?" && guesses < 1) { guesses++; cells.push([rr, cc]); }
+      else { cells = null; break; }
+    }
+    if (cells) return { cells, dir: name, guessed: guesses > 0 };
+  }
+  return null;
+}
+
+function renderBoard(){
+  const board = $("wsBoard");
+  if (!wsGrid.length) { board.hidden = true; return; }
+  board.hidden = false;
+  const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length));
+  let svg = `<svg viewBox="0 0 ${C * 10} ${R * 10}" role="img" aria-label="Word search grid">`;
+  for (const hit of wsHits) {
+    if (!hit.on) continue;
+    const [a, b] = [hit.cells[0], hit.cells[hit.cells.length - 1]];
+    svg += `<line x1="${a[1]*10+5}" y1="${a[0]*10+5}" x2="${b[1]*10+5}" y2="${b[0]*10+5}" stroke="${hit.colour}" stroke-width="7.4" stroke-linecap="round" opacity=".55"/>`;
+  }
+  wsGrid.forEach((row, r) => [...row].forEach((ch, c) => {
+    svg += `<text x="${c*10+5}" y="${r*10+5.3}" font-size="6" text-anchor="middle" dominant-baseline="middle"${ch === "?" ? ' class="unk"' : ""}>${ch}</text>`;
+  }));
+  board.innerHTML = svg + "</svg>";
+}
+
+function renderHits(){
+  const asked = wsHits.filter(h => h.asked);
+  let html = "";
+  if (asked.length) {
+    html += `<ul class="ws-list">` + asked.map(h => h.cells
+      ? `<li><span class="dot" style="background:${h.colour}"></span><span><b>${h.word}</b> <small>row ${h.cells[0][0] + 1}, column ${h.cells[0][1] + 1}, ${h.dir}${h.guessed ? " (includes an unread letter)" : ""}</small></span></li>`
+      : `<li class="miss"><span class="dot" style="background:var(--line)"></span><span><b>${h.word}</b> <small>not found. Check the spelling, or the grid for a misread letter.</small></span></li>`
+    ).join("") + `</ul>`;
+  }
+  const auto = wsHits.filter(h => !h.asked);
+  if (auto.length) {
+    html += `<div class="group"><h3>Every word in the grid <span>(${auto.length})</span></h3>
+      <p class="hint" style="margin-top:0">5 letters or more, longest first. Tap one to highlight it.</p>
+      <div class="chips">${auto.map(h => `<button class="chip${h.rank === Infinity ? " rare" : ""}${h.on ? " on" : ""}" data-ws="${h.word}">${h.word.toLowerCase()}</button>`).join("")}</div></div>`;
+  }
+  $("wsOut").innerHTML = html;
+}
+
+function wsRun(){
+  const words = parseWords($("wsWords").value);
+  const keepAuto = wsHits.filter(h => !h.asked).map(h => h.word);
+  const autoOn = new Set(wsHits.filter(h => !h.asked && h.on).map(h => h.word));
+  wsHits = words.map((w, i) => {
+    const f = findInGrid(w, false) || findInGrid(w, true);
+    return { word: w, asked: true, on: !!f, colour: WS_COLOURS[i % WS_COLOURS.length], ...(f || { cells: null }) };
+  });
+  // Keep the "every word" list, re-checked against the current grid
+  keepAuto.forEach((w, i) => {
+    if (words.includes(w)) return;
+    const f = findInGrid(w, false);
+    if (f) wsHits.push({ word: w, asked: false, on: autoOn.has(w), colour: WS_COLOURS[(words.length + i) % WS_COLOURS.length], rank: RANK ? rankOf(w.toLowerCase()) : Infinity, ...f });
+  });
+  renderBoard(); renderHits(); saveWS();
+}
+
+async function wsAutoFind(){
+  if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; }
+  if (!await needLists($("wsOut"))) return;
+  const asked = new Set(parseWords($("wsWords").value));
+  const found = new Map();
+  for (let r = 0; r < wsGrid.length; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
+    let s = "", cells = [];
+    for (let k = 0; ; k++) {
+      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
+      if (!ch || ch === "?") break;
+      s += ch; cells.push([rr, cc]);
+      if (s.length >= 5 && !found.has(s) && !asked.has(s) && WORDSET.has(s.toLowerCase())) found.set(s, { cells: cells.slice(), dir: name });
+    }
+  }
+  // Drop words that sit entirely inside a longer find in the same place (e.g. BOOKS inside BOOKSHELF)
+  const list = [...found].map(([word, f]) => ({ word, ...f, rank: rankOf(word.toLowerCase()) }))
+    .sort((a, b) => b.word.length - a.word.length || a.rank - b.rank);
+  const keyOf = cells => "|" + cells.map(x => x.join(",")).join("|") + "|";
+  const kept = wsHits.filter(h => h.asked && h.cells).map(h => ({ cells: h.cells, asked: true }));
+  for (const h of list) {
+    const k = keyOf(h.cells);
+    if (!kept.some(o => keyOf(o.cells).includes(k))) kept.push(h);
+  }
+  const autoKept = kept.filter(h => !h.asked);
+  wsHits = wsHits.filter(h => h.asked).concat(autoKept.map((h, i) => ({ ...h, asked: false, on: false, colour: WS_COLOURS[(i + 3) % WS_COLOURS.length] })));
+  if (!autoKept.length) wsStatus("No other dictionary words of 5 letters or more found.");
+  renderBoard(); renderHits();
+}
+
+$("wsOut").addEventListener("click", e => {
+  const b = e.target.closest("[data-ws]");
+  if (!b) return;
+  const h = wsHits.find(x => !x.asked && x.word === b.dataset.ws);
+  if (h) { h.on = !h.on; renderBoard(); renderHits(); }
+});
+$("wsText").addEventListener("input", () => { wsGrid = parseGridText($("wsText").value); wsRun(); });
+$("wsWords").addEventListener("input", () => { if (wsGrid.length) wsRun(); else saveWS(); });
+$("wsFind").addEventListener("click", () => { if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; } wsRun(); });
+$("wsAuto").addEventListener("click", wsAutoFind);
+
+function loadWordSearch(){
+  const saved = store.get("bd-ws", null);
+  if (!saved) return;
+  wsGrid = saved.grid || [];
+  $("wsText").value = wsGrid.join("\n");
+  $("wsWords").value = saved.words || "";
+  if (wsGrid.length) wsRun();
+}
 
 /* ================= COUNTDOWN: switch ================= */
 function showCd(mode){
@@ -918,6 +1296,8 @@ $("ownTarget").addEventListener("keydown", e => { if (e.key === "Enter") { e.pre
 /* ---------- start ---------- */
 renderRecent();
 renderSpots();
+loadWordSearch();
+showPz(store.get("bd-pz", "crossword"));
 newLetters();
 resetNumbersUI();
 showCd(store.get("bd-cd", "letters"));
