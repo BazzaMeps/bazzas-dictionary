@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bazza's Dictionary</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='8' y='8' width='84' height='84' rx='12' fill='%23fbfaf5' stroke='%231c2e5a' stroke-width='6'/><text x='50' y='70' font-size='58' font-family='Arial' font-weight='700' text-anchor='middle' fill='%231c2e5a'>B</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#1c2e5a; --board-2:#24396d;
+  --tile:#fbfaf5; --tile-edge:#cfc8b2; --tile-ink:#1c2e5a;
+  --clock:#f2c230;
+  --bg:#e8edf6; --surface:#ffffff; --ink:#1a1f2b; --muted:#5d6779; --line:#cdd5e4;
+  --good:#2f7d4f; --bad:#b3362c;
+  --ui:"Bricolage Grotesque", "Segoe UI", Roboto, system-ui, sans-serif;
+  --read:"Literata", Georgia, "Times New Roman", serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1830; --surface:#17223f; --ink:#e9edf6; --muted:#9aa6c0; --line:#2b3a62;
+    --board:#24396d; --board-2:#2d4580; --good:#5cc489; --bad:#ef7b70;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1830; --surface:#17223f; --ink:#e9edf6; --muted:#9aa6c0; --line:#2b3a62;
+  --board:#24396d; --board-2:#2d4580; --good:#5cc489; --bad:#ef7b70;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+::placeholder{color:var(--muted);opacity:1}
+:focus-visible{outline:3px solid var(--clock);outline-offset:2px}
+
+/* Header: the board */
+header{background:var(--board);color:#fff;padding:18px 16px 0}
+.wrap{max-width:720px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:1.05rem;font-weight:600;letter-spacing:.01em;opacity:.85}
+.title-tiles{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 16px}
+
+.tile{display:inline-grid;place-items:center;width:2.1em;height:2.1em;background:var(--tile);color:var(--tile-ink);
+  border-radius:4px;box-shadow:inset 0 -3px 0 var(--tile-edge);font-weight:800;font-size:1.15rem;text-transform:uppercase;line-height:1}
+.title-tiles .tile{font-size:1.35rem}
+.tile.blank{background:transparent;color:var(--clock);box-shadow:inset 0 0 0 2px var(--clock)}
+.tile.empty{background:var(--board-2);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+
+nav{display:flex;gap:2px}
+nav button{flex:1;background:transparent;border:0;color:#c9d3ea;padding:12px 6px 14px;font-weight:600;cursor:pointer;border-radius:8px 8px 0 0}
+nav button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+
+main{padding:20px 16px 48px}
+section[hidden]{display:none}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{flex:1 1 200px;min-width:0;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--surface);font-size:1.1rem}
+.field:focus{border-color:var(--board-2);outline:none}
+.btn{padding:12px 18px;border-radius:10px;border:0;background:var(--board);color:#fff;font-weight:600;cursor:pointer}
+:root[data-theme="dark"] .btn:not(.ghost){background:var(--clock);color:#1c2e5a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.ghost){background:var(--clock);color:#1c2e5a}}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn:disabled{opacity:.35;filter:grayscale(1);cursor:not-allowed}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 0 0}
+.status{color:var(--muted);margin:16px 0}
+.status.err{color:var(--bad)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.95rem}
+.chip.rare{color:var(--muted);background:transparent}
+.chip mark{background:transparent;color:inherit;text-decoration:underline wavy var(--clock) 2px;text-underline-offset:3px}
+
+/* Define */
+.entry{margin-top:20px}
+.headword{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.headword h2{margin:0;font-size:2.4rem;font-weight:800;line-height:1.05;word-break:break-word}
+.phon{font-family:var(--read);color:var(--muted);font-size:1.1rem}
+.audio{border:2px solid var(--line);background:var(--surface);border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:1rem}
+.pos{margin:24px 0 6px;font-family:var(--read);font-style:italic;font-size:1.15rem;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
+ol.defs{margin:0;padding-left:1.6em;font-family:var(--read);line-height:1.6;max-width:65ch}
+ol.defs li{margin:10px 0}
+ol.defs .ex{display:block;color:var(--muted);font-style:italic}
+.nyms{margin:10px 0 0;font-size:.9rem;color:var(--muted)}
+.nyms .chips{margin-top:6px}
+.source{margin-top:28px;font-size:.85rem;color:var(--muted)}
+.source a{color:inherit}
+.inlist{font-size:.9rem;color:var(--muted);margin-top:6px}
+.recent{margin-top:24px}
+.recent h3,.opts h3{font-size:.95rem;font-weight:600;color:var(--muted);margin:0 0 8px}
+
+/* Unscramble */
+.preview{display:flex;gap:4px;flex-wrap:wrap;min-height:2.6em;margin:14px 0 4px}
+.opts{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:.95rem}
+.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.opts select{padding:6px 8px;border-radius:8px;border:2px solid var(--line);background:var(--surface)}
+.group{margin-top:22px}
+.group h3{margin:0 0 8px;font-size:1.05rem;font-weight:800}
+.group h3 span{font-weight:400;color:var(--muted)}
+.more{margin-top:8px}
+
+/* Countdown */
+.cd-board{background:var(--board);border-radius:14px;padding:16px;color:#fff}
+.cd-tiles{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.cd-tiles .tile{width:100%;height:auto;aspect-ratio:1;font-size:clamp(1rem,5vw,1.6rem)}
+.clock{height:10px;background:var(--board-2);border-radius:999px;margin:16px 0 4px;overflow:hidden}
+.clock div{height:100%;width:0;background:var(--clock);transition:width .25s linear}
+.cd-meta{display:flex;justify-content:space-between;font-size:.9rem;color:#c9d3ea}
+.cd-controls{margin-top:14px}
+.cd-controls .btn{flex:1}
+.verdict{margin-top:12px;font-weight:600}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+
+@media (prefers-reduced-motion: reduce){.clock div{transition:none}}
+
+/* v2 additions */
+nav{overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:1 0 auto;padding:12px 4px 14px;font-size:clamp(.8rem,3.4vw,.95rem);white-space:nowrap}
+.seg{display:inline-flex;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:3px;margin-bottom:16px}
+.seg button{border:0;background:transparent;padding:8px 18px;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--board);color:#fff}
+.lbl{display:block;font-size:.92rem;color:var(--muted);margin:14px 0 6px}
+.field.small{flex:none;width:100%;font-size:1rem;padding:10px 12px}
+details.more{margin-top:14px;border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface)}
+details.more, details.more *{box-sizing:border-box}
+details.more summary{cursor:pointer;font-weight:600}
+.spots{display:grid;gap:6px}
+.spots label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.8rem;color:var(--muted)}
+.spots input{width:100%;min-width:0;text-align:center;padding:8px 2px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:lowercase}
+.spots input:disabled{opacity:.35}
+
+/* Word search */
+.ws-upload{display:block;text-align:center}
+.ws-board{margin-top:14px;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px}
+.ws-board svg{display:block;width:100%;height:auto}
+.ws-board text{font-family:var(--ui);font-weight:700;fill:var(--ink)}
+.ws-board text.unk{fill:var(--bad)}
+.ws-text{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase}
+textarea.field{resize:vertical;line-height:1.5}
+.ws-list{list-style:none;padding:0;margin:14px 0 0}
+.ws-list li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.ws-list .dot{flex:none;width:12px;height:12px;border-radius:50%;transform:translateY(1px)}
+.ws-list b{letter-spacing:.04em}
+.ws-list small{color:var(--muted)}
+.ws-list .miss b{color:var(--bad)}
+.chip.on{background:var(--clock);color:#1c2e5a;border-color:var(--clock)}
+
+/* Numbers round */
+.target{font-size:clamp(2.6rem,14vw,4rem);font-weight:800;letter-spacing:.08em;text-align:center;color:var(--clock);
+  background:#0b1430;border-radius:10px;padding:6px 0;margin-bottom:14px;font-variant-numeric:tabular-nums;line-height:1.1}
+.ntiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.ntile{min-width:3.1em;height:2.6em;padding:0 .5em;border:0;border-radius:6px;background:var(--tile);color:var(--tile-ink);
+  box-shadow:inset 0 -3px 0 var(--tile-edge);font-weight:800;font-size:1.25rem;cursor:pointer;font-variant-numeric:tabular-nums}
+.ntile.made{background:#fff6d6;box-shadow:inset 0 0 0 2px var(--clock),inset 0 -3px 0 var(--tile-edge)}
+.ntile.sel{outline:4px solid var(--clock);outline-offset:2px}
+.ntile:disabled{opacity:.25;cursor:default}
+.ntile.blank{background:var(--board-2);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);cursor:default}
+.large{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.large .btn{padding:12px 0}
+.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.ops .btn{font-size:1.4rem;padding:10px 0}
+.ops .btn.on{outline:4px solid var(--clock);outline-offset:2px}
+.steps{font-family:var(--read);font-size:1.05rem;padding-left:1.6em;margin:12px 0 0}
+.steps li{margin:4px 0}
+.best{margin-top:10px;font-weight:600}
+.nums-own{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end}
+@media (max-width:420px){.nums-own{grid-template-columns:1fr 1fr}.nums-own .btn{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand"><h1>Bazza's Dictionary</h1></div>
+    <div class="title-tiles" aria-hidden="true">
+      <span class="tile">w</span><span class="tile">o</span><span class="tile">r</span><span class="tile">d</span><span class="tile">s</span>
+    </div>
+    <nav role="tablist">
+      <button role="tab" aria-selected="true" data-tab="define">Define</button>
+      <button role="tab" aria-selected="false" data-tab="unscramble">Unscramble</button>
+      <button role="tab" aria-selected="false" data-tab="crossword">Puzzles</button>
+      <button role="tab" aria-selected="false" data-tab="countdown">Countdown</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- DEFINE -->
+  <section id="tab-define">
+    <form class="row" autocomplete="off" onsubmit="return false">
+      <input class="field" id="defineInput" type="search" placeholder="Type a word" autocapitalize="none" spellcheck="false" enterkeyhint="search">
+      <button class="btn" id="defineBtn">Look up</button>
+    </form>
+    <div id="defineOut"></div>
+    <div class="recent" id="recentWrap" hidden>
+      <h3>Recent</h3>
+      <div class="chips" id="recentChips"></div>
+    </div>
+  </section>
+
+  <!-- UNSCRAMBLE -->
+  <section id="tab-unscramble" hidden>
+    <form class="row" autocomplete="off" onsubmit="return false">
+      <input class="field" id="unInput" type="text" placeholder="Letters, ? for a blank" autocapitalize="none" spellcheck="false" maxlength="15" enterkeyhint="go">
+      <button class="btn" id="unBtn">Unscramble</button>
+    </form>
+    <div class="preview" id="unPreview" aria-hidden="true"></div>
+    <p class="hint">Up to 15 letters. Use ? for a blank tile (up to 3). Letters filled by a blank get a yellow underline.</p>
+    <div class="opts">
+      <label>Shortest word
+        <select id="minLen"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
+      </label>
+      <label><input type="checkbox" id="commonOnly"> Common words only</label>
+    </div>
+    <div id="unOut"></div>
+  </section>
+
+  <!-- PUZZLES: crossword + word search -->
+  <section id="tab-crossword" hidden>
+    <div class="seg">
+      <button aria-pressed="true" data-pz="crossword">Crossword</button>
+      <button aria-pressed="false" data-pz="wordsearch">Word search</button>
+    </div>
+    <div id="pz-crossword">
+    <form class="row" autocomplete="off" onsubmit="return false">
+      <input class="field" id="cwInput" type="text" placeholder="Pattern, e.g. c?o?s?o?d" autocapitalize="none" spellcheck="false" maxlength="20" enterkeyhint="search">
+      <button class="btn" id="cwBtn">Find words</button>
+    </form>
+    <div class="preview" id="cwPreview" aria-hidden="true"></div>
+    <p class="hint">Type the letters you know and ? for each gap. The pattern sets the length, so ????? finds 5-letter words.</p>
+    <details class="more" id="cwMore">
+      <summary>More clues (handy for Wordle)</summary>
+      <label class="lbl" for="cwHas">Letters it must contain (yellow)</label>
+      <input class="field small" id="cwHas" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. ae">
+      <label class="lbl" for="cwNot">Letters it can't contain (grey)</label>
+      <input class="field small" id="cwNot" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. stui">
+      <span class="lbl">Wrong spots: letters in the word but not in that position</span>
+      <div class="spots" id="cwSpots"></div>
+    </details>
+    <div class="opts"><label><input type="checkbox" id="cwCommon"> Common words only</label></div>
+    <div id="cwOut"></div>
+    </div>
+
+    <div id="pz-wordsearch" hidden>
+      <label class="btn ws-upload" for="wsFile">Photo of a word search</label>
+      <input id="wsFile" type="file" accept="image/*" hidden>
+      <p class="hint">Take the photo straight on, in good light, with the whole grid in shot. Or type the grid in below.</p>
+      <div class="status" id="wsStatus" role="status"></div>
+      <div class="ws-board" id="wsBoard" hidden></div>
+      <details class="more" id="wsFix">
+        <summary>Check or type the grid</summary>
+        <p class="hint">One row per line. Fix any letter the camera got wrong; a ? marks one it couldn't read.</p>
+        <textarea class="field small ws-text" id="wsText" rows="8" autocapitalize="characters" spellcheck="false" placeholder="SZBOOKCASE&#10;SIDEBOARDT&#10;..."></textarea>
+      </details>
+      <label class="lbl" for="wsWords">Words to find</label>
+      <textarea class="field small" id="wsWords" rows="3" autocapitalize="none" spellcheck="false" placeholder="bookcase, sideboard, cabinet"></textarea>
+      <div class="row cd-controls">
+        <button class="btn" id="wsFind">Find them</button>
+        <button class="btn ghost" id="wsAuto">Find every word</button>
+      </div>
+      <div id="wsOut"></div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section id="tab-countdown" hidden>
+    <div class="seg">
+      <button aria-pressed="true" data-cd="letters">Letters</button>
+      <button aria-pressed="false" data-cd="numbers">Numbers</button>
+    </div>
+
+    <div id="cd-letters">
+      <div class="cd-board">
+        <div class="cd-tiles" id="cdTiles"></div>
+        <div class="clock" aria-hidden="true"><div id="cdBar"></div></div>
+        <div class="cd-meta"><span id="cdCounts"></span><span id="cdTime"></span></div>
+      </div>
+      <div class="row cd-controls">
+        <button class="btn" id="vowelBtn">Vowel</button>
+        <button class="btn" id="consBtn">Consonant</button>
+      </div>
+      <div class="row cd-controls">
+        <button class="btn ghost" id="randomBtn">Random 9</button>
+        <button class="btn ghost" id="newBtn">New round</button>
+      </div>
+      <div id="cdPlay" hidden>
+        <form class="row" style="margin-top:18px" autocomplete="off" onsubmit="return false">
+          <input class="field" id="cdInput" type="text" placeholder="Your word" autocapitalize="none" spellcheck="false" enterkeyhint="done">
+          <button class="btn" id="cdCheck">Check</button>
+        </form>
+        <div class="verdict" id="cdVerdict" role="status"></div>
+        <div class="row" style="margin-top:12px"><button class="btn ghost" id="revealBtn">Show best words</button></div>
+        <div id="cdOut"></div>
+      </div>
+    </div>
+
+    <div id="cd-numbers" hidden>
+      <div class="cd-board">
+        <div class="target" id="nTarget" aria-live="polite">000</div>
+        <div class="ntiles" id="nTiles"></div>
+        <div class="clock" aria-hidden="true"><div id="nBar"></div></div>
+        <div class="cd-meta"><span id="nMeta"></span><span id="nTime"></span></div>
+      </div>
+
+      <div id="nPick">
+        <span class="lbl">How many large numbers?</span>
+        <div class="large" id="largeBtns">
+          <button class="btn" data-large="0">0</button><button class="btn" data-large="1">1</button><button class="btn" data-large="2">2</button><button class="btn" data-large="3">3</button><button class="btn" data-large="4">4</button>
+        </div>
+        <details class="more">
+          <summary>Solve numbers from the telly</summary>
+          <div class="nums-own" style="margin-top:12px">
+            <label><span class="lbl">Six numbers</span><input class="field small" id="ownNums" type="text" inputmode="numeric" placeholder="100 25 3 7 2 8"></label>
+            <label><span class="lbl">Target</span><input class="field small" id="ownTarget" type="text" inputmode="numeric" placeholder="573"></label>
+            <button class="btn" id="ownBtn">Solve</button>
+          </div>
+          <div class="verdict no" id="ownMsg"></div>
+        </details>
+      </div>
+
+      <div id="nPlay" hidden>
+        <div class="ops" id="opsRow">
+          <button class="btn" data-op="+" aria-label="add">+</button>
+          <button class="btn" data-op="-" aria-label="subtract">−</button>
+          <button class="btn" data-op="*" aria-label="multiply">×</button>
+          <button class="btn" data-op="/" aria-label="divide">÷</button>
+        </div>
+        <div class="row cd-controls">
+          <button class="btn ghost" id="nUndo">Undo</button>
+          <button class="btn ghost" id="nReset">Start again</button>
+        </div>
+        <p class="hint">Tap a number, then an operation, then another number. Your answer becomes a new tile to keep going with.</p>
+        <div class="verdict" id="nMsg" role="status"></div>
+        <ol class="steps" id="nSteps"></ol>
+        <div class="best" id="nBest"></div>
+        <div class="row cd-controls">
+          <button class="btn ghost" id="nSolve">Show solution</button>
+          <button class="btn ghost" id="nNew">New round</button>
+        </div>
+        <div id="nSolution"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+"use strict";
+
+const WORDS_URL  = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt";
+const COMMON_URL = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt";
+const DICT_URL   = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+const WIKT_URL   = "https://en.wiktionary.org/api/rest_v1/page/definition/";
+const CACHE_NAME = "bazza-dict-lists-v1";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- storage (never fatal) ---------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+/* ---------- 30-second clock ---------- */
+function makeClock(bar, label, secs){
+  let t = null;
+  return {
+    start(onEnd){
+      this.stop();
+      let left = secs;
+      bar.style.width = "0%"; label.textContent = left + "s";
+      t = setInterval(() => {
+        left--;
+        bar.style.width = ((secs - left) / secs * 100) + "%";
+        label.textContent = left > 0 ? left + "s" : "Time's up";
+        if (left <= 0) { this.stop(); if (onEnd) onEnd(); }
+      }, 1000);
+    },
+    stop(){ clearInterval(t); t = null; },
+    reset(){ this.stop(); bar.style.width = "0"; label.textContent = ""; }
+  };
+}
+
+/* ---------- word lists ---------- */
+let WORDS = null, WORDSET = null, RANK = null, listsPromise = null;
+
+async function getText(url){
+  if ("caches" in window) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const hit = await cache.match(url);
+      if (hit) return await hit.text();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      try { await cache.put(url, res.clone()); } catch {}
+      return await res.text();
+    } catch (e) { /* fall through */ }
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.text();
+}
+function loadLists(){
+  if (!listsPromise) {
+    listsPromise = Promise.all([getText(WORDS_URL), getText(COMMON_URL)]).then(([all, common]) => {
+      WORDS = all.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(w => /^[a-z]+$/.test(w));
+      WORDSET = new Set(WORDS);
+      RANK = new Map();
+      common.split(/\r?\n/).forEach((w, i) => { w = w.trim().toLowerCase(); if (w && !RANK.has(w)) RANK.set(w, i); });
+    }).catch(e => { listsPromise = null; throw e; });
+  }
+  return listsPromise;
+}
+async function needLists(out){
+  if (WORDS) return true;
+  out.innerHTML = `<p class="status">Loading the word list (about 4 MB, first time only)…</p>`;
+  try { await loadLists(); return true; }
+  catch { out.innerHTML = `<p class="status err">Couldn't download the word list. Check your connection and try again.</p>`; return false; }
+}
+const rankOf = w => RANK.has(w) ? RANK.get(w) : Infinity;
+
+/* ---------- shared result rendering ---------- */
+function wordChip(r){
+  let html = "";
+  for (let i = 0; i < r.w.length; i++) html += r.blanks && r.blanks.includes(i) ? `<mark>${r.w[i]}</mark>` : r.w[i];
+  const rare = r.rank === Infinity ? " rare" : "";
+  return `<button class="chip${rare}" data-word="${r.w}" title="${rare ? "Uncommon word" : "Common word"}">${html}</button>`;
+}
+const KEY_TEXT = "Bold ones are common; faded ones are obscure. Tap any word for its definition.";
+
+function renderGroups(target, results, total, opts = {}){
+  const cap = opts.cap || 60;
+  if (!results.length) { target.innerHTML = `<p class="status">No words found. Try more letters, a blank (?), or a shorter minimum length.</p>`; return; }
+  const groups = new Map();
+  for (const r of results) { if (!groups.has(r.w.length)) groups.set(r.w.length, []); groups.get(r.w.length).push(r); }
+  let html = `<p class="status">${results.length.toLocaleString("en-GB")} words. ${opts.note || ""}${KEY_TEXT}</p>`;
+  let g = 0;
+  for (const [len, list] of groups) {
+    if (opts.maxGroups && g++ >= opts.maxGroups) break;
+    const label = len === total ? `${len} letters, uses them all` : `${len} letters`;
+    html += `<div class="group"><h3>${label} <span>(${list.length})</span></h3><div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>`;
+    if (list.length > cap) html += `<button class="btn ghost more" data-more="${len}">Show all ${list.length}</button>`;
+    html += `</div>`;
+  }
+  target.innerHTML = html;
+  target.querySelectorAll("[data-more]").forEach(btn => btn.addEventListener("click", () => {
+    btn.previousElementSibling.innerHTML = groups.get(+btn.dataset.more).map(wordChip).join("");
+    btn.remove();
+  }));
+}
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  if (!$("tab-" + name)) name = "define";
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  ["define","unscramble","crossword","countdown"].forEach(t => $("tab-" + t).hidden = t !== name);
+  store.set("bd-tab", name);
+  if (name !== "define") loadLists().catch(() => {});
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+document.addEventListener("click", e => {
+  const chip = e.target.closest("[data-word]");
+  if (!chip) return;
+  showTab("define");
+  $("defineInput").value = chip.dataset.word;
+  define(chip.dataset.word);
+  window.scrollTo({ top: 0 });
+});
+
+/* ================= DEFINE ================= */
+let recent = store.get("bd-recent", []);
+function renderRecent(){
+  $("recentWrap").hidden = !recent.length;
+  $("recentChips").innerHTML = recent.map(w => `<button class="chip" data-word="${esc(w)}">${esc(w)}</button>`).join("");
+}
+function addRecent(w){
+  recent = [w, ...recent.filter(x => x !== w)].slice(0, 20);
+  store.set("bd-recent", recent); renderRecent();
+}
+
+// Saved definitions, so repeat look-ups are instant
+let defCache = store.get("bd-defs", {});
+function cacheDef(word, entry){
+  defCache[word] = { ...entry, t: Date.now() };
+  const keys = Object.keys(defCache);
+  if (keys.length > 150) keys.sort((a, b) => defCache[a].t - defCache[b].t).slice(0, keys.length - 150).forEach(k => delete defCache[k]);
+  store.set("bd-defs", defCache);
+}
+
+const stripHTML = html => { const t = document.createElement("template"); t.innerHTML = html || ""; return t.content.textContent.trim(); };
+async function fetchJSON(url, ms = 8000){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    let data = null;
+    try { data = await res.json(); } catch {}
+    return { status: res.status, ok: res.ok, data };
+  } finally { clearTimeout(timer); }
+}
+function slotsToList(map){
+  return [...map].filter(([, v]) => v.defs.length).map(([pos, v]) => ({ pos, defs: v.defs, syn: [...v.syn], ant: [...v.ant] }));
+}
+
+async function fromFreeDict(word){
+  const { status, ok, data } = await fetchJSON(DICT_URL + encodeURIComponent(word));
+  if (status === 404) return null;
+  if (!ok || !Array.isArray(data)) throw new Error("Free Dictionary API returned " + status);
+  const phon = data.map(d => d.phonetic).find(Boolean) || (data.flatMap(d => d.phonetics || []).find(p => p.text) || {}).text || "";
+  const audios = data.flatMap(d => d.phonetics || []).map(p => p.audio).filter(Boolean);
+  const byPos = new Map();
+  for (const entry of data) for (const m of entry.meanings || []) {
+    const key = m.partOfSpeech || "other";
+    if (!byPos.has(key)) byPos.set(key, { defs: [], syn: new Set(), ant: new Set() });
+    const slot = byPos.get(key);
+    (m.definitions || []).forEach(d => {
+      slot.defs.push({ text: d.definition, ex: d.example || "" });
+      (d.synonyms || []).forEach(s => slot.syn.add(s));
+      (d.antonyms || []).forEach(s => slot.ant.add(s));
+    });
+    (m.synonyms || []).forEach(s => slot.syn.add(s));
+    (m.antonyms || []).forEach(s => slot.ant.add(s));
+  }
+  return {
+    word: data[0].word || word, phon,
+    audio: audios.find(a => /-uk\.mp3$/.test(a)) || audios[0] || "",
+    meanings: slotsToList(byPos),
+    sources: [...new Set(data.flatMap(d => d.sourceUrls || []))],
+    credit: "Definitions from Wiktionary (CC BY-SA) via Free Dictionary API"
+  };
+}
+async function fromWiktionary(word){
+  const { status, ok, data } = await fetchJSON(WIKT_URL + encodeURIComponent(word));
+  if (status === 404) return null;
+  if (!ok || !data) throw new Error("Wiktionary returned " + status);
+  const byPos = new Map();
+  for (const sec of data.en || []) {
+    const key = (sec.partOfSpeech || "other").toLowerCase();
+    if (!byPos.has(key)) byPos.set(key, { defs: [], syn: new Set(), ant: new Set() });
+    for (const d of sec.definitions || []) {
+      const text = stripHTML(d.definition);
+      if (!text) continue;
+      const ex = (d.parsedExamples && d.parsedExamples[0] && stripHTML(d.parsedExamples[0].example))
+              || (d.examples && stripHTML(d.examples[0])) || "";
+      byPos.get(key).defs.push({ text, ex });
+    }
+  }
+  const meanings = slotsToList(byPos);
+  if (!meanings.length) return null;
+  return { word, phon: "", audio: "", meanings,
+    sources: ["https://en.wiktionary.org/wiki/" + encodeURIComponent(word)],
+    credit: "Definitions from Wiktionary (CC BY-SA)" };
+}
+
+let defineSeq = 0;
+async function define(raw){
+  const word = raw.trim().toLowerCase();
+  if (!word) return;
+  const seq = ++defineSeq;
+  const out = $("defineOut");
+
+  let entry = defCache[word] || null;
+  let bothFailed = false;
+  if (!entry) {
+    out.innerHTML = `<p class="status">Looking up “${esc(word)}”…</p>`;
+    // Ask both at once. Prefer Free Dictionary (it has pronunciation) if it answers quickly.
+    const settle = p => p.then(r => ({ r }), e => ({ e }));
+    const pFree = settle(fromFreeDict(word));
+    const pWikt = settle(fromWiktionary(word));
+    const quick = await Promise.race([pFree, wait(2500).then(() => null)]);
+    if (quick && quick.r) entry = quick.r;
+    else {
+      const w = await pWikt;
+      if (w.r) entry = w.r;
+      else {
+        const f = quick || await pFree;
+        if (f.r) entry = f.r;
+        else bothFailed = !!(f.e && w.e);
+      }
+    }
+    if (entry) cacheDef(word, entry);
+  }
+  if (seq !== defineSeq) return;
+
+  const listNote = WORDSET ? `<div class="inlist">${WORDSET.has(word) ? "Valid in the anagram word list." : "Not in the anagram word list."}</div>` : "";
+  if (!entry) {
+    out.innerHTML = bothFailed
+      ? `<p class="status err">Couldn't reach either dictionary. Check your connection and try again.</p>`
+      : `<div class="entry"><div class="headword"><h2>${esc(word)}</h2></div>${listNote}
+         <p class="status">No definition found for “${esc(word)}”. Try the base form (singular, or without -ed / -ing).</p></div>`;
+    return;
+  }
+  addRecent(word);
+
+  const nymChips = list => list.slice(0, 16).map(s => `<button class="chip" data-word="${esc(s)}">${esc(s)}</button>`).join("");
+  let html = `<div class="entry"><div class="headword"><h2>${esc(entry.word)}</h2>`;
+  if (entry.phon) html += `<span class="phon">${esc(entry.phon)}</span>`;
+  if (entry.audio) html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button>`;
+  html += `</div>${listNote}`;
+  for (const m of entry.meanings) {
+    html += `<div class="pos">${esc(m.pos)}</div><ol class="defs">`;
+    html += m.defs.map(d => `<li>${esc(d.text)}${d.ex ? `<span class="ex">“${esc(d.ex)}”</span>` : ""}</li>`).join("");
+    html += `</ol>`;
+    if (m.syn.length) html += `<div class="nyms">Similar<div class="chips">${nymChips(m.syn)}</div></div>`;
+    if (m.ant.length) html += `<div class="nyms">Opposite<div class="chips">${nymChips(m.ant)}</div></div>`;
+  }
+  if (entry.sources.length) html += `<p class="source">${entry.credit}: ${entry.sources.map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(decodeURIComponent(s.replace(/^https?:\/\//, "")))}</a>`).join(", ")}</p>`;
+  html += `</div>`;
+  out.innerHTML = html;
+  if (entry.audio) $("playAudio").addEventListener("click", () => {
+    new Audio(entry.audio.startsWith("//") ? "https:" + entry.audio : entry.audio).play().catch(() => {});
+  });
+}
+$("defineBtn").addEventListener("click", () => define($("defineInput").value));
+$("defineInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); define($("defineInput").value); } });
+
+/* ================= UNSCRAMBLE ================= */
+function solveLetters(letters, blanks, minLen){
+  const avail = new Int8Array(26);
+  for (const ch of letters) avail[ch.charCodeAt(0) - 97]++;
+  const total = letters.length + blanks;
+  const need = new Int8Array(26);
+  const out = [];
+  for (let k = 0; k < WORDS.length; k++) {
+    const w = WORDS[k], L = w.length;
+    if (L < minLen || L > total) continue;
+    need.set(avail);
+    let b = blanks, ok = true, pos = null;
+    for (let i = 0; i < L; i++) {
+      const c = w.charCodeAt(i) - 97;
+      if (need[c] > 0) need[c]--;
+      else if (b > 0) { b--; (pos || (pos = [])).push(i); }
+      else { ok = false; break; }
+    }
+    if (ok) out.push({ w, blanks: pos || [], rank: rankOf(w) });
+  }
+  out.sort((a, b) => b.w.length - a.w.length || a.rank - b.rank || (a.w < b.w ? -1 : 1));
+  return out;
+}
+function parseLetters(s){
+  s = s.toLowerCase().replace(/\*/g, "?");
+  return { letters: s.replace(/[^a-z]/g, ""), blanks: Math.min(3, (s.match(/\?/g) || []).length) };
+}
+$("unInput").addEventListener("input", () => {
+  const { letters, blanks } = parseLetters($("unInput").value);
+  $("unPreview").innerHTML = [...letters].map(c => `<span class="tile">${c}</span>`).join("") + `<span class="tile blank">?</span>`.repeat(blanks);
+});
+async function unscramble(){
+  const { letters, blanks } = parseLetters($("unInput").value);
+  const out = $("unOut");
+  if (letters.length + blanks < 2) { out.innerHTML = `<p class="status">Enter at least 2 letters.</p>`; return; }
+  if (!await needLists(out)) return;
+  let results = solveLetters(letters, blanks, +$("minLen").value);
+  let note = "";
+  if ($("commonOnly").checked) {
+    const common = results.filter(r => r.rank !== Infinity);
+    if (common.length) results = common;
+    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+  }
+  renderGroups(out, results, letters.length + blanks, { note });
+}
+$("unBtn").addEventListener("click", unscramble);
+$("unInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); unscramble(); } });
+["minLen","commonOnly"].forEach(id => $(id).addEventListener("change", () => { if ($("unOut").innerHTML) unscramble(); }));
+
+/* ================= CROSSWORD / WORDLE ================= */
+const cleanPattern = s => s.toLowerCase().replace(/[.\-_*\s]/g, "?").replace(/[^a-z?]/g, "");
+const cleanLetters = s => s.toLowerCase().replace(/[^a-z]/g, "");
+
+function renderSpots(){
+  const p = cleanPattern($("cwInput").value);
+  const wrap = $("cwSpots");
+  const old = [...wrap.querySelectorAll("input")].map(i => i.value);
+  wrap.style.gridTemplateColumns = `repeat(${Math.max(p.length, 1)}, minmax(0, 1fr))`;
+  wrap.innerHTML = p ? [...p].map((c, i) =>
+    `<label>${c === "?" ? i + 1 : c.toUpperCase()}<input type="text" maxlength="6" autocapitalize="none" spellcheck="false" aria-label="Letters not in position ${i + 1}" value="${esc(old[i] || "")}"${c === "?" ? "" : " disabled"}></label>`
+  ).join("") : `<span class="hint" style="margin:0">Type a pattern first.</span>`;
+  $("cwPreview").innerHTML = [...p].map(c => c === "?" ? `<span class="tile empty"></span>` : `<span class="tile">${c}</span>`).join("");
+}
+$("cwInput").addEventListener("input", renderSpots);
+
+async function crossword(){
+  const p = cleanPattern($("cwInput").value);
+  const out = $("cwOut");
+  if (p.length < 2) { out.innerHTML = `<p class="status">Enter a pattern of at least 2 letters, like c?o?s.</p>`; return; }
+  if (!await needLists(out)) return;
+
+  const spots = [...$("cwSpots").querySelectorAll("input")].map(i => cleanLetters(i.value));
+  const banned = new Set(cleanLetters($("cwNot").value));
+  // Minimum count of each letter that must appear
+  const need = {};
+  for (const c of cleanLetters($("cwHas").value)) need[c] = (need[c] || 0) + 1;
+  for (const s of spots) for (const c of new Set(s)) need[c] = Math.max(need[c] || 0, 1);
+
+  const L = p.length, results = [];
+  outer: for (const w of WORDS) {
+    if (w.length !== L) continue;
+    for (let i = 0; i < L; i++) {
+      const c = w[i];
+      if (p[i] !== "?") { if (c !== p[i]) continue outer; }
+      else if (banned.has(c) || (spots[i] && spots[i].includes(c))) continue outer;
+    }
+    for (const c in need) { let n = 0; for (const x of w) if (x === c) n++; if (n < need[c]) continue outer; }
+    results.push({ w, blanks: [], rank: rankOf(w) });
+  }
+  let list = results, note = "";
+  if ($("cwCommon").checked) {
+    const common = results.filter(r => r.rank !== Infinity);
+    if (common.length) list = common;
+    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+  }
+  list.sort((a, b) => a.rank - b.rank || (a.w < b.w ? -1 : 1));
+  if (!list.length) { out.innerHTML = `<p class="status">No words match. Check the pattern, or remove a clue.</p>`; return; }
+  const cap = 150;
+  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} matches. ${note}${KEY_TEXT}</p>
+    <div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>
+    ${list.length > cap ? `<button class="btn ghost more" id="cwMoreBtn">Show all ${list.length.toLocaleString("en-GB")}</button>` : ""}`;
+  if (list.length > cap) $("cwMoreBtn").addEventListener("click", e => {
+    e.target.previousElementSibling.innerHTML = list.map(wordChip).join(""); e.target.remove();
+  });
+}
+$("cwBtn").addEventListener("click", crossword);
+["cwInput","cwHas","cwNot"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } }));
+$("cwSpots").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } });
+$("cwCommon").addEventListener("change", () => { if ($("cwOut").innerHTML) crossword(); });
+
+/* ================= PUZZLES: switch ================= */
+function showPz(mode){
+  document.querySelectorAll("[data-pz]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pz === mode));
+  $("pz-crossword").hidden = mode !== "crossword";
+  $("pz-wordsearch").hidden = mode !== "wordsearch";
+  store.set("bd-pz", mode);
+}
+document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
+
+/* ================= WORD SEARCH ================= */
+const TESS = {
+  script: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+  worker: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  core:   "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+  lang:   "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"
+};
+const WS_COLOURS = ["#f2c230", "#5cc489", "#6aa8ff", "#ff8fa3", "#c49bff", "#ffa94d", "#4fd1c5", "#e57373"];
+const DIRS = [[0,1,"left to right"],[0,-1,"right to left"],[1,0,"downwards"],[-1,0,"upwards"],
+              [1,1,"diagonal, down and right"],[-1,-1,"diagonal, up and left"],[1,-1,"diagonal, down and left"],[-1,1,"diagonal, up and right"]];
+let wsGrid = [];          // array of row strings, "?" = unread letter
+let wsHits = [];          // [{word, cells:[[r,c]..], dir, colour, guessed, asked, on}]
+let tessPromise = null, tessWorker = null;
+
+function wsStatus(msg, err){ const el = $("wsStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function saveWS(){ store.set("bd-ws", { grid: wsGrid, words: $("wsWords").value }); }
+
+function loadTesseract(){
+  if (!tessPromise) tessPromise = new Promise((res, rej) => {
+    if (window.Tesseract) return res(window.Tesseract);
+    const s = document.createElement("script");
+    s.src = TESS.script;
+    s.onload = () => res(window.Tesseract);
+    s.onerror = () => { tessPromise = null; rej(new Error("Couldn't load the text reader")); };
+    document.head.appendChild(s);
+  });
+  return tessPromise;
+}
+async function getWorker(){
+  if (tessWorker) return tessWorker;
+  const T = await loadTesseract();
+  tessWorker = await T.createWorker("eng", 1, { workerPath: TESS.worker, corePath: TESS.core, langPath: TESS.lang });
+  return tessWorker;
+}
+async function ocr(canvas, psm){
+  const w = await getWorker();
+  await w.setParameters({ tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", tessedit_pageseg_mode: String(psm) });
+  const { data } = await w.recognize(canvas, {}, { blocks: true, text: true });
+  const syms = [];
+  for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const wd of l.words || []) for (const s of wd.symbols || [])
+    if (/^[A-Z]$/.test(s.text)) syms.push({ t: s.text, x: (s.bbox.x0 + s.bbox.x1) / 2, y: (s.bbox.y0 + s.bbox.y1) / 2, w: s.bbox.x1 - s.bbox.x0, h: s.bbox.y1 - s.bbox.y0 });
+  return syms;
+}
+
+/* Photo → clean black-and-white canvas (adaptive threshold copes with shadows) */
+async function photoToBinary(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = url; });
+    const big = Math.max(img.naturalWidth, img.naturalHeight);
+    const sc = Math.min(2, 1600 / big);
+    const W = Math.round(img.naturalWidth * sc), H = Math.round(img.naturalHeight * sc);
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    const id = ctx.getImageData(0, 0, W, H), d = id.data;
+    const g = new Float64Array(W * H);
+    for (let i = 0; i < W * H; i++) g[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
+    // Bradley adaptive threshold using an integral image
+    const I = new Float64Array((W + 1) * (H + 1));
+    for (let y = 0; y < H; y++) { let row = 0; for (let x = 0; x < W; x++) { row += g[y*W + x]; I[(y+1)*(W+1) + x + 1] = I[y*(W+1) + x + 1] + row; } }
+    const r = Math.max(8, Math.round(Math.max(W, H) / 16));
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const x0 = Math.max(0, x - r), x1 = Math.min(W, x + r + 1), y0 = Math.max(0, y - r), y1 = Math.min(H, y + r + 1);
+      const sum = I[y1*(W+1) + x1] - I[y0*(W+1) + x1] - I[y1*(W+1) + x0] + I[y0*(W+1) + x0];
+      const v = g[y*W + x] * (x1 - x0) * (y1 - y0) < sum * 0.85 ? 0 : 255;
+      d[i4(x, y, W)] = d[i4(x, y, W) + 1] = d[i4(x, y, W) + 2] = v;
+    }
+    ctx.putImageData(id, 0, 0);
+    return cv;
+  } finally { URL.revokeObjectURL(url); }
+}
+const i4 = (x, y, W) => (y * W + x) * 4;
+const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+/* Group positions into evenly spaced rows/columns; keep the longest regular run */
+function lattice(values, gap, minCount){
+  const v = [...values].sort((a, b) => a - b);
+  const groups = [[v[0]]];
+  for (let i = 1; i < v.length; i++) (v[i] - groups[groups.length - 1].slice(-1)[0] < gap) ? groups[groups.length - 1].push(v[i]) : groups.push([v[i]]);
+  let centres = groups.filter(g => g.length >= minCount).map(median);
+  if (centres.length < 3) return centres;
+  const sp = median(centres.slice(1).map((c, i) => c - centres[i]));
+  let best = [centres[0]], cur = [centres[0]];
+  for (let i = 1; i < centres.length; i++) {
+    const step = centres[i] - centres[i - 1];
+    if (Math.abs(step - sp) < sp * 0.35) cur.push(centres[i]); else cur = [centres[i]];
+    if (cur.length > best.length) best = cur.slice();
+  }
+  return best;
+}
+
+async function readWordSearch(file){
+  wsStatus("Loading the text reader (about 5 MB, first time only)…");
+  try { await getWorker(); } catch { wsStatus("Couldn't download the text reader. Check your connection and try again.", true); return; }
+  wsStatus("Cleaning up the photo…");
+  const bin = await photoToBinary(file);
+
+  wsStatus("Finding the grid…");
+  let syms = await ocr(bin, 6);
+  if (syms.length < 9) { wsStatus("Couldn't find a grid of letters in that photo. Try a closer, straighter shot, or type the grid in.", true); $("wsFix").open = true; return; }
+  const h = median(syms.map(s => s.h));
+  syms = syms.filter(s => s.h < 1.6 * h && s.h > 0.4 * h);
+  const rowsY = lattice(syms.map(s => s.y), h * 0.6, 3);
+  const colsX = lattice(syms.map(s => s.x), h * 0.6, Math.max(2, rowsY.length / 3));
+  if (rowsY.length < 3 || colsX.length < 3) { wsStatus("Couldn't line up the rows and columns. Try a straighter photo, or type the grid in.", true); $("wsFix").open = true; return; }
+
+  // Re-draw every cell, evenly spaced and the same size, then read them all in one go
+  wsStatus(`Reading ${rowsY.length * colsX.length} letters…`);
+  const sp = Math.min(median(colsX.slice(1).map((c, i) => c - colsX[i])), median(rowsY.slice(1).map((c, i) => c - rowsY[i])));
+  const half = sp * 0.42, scale = 40 / h, cw = Math.max(16, Math.round(2 * half * scale)), G = cw;
+  const R = rowsY.length, C = colsX.length;
+  const re = document.createElement("canvas");
+  re.width = C * (cw + G) + G; re.height = R * (cw + G) + G;
+  const rx = re.getContext("2d", { willReadFrequently: true });
+  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
+  rx.imageSmoothingEnabled = true;
+  // Photos are rarely perfectly flat, so centre each cell on the nearest letter actually seen there
+  const centreOf = (r, c) => {
+    let best = null, bd = sp * 0.35;
+    for (const s of syms) { const d = Math.hypot(s.x - colsX[c], s.y - rowsY[r]); if (d < bd) { bd = d; best = s; } }
+    return best ? [best.x, best.y] : [colsX[c], rowsY[r]];
+  };
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const [cx, cy] = centreOf(r, c);
+    rx.drawImage(bin, cx - half, cy - half, 2 * half, 2 * half, G + c * (cw + G), G + r * (cw + G), cw, cw);
+  }
+  // Wipe anything touching a cell's edge (the puzzle's border line, bits of neighbours), keeping the letter in the middle
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const im = rx.getImageData(X, Y, cw, cw), q = im.data, orig = new Uint8ClampedArray(q);
+    const dark = i => q[i * 4] < 128, stack = [];
+    for (let k = 0; k < cw; k++) stack.push(k, (cw - 1) * cw + k, k * cw, k * cw + cw - 1);
+    while (stack.length) {
+      const i = stack.pop();
+      if (!dark(i)) continue;
+      q[i*4] = q[i*4+1] = q[i*4+2] = 255;
+      const x = i % cw, y = (i - x) / cw;
+      if (x > 0) stack.push(i - 1); if (x < cw - 1) stack.push(i + 1);
+      if (y > 0) stack.push(i - cw); if (y < cw - 1) stack.push(i + cw);
+    }
+    let ink = 0;
+    for (let i = 0; i < cw * cw; i++) if (dark(i)) ink++;
+    if (ink < cw * cw * 0.01) q.set(orig); // wiped the letter itself, so put it back
+    rx.putImageData(im, X, Y);
+  }
+  const grid = Array.from({ length: R }, () => Array(C).fill("?"));
+  for (const s of await ocr(re, 6)) {
+    const c = Math.floor((s.x - G / 2) / (cw + G)), r = Math.floor((s.y - G / 2) / (cw + G));
+    if (r >= 0 && r < R && c >= 0 && c < C && grid[r][c] === "?") grid[r][c] = s.t;
+  }
+
+  // A tall thin stroke can only be an I (the reader often mistakes it for T or misses it)
+  const missing = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const px = rx.getImageData(X, Y, cw, cw).data;
+    let x0 = cw, x1 = -1, y0 = cw, y1 = -1;
+    for (let y = 0; y < cw; y++) for (let x = 0; x < cw; x++) if (px[(y * cw + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= 0 && (y1 - y0 + 1) > cw * 0.4 && (x1 - x0 + 1) < (y1 - y0 + 1) * 0.4) grid[r][c] = "I";
+    else if (grid[r][c] === "?" && x1 >= 0) missing.push([r, c]);
+  }
+  // Second look at anything still unread: read that cell on its own
+  if (missing.length) wsStatus(`Double-checking ${missing.length} letter${missing.length === 1 ? "" : "s"}…`);
+  for (const [r, c] of missing) {
+    const X = G + c * (cw + G), Y = G + r * (cw + G);
+    const one = document.createElement("canvas"); one.width = one.height = cw + 40;
+    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
+    ox.drawImage(re, X, Y, cw, cw, 20, 20, cw, cw);
+    const got = await ocr(one, 10);
+    if (got.length) grid[r][c] = got[0].t;
+  }
+
+  wsGrid = grid.map(r => r.join(""));
+  $("wsText").value = wsGrid.join("\n");
+  const unread = wsGrid.join("").split("?").length - 1;
+  wsStatus(`Read a ${C} × ${R} grid. ${unread ? `${unread} letter${unread === 1 ? "" : "s"} couldn't be read (shown as red ?). ` : ""}Give it a quick check against the puzzle; you can fix any letter under “Check or type the grid”.`);
+  if (unread) $("wsFix").open = true;
+  saveWS();
+  wsRun();
+}
+
+$("wsFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { await readWordSearch(f); }
+  catch (err) { console.warn(err); wsStatus("Something went wrong reading that photo. Try again, or type the grid in.", true); $("wsFix").open = true; }
+});
+
+function parseGridText(t){
+  return t.toUpperCase().split(/\r?\n/).map(l => l.replace(/[^A-Z?]/g, "")).filter(Boolean);
+}
+function parseWords(t){
+  const parts = /[\n,;]/.test(t.trim()) ? t.split(/[\n,;]+/) : t.split(/\s+/);
+  return [...new Set(parts.map(w => w.toUpperCase().replace(/[^A-Z]/g, "")).filter(w => w.length >= 2))];
+}
+
+function findInGrid(word, allowGuess){
+  const R = wsGrid.length;
+  for (let r = 0; r < R; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
+    let guesses = 0, cells = [];
+    for (let k = 0; k < word.length; k++) {
+      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
+      if (ch === word[k]) cells.push([rr, cc]);
+      else if (allowGuess && ch === "?" && guesses < 1) { guesses++; cells.push([rr, cc]); }
+      else { cells = null; break; }
+    }
+    if (cells) return { cells, dir: name, guessed: guesses > 0 };
+  }
+  return null;
+}
+
+function renderBoard(){
+  const board = $("wsBoard");
+  if (!wsGrid.length) { board.hidden = true; return; }
+  board.hidden = false;
+  const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length));
+  let svg = `<svg viewBox="0 0 ${C * 10} ${R * 10}" role="img" aria-label="Word search grid">`;
+  for (const hit of wsHits) {
+    if (!hit.on) continue;
+    const [a, b] = [hit.cells[0], hit.cells[hit.cells.length - 1]];
+    svg += `<line x1="${a[1]*10+5}" y1="${a[0]*10+5}" x2="${b[1]*10+5}" y2="${b[0]*10+5}" stroke="${hit.colour}" stroke-width="7.4" stroke-linecap="round" opacity=".55"/>`;
+  }
+  wsGrid.forEach((row, r) => [...row].forEach((ch, c) => {
+    svg += `<text x="${c*10+5}" y="${r*10+5.3}" font-size="6" text-anchor="middle" dominant-baseline="middle"${ch === "?" ? ' class="unk"' : ""}>${ch}</text>`;
+  }));
+  board.innerHTML = svg + "</svg>";
+}
+
+function renderHits(){
+  const asked = wsHits.filter(h => h.asked);
+  let html = "";
+  if (asked.length) {
+    html += `<ul class="ws-list">` + asked.map(h => h.cells
+      ? `<li><span class="dot" style="background:${h.colour}"></span><span><b>${h.word}</b> <small>row ${h.cells[0][0] + 1}, column ${h.cells[0][1] + 1}, ${h.dir}${h.guessed ? " (includes an unread letter)" : ""}</small></span></li>`
+      : `<li class="miss"><span class="dot" style="background:var(--line)"></span><span><b>${h.word}</b> <small>not found. Check the spelling, or the grid for a misread letter.</small></span></li>`
+    ).join("") + `</ul>`;
+  }
+  const auto = wsHits.filter(h => !h.asked);
+  if (auto.length) {
+    html += `<div class="group"><h3>Every word in the grid <span>(${auto.length})</span></h3>
+      <p class="hint" style="margin-top:0">5 letters or more, longest first. Tap one to highlight it.</p>
+      <div class="chips">${auto.map(h => `<button class="chip${h.rank === Infinity ? " rare" : ""}${h.on ? " on" : ""}" data-ws="${h.word}">${h.word.toLowerCase()}</button>`).join("")}</div></div>`;
+  }
+  $("wsOut").innerHTML = html;
+}
+
+function wsRun(){
+  const words = parseWords($("wsWords").value);
+  const keepAuto = wsHits.filter(h => !h.asked).map(h => h.word);
+  const autoOn = new Set(wsHits.filter(h => !h.asked && h.on).map(h => h.word));
+  wsHits = words.map((w, i) => {
+    const f = findInGrid(w, false) || findInGrid(w, true);
+    return { word: w, asked: true, on: !!f, colour: WS_COLOURS[i % WS_COLOURS.length], ...(f || { cells: null }) };
+  });
+  // Keep the "every word" list, re-checked against the current grid
+  keepAuto.forEach((w, i) => {
+    if (words.includes(w)) return;
+    const f = findInGrid(w, false);
+    if (f) wsHits.push({ word: w, asked: false, on: autoOn.has(w), colour: WS_COLOURS[(words.length + i) % WS_COLOURS.length], rank: RANK ? rankOf(w.toLowerCase()) : Infinity, ...f });
+  });
+  renderBoard(); renderHits(); saveWS();
+}
+
+async function wsAutoFind(){
+  if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; }
+  if (!await needLists($("wsOut"))) return;
+  const asked = new Set(parseWords($("wsWords").value));
+  const found = new Map();
+  for (let r = 0; r < wsGrid.length; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
+    let s = "", cells = [];
+    for (let k = 0; ; k++) {
+      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
+      if (!ch || ch === "?") break;
+      s += ch; cells.push([rr, cc]);
+      if (s.length >= 5 && !found.has(s) && !asked.has(s) && WORDSET.has(s.toLowerCase())) found.set(s, { cells: cells.slice(), dir: name });
+    }
+  }
+  // Drop words that sit entirely inside a longer find in the same place (e.g. BOOKS inside BOOKSHELF)
+  const list = [...found].map(([word, f]) => ({ word, ...f, rank: rankOf(word.toLowerCase()) }))
+    .sort((a, b) => b.word.length - a.word.length || a.rank - b.rank);
+  const keyOf = cells => "|" + cells.map(x => x.join(",")).join("|") + "|";
+  const kept = wsHits.filter(h => h.asked && h.cells).map(h => ({ cells: h.cells, asked: true }));
+  for (const h of list) {
+    const k = keyOf(h.cells);
+    if (!kept.some(o => keyOf(o.cells).includes(k))) kept.push(h);
+  }
+  const autoKept = kept.filter(h => !h.asked);
+  wsHits = wsHits.filter(h => h.asked).concat(autoKept.map((h, i) => ({ ...h, asked: false, on: false, colour: WS_COLOURS[(i + 3) % WS_COLOURS.length] })));
+  if (!autoKept.length) wsStatus("No other dictionary words of 5 letters or more found.");
+  renderBoard(); renderHits();
+}
+
+$("wsOut").addEventListener("click", e => {
+  const b = e.target.closest("[data-ws]");
+  if (!b) return;
+  const h = wsHits.find(x => !x.asked && x.word === b.dataset.ws);
+  if (h) { h.on = !h.on; renderBoard(); renderHits(); }
+});
+$("wsText").addEventListener("input", () => { wsGrid = parseGridText($("wsText").value); wsRun(); });
+$("wsWords").addEventListener("input", () => { if (wsGrid.length) wsRun(); else saveWS(); });
+$("wsFind").addEventListener("click", () => { if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; } wsRun(); });
+$("wsAuto").addEventListener("click", wsAutoFind);
+
+function loadWordSearch(){
+  const saved = store.get("bd-ws", null);
+  if (!saved) return;
+  wsGrid = saved.grid || [];
+  $("wsText").value = wsGrid.join("\n");
+  $("wsWords").value = saved.words || "";
+  if (wsGrid.length) wsRun();
+}
+
+/* ================= COUNTDOWN: switch ================= */
+function showCd(mode){
+  document.querySelectorAll("[data-cd]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cd === mode));
+  $("cd-letters").hidden = mode !== "letters";
+  $("cd-numbers").hidden = mode !== "numbers";
+  store.set("bd-cd", mode);
+}
+document.querySelectorAll("[data-cd]").forEach(b => b.addEventListener("click", () => showCd(b.dataset.cd)));
+
+/* ================= COUNTDOWN: letters ================= */
+const VOWEL_POOL = { a:15, e:21, i:13, o:13, u:5 };
+const CONS_POOL  = { b:2,c:3,d:6,f:2,g:3,h:2,j:1,k:1,l:5,m:4,n:8,p:4,q:1,r:9,s:9,t:9,v:1,w:1,x:1,y:1,z:1 };
+const letterClock = makeClock($("cdBar"), $("cdTime"), 30);
+let vDeck, cDeck, board;
+const makeDeck = pool => shuffle(Object.entries(pool).flatMap(([ch, n]) => Array(n).fill(ch)));
+const isVowel = c => "aeiou".includes(c);
+
+function newLetters(){
+  letterClock.reset();
+  vDeck = makeDeck(VOWEL_POOL); cDeck = makeDeck(CONS_POOL); board = [];
+  $("cdPlay").hidden = true; $("cdOut").innerHTML = ""; $("cdVerdict").textContent = ""; $("cdInput").value = "";
+  renderLetters();
+}
+function renderLetters(){
+  let html = "";
+  for (let i = 0; i < 9; i++) html += board[i] ? `<span class="tile">${board[i]}</span>` : `<span class="tile empty"></span>`;
+  $("cdTiles").innerHTML = html;
+  const v = board.filter(isVowel).length, c = board.length - v, full = board.length === 9;
+  $("vowelBtn").disabled = full || v >= 5;
+  $("consBtn").disabled = full || c >= 6;
+  $("randomBtn").disabled = board.length > 0;
+  $("cdCounts").textContent = full ? `${v} vowels, ${c} consonants` : board.length ? `${board.length} of 9 picked` : "Pick 9: at least 3 vowels and 4 consonants";
+}
+function pickLetter(vowel){
+  if (board.length >= 9) return;
+  board.push(vowel ? vDeck.pop() : cDeck.pop());
+  renderLetters();
+  if (board.length === 9) startLetters();
+}
+function randomNine(){
+  const vowels = 3 + Math.floor(Math.random() * 3);
+  shuffle([...Array(vowels).fill(true), ...Array(9 - vowels).fill(false)]).forEach(v => board.push(v ? vDeck.pop() : cDeck.pop()));
+  renderLetters(); startLetters();
+}
+function startLetters(){
+  $("cdPlay").hidden = false;
+  letterClock.start();
+  $("cdInput").focus({ preventScroll: true });
+}
+async function checkWord(){
+  const w = $("cdInput").value.trim().toLowerCase();
+  const v = $("cdVerdict");
+  if (!w) return;
+  const avail = {}; board.forEach(c => avail[c] = (avail[c] || 0) + 1);
+  for (const c of w) {
+    if (!avail[c]) { v.className = "verdict no"; v.textContent = `“${w}” can't be made from these letters.`; return; }
+    avail[c]--;
+  }
+  try { await loadLists(); } catch { v.className = "verdict no"; v.textContent = "Couldn't load the word list to check it."; return; }
+  if (WORDSET.has(w)) {
+    const pts = w.length === 9 ? 18 : w.length;
+    v.className = "verdict ok"; v.textContent = `“${w}” is valid: ${pts} point${pts === 1 ? "" : "s"}.`;
+  } else { v.className = "verdict no"; v.textContent = `“${w}” isn't in the word list.`; }
+}
+async function revealLetters(){
+  letterClock.reset();
+  const out = $("cdOut");
+  if (!await needLists(out)) return;
+  renderGroups(out, solveLetters(board.join(""), 0, 4), 9, { cap: 40, maxGroups: 3 });
+}
+$("vowelBtn").addEventListener("click", () => pickLetter(true));
+$("consBtn").addEventListener("click", () => pickLetter(false));
+$("randomBtn").addEventListener("click", randomNine);
+$("newBtn").addEventListener("click", newLetters);
+$("cdCheck").addEventListener("click", checkWord);
+$("cdInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); checkWord(); } });
+$("revealBtn").addEventListener("click", revealLetters);
+
+/* ================= COUNTDOWN: numbers ================= */
+const SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+const numberClock = makeClock($("nBar"), $("nTime"), 30);
+let N = null; // { start:[], target, tiles:[{id,v,used,made}], history:[], sel, op, nextId }
+
+function solveNumbers(nums, target){
+  let best = { diff: Infinity, value: null, steps: [] };
+  for (const n of nums) { const d = Math.abs(n - target); if (d < best.diff) best = { diff: d, value: n, steps: [] }; }
+  if (best.diff === 0) return best;
+  // Iterative deepening: try 1 step, then 2, and so on, so the answer uses as few steps as possible
+  for (let limit = 1; limit < nums.length && best.diff > 0; limit++) {
+    const seen = new Set();
+    const dfs = (arr, steps) => {
+      const key = arr.slice().sort((a, b) => a - b).join(",");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) {
+        const hi = Math.max(arr[i], arr[j]), lo = Math.min(arr[i], arr[j]);
+        const rest = arr.filter((_, k) => k !== i && k !== j);
+        const cands = [["+", hi + lo]];
+        if (lo > 1) cands.push(["*", hi * lo]);
+        if (hi > lo) cands.push(["-", hi - lo]);
+        if (lo > 1 && hi % lo === 0) cands.push(["/", hi / lo]);
+        for (const [op, r] of cands) {
+          const s = `${hi} ${SYM[op]} ${lo} = ${r}`;
+          const d = Math.abs(r - target);
+          if (d < best.diff) { best = { diff: d, value: r, steps: [...steps, s] }; if (d === 0) return true; }
+          if (rest.length && steps.length + 1 < limit && dfs([...rest, r], [...steps, s])) return true;
+        }
+      }
+      return false;
+    };
+    dfs(nums.slice(), []);
+  }
+  return best;
+}
+const pointsFor = diff => diff === 0 ? 10 : diff <= 5 ? 7 : diff <= 10 ? 5 : 0;
+
+function resetNumbersUI(){
+  numberClock.reset();
+  N = null;
+  $("nTarget").textContent = "000";
+  $("nTiles").innerHTML = `<span class="ntile blank"></span>`.repeat(6);
+  $("nMeta").textContent = "Choose how many large numbers";
+  $("nPick").hidden = false; $("nPlay").hidden = true;
+  $("nSolution").innerHTML = ""; $("nMsg").textContent = ""; $("ownMsg").textContent = "";
+}
+function startNumbers(nums, target, timed){
+  N = { start: nums.slice(), target, history: [], sel: null, op: null, nextId: 0, tiles: [] };
+  N.tiles = nums.map(v => ({ id: N.nextId++, v, used: false, made: false }));
+  $("nPick").hidden = true; $("nPlay").hidden = false;
+  $("nSolution").innerHTML = ""; $("nMsg").textContent = "";
+  renderNumbers();
+  if (timed) {
+    // A quick spin of the target display, then the clock starts
+    let spins = 0;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const spin = setInterval(() => {
+      $("nTarget").textContent = 101 + Math.floor(Math.random() * 899);
+      if (reduce || ++spins > 12) { clearInterval(spin); $("nTarget").textContent = target; numberClock.start(); }
+    }, 60);
+  } else {
+    $("nTarget").textContent = target;
+    $("nTime").textContent = "";
+  }
+}
+function dealNumbers(large){
+  const big = shuffle([25, 50, 75, 100]).slice(0, large);
+  const small = shuffle([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10]).slice(0, 6 - large);
+  startNumbers([...big, ...small], 101 + Math.floor(Math.random() * 899), true);
+}
+function renderNumbers(){
+  $("nTiles").innerHTML = N.tiles.map(t =>
+    `<button class="ntile${t.made ? " made" : ""}${N.sel === t.id ? " sel" : ""}" data-tile="${t.id}"${t.used ? " disabled" : ""}>${t.v}</button>`
+  ).join("");
+  document.querySelectorAll("#opsRow [data-op]").forEach(b => b.classList.toggle("on", N.op === b.dataset.op));
+  $("nSteps").innerHTML = N.history.map(h => `<li>${h.text}</li>`).join("");
+  let best = null;
+  for (const t of N.tiles) { const d = Math.abs(t.v - N.target); if (!best || d < best.d) best = { v: t.v, d }; }
+  const pts = pointsFor(best.d);
+  $("nBest").textContent = best.d === 0
+    ? `Spot on! ${best.v}, 10 points.`
+    : `Closest so far: ${best.v}, ${best.d} away (${pts} point${pts === 1 ? "" : "s"}).`;
+  $("nMeta").textContent = `${N.start.filter(n => n >= 25).length} large, ${N.start.filter(n => n < 25).length} small`;
+}
+function tapTile(id){
+  const t = N.tiles.find(x => x.id === id);
+  if (!t || t.used) return;
+  $("nMsg").textContent = "";
+  if (N.sel === null || N.op === null || N.sel === id) { N.sel = N.sel === id && N.op === null ? null : id; renderNumbers(); return; }
+  const a = N.tiles.find(x => x.id === N.sel), b = t;
+  let r;
+  if (N.op === "+") r = a.v + b.v;
+  else if (N.op === "*") r = a.v * b.v;
+  else if (N.op === "-") r = a.v - b.v;
+  else r = b.v !== 0 && a.v % b.v === 0 ? a.v / b.v : NaN;
+  if (N.op === "-" && r <= 0) { $("nMsg").className = "verdict no"; $("nMsg").textContent = "No negatives or zero: take the smaller number from the bigger one."; return; }
+  if (Number.isNaN(r)) { $("nMsg").className = "verdict no"; $("nMsg").textContent = `${a.v} doesn't divide exactly by ${b.v}.`; return; }
+  a.used = b.used = true;
+  const made = { id: N.nextId++, v: r, used: false, made: true };
+  N.tiles.push(made);
+  N.history.push({ a: a.id, b: b.id, made: made.id, text: `${a.v} ${SYM[N.op]} ${b.v} = ${r}` });
+  N.sel = made.id; N.op = null;
+  renderNumbers();
+  if (r === N.target) numberClock.stop();
+}
+function tapOp(op){
+  if (!N) return;
+  if (N.sel === null) { $("nMsg").className = "verdict no"; $("nMsg").textContent = "Pick a number first."; return; }
+  $("nMsg").textContent = "";
+  N.op = N.op === op ? null : op;
+  renderNumbers();
+}
+function undoNumbers(){
+  const h = N && N.history.pop();
+  if (!h) return;
+  N.tiles = N.tiles.filter(t => t.id !== h.made);
+  N.tiles.forEach(t => { if (t.id === h.a || t.id === h.b) t.used = false; });
+  N.sel = null; N.op = null; $("nMsg").textContent = "";
+  renderNumbers();
+}
+function restartNumbers(){
+  if (!N) return;
+  N.tiles = N.start.map(v => ({ id: N.nextId++, v, used: false, made: false }));
+  N.history = []; N.sel = null; N.op = null; $("nMsg").textContent = "";
+  renderNumbers();
+}
+function showSolution(){
+  if (!N) return;
+  numberClock.stop();
+  $("nTime").textContent = "";
+  $("nSolution").innerHTML = `<p class="status">Working it out…</p>`;
+  setTimeout(() => {
+    const s = solveNumbers(N.start, N.target);
+    const head = s.diff === 0
+      ? `<p class="verdict ok">${N.target} can be made exactly:</p>`
+      : `<p class="verdict no">${N.target} can't be made. The closest is ${s.value}, ${s.diff} away:</p>`;
+    $("nSolution").innerHTML = head + (s.steps.length ? `<ol class="steps">${s.steps.map(x => `<li>${x}</li>`).join("")}</ol>` : `<p class="status">It's one of your numbers already.</p>`);
+  }, 30);
+}
+function solveOwn(){
+  const nums = ($("ownNums").value.match(/\d+/g) || []).map(Number).filter(n => n > 0);
+  const target = parseInt($("ownTarget").value, 10);
+  const msg = $("ownMsg");
+  if (nums.length < 2 || nums.length > 6) { msg.textContent = "Enter between 2 and 6 numbers, separated by spaces."; return; }
+  if (!(target > 0)) { msg.textContent = "Enter a target number."; return; }
+  msg.textContent = "";
+  startNumbers(nums, target, false);
+  showSolution();
+}
+$("nTiles").addEventListener("click", e => { const b = e.target.closest("[data-tile]"); if (b && N) tapTile(+b.dataset.tile); });
+document.querySelectorAll("#opsRow [data-op]").forEach(b => b.addEventListener("click", () => tapOp(b.dataset.op)));
+document.querySelectorAll("[data-large]").forEach(b => b.addEventListener("click", () => dealNumbers(+b.dataset.large)));
+$("nUndo").addEventListener("click", undoNumbers);
+$("nReset").addEventListener("click", restartNumbers);
+$("nSolve").addEventListener("click", showSolution);
+$("nNew").addEventListener("click", resetNumbersUI);
+$("ownBtn").addEventListener("click", solveOwn);
+$("ownTarget").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); solveOwn(); } });
+
+/* ---------- start ---------- */
+renderRecent();
+renderSpots();
+loadWordSearch();
+showPz(store.get("bd-pz", "crossword"));
+newLetters();
+resetNumbersUI();
+showCd(store.get("bd-cd", "letters"));
+showTab(store.get("bd-tab", "define"));
+})();
+</script>
+</body>
+</html>
