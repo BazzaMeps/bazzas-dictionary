@@ -799,6 +799,9 @@ async function photoToBinary(file){
     const id = ctx.getImageData(0, 0, W, H), d = id.data;
     const g = new Float64Array(W * H);
     for (let i = 0; i < W * H; i++) g[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
+    // Light letters on a dark background (dark-mode screenshots): flip it so the letters are dark
+    const sample = []; for (let i = 0; i < W * H; i += 97) sample.push(g[i]);
+    if (median(sample) < 110) for (let i = 0; i < W * H; i++) g[i] = 255 - g[i];
     // Bradley adaptive threshold using an integral image
     const I = new Float64Array((W + 1) * (H + 1));
     for (let y = 0; y < H; y++) { let row = 0; for (let x = 0; x < W; x++) { row += g[y*W + x]; I[(y+1)*(W+1) + x + 1] = I[y*(W+1) + x + 1] + row; } }
@@ -893,16 +896,60 @@ async function readWordSearch(file){
     if (r >= 0 && r < R && c >= 0 && c < C && grid[r][c] === "?") grid[r][c] = s.t;
   }
 
-  // A tall thin stroke can only be an I (the reader often mistakes it for T or misses it)
-  const missing = [];
+  // Fingerprint every cell's shape. A tall thin stroke can only be an I (the reader often mistakes it for T)
+  const N = 24, fp = document.createElement("canvas");
+  fp.width = fp.height = N;
+  const fx = fp.getContext("2d", { willReadFrequently: true });
+  const vecs = [];
   for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
     const X = G + c * (cw + G), Y = G + r * (cw + G);
     const px = rx.getImageData(X, Y, cw, cw).data;
     let x0 = cw, x1 = -1, y0 = cw, y1 = -1;
     for (let y = 0; y < cw; y++) for (let x = 0; x < cw; x++) if (px[(y * cw + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-    if (x1 >= 0 && (y1 - y0 + 1) > cw * 0.4 && (x1 - x0 + 1) < (y1 - y0 + 1) * 0.4) grid[r][c] = "I";
-    else if (grid[r][c] === "?" && x1 >= 0) missing.push([r, c]);
+    if (x1 < 0) continue;
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+    if (bh > cw * 0.4 && bw < bh * 0.4) grid[r][c] = "I";
+    const k = N / Math.max(bw, bh), w = Math.max(1, Math.round(bw * k)), h = Math.max(1, Math.round(bh * k));
+    fx.fillStyle = "#fff"; fx.fillRect(0, 0, N, N);
+    fx.drawImage(re, X + x0, Y + y0, bw, bh, (N - w) >> 1, (N - h) >> 1, w, h);
+    const q = fx.getImageData(0, 0, N, N).data, v = new Float32Array(N * N);
+    let mean = 0;
+    for (let i = 0; i < N * N; i++) { v[i] = 1 - q[i * 4] / 255; mean += v[i]; }
+    mean /= N * N;
+    let norm = 0;
+    for (let i = 0; i < N * N; i++) { v[i] -= mean; norm += v[i] * v[i]; }
+    norm = Math.sqrt(norm);
+    if (norm > 0) { for (let i = 0; i < N * N; i++) v[i] /= norm; vecs.push({ r, c, v }); }
   }
+
+  // Cross-check: a puzzle uses one typeface, so compare every cell with the average look of each letter
+  // and let the majority correct the odd misread (fixes P read as D, Q read as O, and so on)
+  wsStatus("Cross-checking the letters against each other…");
+  for (let pass = 0; pass < 3; pass++) {
+    const sums = {}, counts = {};
+    for (const { r, c, v } of vecs) {
+      const l = grid[r][c];
+      if (l === "?") continue;
+      if (!sums[l]) { sums[l] = new Float32Array(N * N); counts[l] = 0; }
+      for (let i = 0; i < N * N; i++) sums[l][i] += v[i];
+      counts[l]++;
+    }
+    const tmpl = Object.entries(sums).map(([l, t]) => {
+      let n = 0; for (let i = 0; i < t.length; i++) n += t[i] * t[i];
+      n = Math.sqrt(n) || 1;
+      return [l, t.map(x => x / n)];
+    });
+    let changed = 0;
+    for (const { r, c, v } of vecs) {
+      let best = null, bs = 0.5;
+      for (const [l, t] of tmpl) { let d = 0; for (let i = 0; i < v.length; i++) d += v[i] * t[i]; if (d > bs) { bs = d; best = l; } }
+      if (best && best !== grid[r][c]) { grid[r][c] = best; changed++; }
+    }
+    if (!changed) break;
+  }
+
+  const missing = [];
+  for (const { r, c } of vecs) if (grid[r][c] === "?") missing.push([r, c]);
   // Second look at anything still unread: read that cell on its own
   if (missing.length) wsStatus(`Double-checking ${missing.length} letter${missing.length === 1 ? "" : "s"}…`);
   for (const [r, c] of missing) {
