@@ -122,7 +122,7 @@ nav{overflow-x:auto;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{flex:1 0 auto;padding:12px 4px 14px;font-size:clamp(.8rem,3.4vw,.95rem);white-space:nowrap}
 .seg{display:inline-flex;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:3px;margin-bottom:16px}
-.seg button{border:0;background:transparent;padding:8px 18px;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button{border:0;background:transparent;padding:8px clamp(10px,3.4vw,18px);white-space:nowrap;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--board);color:#fff}
 .lbl{display:block;font-size:.92rem;color:var(--muted);margin:14px 0 6px}
 .field.small{flex:none;width:100%;font-size:1rem;padding:10px 12px}
@@ -170,6 +170,39 @@ textarea.field{resize:vertical;line-height:1.5}
 .best{margin-top:10px;font-weight:600}
 .nums-own{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end}
 @media (max-width:420px){.nums-own{grid-template-columns:1fr 1fr}.nums-own .btn{grid-column:1/-1}}
+/* Tap to fix (word search) */
+.ws-board svg{cursor:pointer;touch-action:manipulation}
+.ws-board rect.sel{fill:var(--clock);opacity:.45}
+.ws-edit{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:2px solid var(--clock);border-radius:12px;background:var(--surface)}
+.ws-edit[hidden]{display:none}
+.ws-edit span{flex:1 1 180px;font-size:.95rem}
+.ws-edit input{width:3em;text-align:center;font-size:1.3rem;font-weight:800;padding:6px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:uppercase}
+/* Sudoku */
+.sd-grid{--sd-mine:#2d5fc4;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));margin-top:14px;border:3px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface);user-select:none;max-width:480px}
+.sd-c{aspect-ratio:1;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);
+  width:100%;min-width:0;font-size:clamp(1.05rem,5.6vw,1.6rem);font-variant-numeric:tabular-nums;padding:0;cursor:pointer;color:var(--sd-mine);font-weight:400;touch-action:manipulation}
+:root[data-theme="dark"] .sd-grid{--sd-mine:var(--clock)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sd-grid{--sd-mine:var(--clock)}}
+.sd-c:nth-child(9n){border-right:0}
+.sd-c:nth-child(9n+3),.sd-c:nth-child(9n+6){border-right:2px solid var(--ink)}
+.sd-c:nth-child(n+19):nth-child(-n+27),.sd-c:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid var(--ink)}
+.sd-c:nth-child(n+73){border-bottom:0}
+.sd-c.g{color:var(--ink);font-weight:800}
+.sd-c.s{font-style:italic;opacity:.8}
+.sd-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface))}
+.sd-c.same{background:color-mix(in srgb,var(--clock) 30%,var(--surface))}
+.sd-c.sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface));color:#1c2e5a}
+.sd-c.bad{color:var(--bad);font-weight:800}
+.sd-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
+.sd-c.hint-house{background:color-mix(in srgb,var(--good) 14%,var(--surface))}
+.sd-pad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px;max-width:480px}
+.sd-pad .btn{padding:12px 0;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.sd-pad .btn.done{opacity:.35}
+.sd-msg{margin-top:12px;font-weight:600}
+.sd-msg .btn{margin-top:8px;padding:8px 14px}
+.sd-msg.ok{color:var(--good)} .sd-msg.no{color:var(--bad)}
+/* Conundrum */
+.cn-answer .tile{background:#fff6d6;box-shadow:inset 0 0 0 2px var(--clock),inset 0 -3px 0 var(--tile-edge)}
 </style>
 </head>
 <body>
@@ -224,6 +257,7 @@ textarea.field{resize:vertical;line-height:1.5}
     <div class="seg">
       <button aria-pressed="true" data-pz="crossword">Crossword</button>
       <button aria-pressed="false" data-pz="wordsearch">Word search</button>
+      <button aria-pressed="false" data-pz="sudoku">Sudoku</button>
     </div>
     <div id="pz-crossword">
     <form class="row" autocomplete="off" onsubmit="return false">
@@ -251,6 +285,12 @@ textarea.field{resize:vertical;line-height:1.5}
       <p class="hint">Take the photo straight on, in good light, with the whole grid in shot. Or type the grid in below.</p>
       <div class="status" id="wsStatus" role="status"></div>
       <div class="ws-board" id="wsBoard" hidden></div>
+      <p class="hint" id="wsTapHint" hidden>Tap any letter on the grid to fix it.</p>
+      <div class="ws-edit" id="wsEdit" hidden>
+        <span id="wsEditLbl"></span>
+        <input id="wsEditIn" type="text" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Correct letter">
+        <button class="btn ghost" id="wsEditDone">Done</button>
+      </div>
       <details class="more" id="wsFix">
         <summary>Check or type the grid</summary>
         <p class="hint">One row per line. Fix any letter the camera got wrong; a ? marks one it couldn't read.</p>
@@ -264,6 +304,29 @@ textarea.field{resize:vertical;line-height:1.5}
       </div>
       <div id="wsOut"></div>
     </div>
+
+    <div id="pz-sudoku" hidden>
+      <label class="btn ws-upload" for="sdFile">Photo of a sudoku</label>
+      <input id="sdFile" type="file" accept="image/*" hidden>
+      <p class="hint">Get the whole grid in shot, as square-on as you can. Or tick “Fix the puzzle's numbers”, tap a square and type them in.</p>
+      <div class="status" id="sdStatus" role="status"></div>
+      <div class="sd-grid" id="sdGrid" role="grid" aria-label="Sudoku grid"></div>
+      <div class="sd-pad" id="sdPad">
+        <button class="btn ghost" data-n="1">1</button><button class="btn ghost" data-n="2">2</button><button class="btn ghost" data-n="3">3</button><button class="btn ghost" data-n="4">4</button><button class="btn ghost" data-n="5">5</button>
+        <button class="btn ghost" data-n="6">6</button><button class="btn ghost" data-n="7">7</button><button class="btn ghost" data-n="8">8</button><button class="btn ghost" data-n="9">9</button><button class="btn ghost" data-n="0" aria-label="Rub out">⌫</button>
+      </div>
+      <div class="opts"><label><input type="checkbox" id="sdEdit"> Fix the puzzle's numbers</label></div>
+      <div class="row cd-controls">
+        <button class="btn" id="sdHint">Hint</button>
+        <button class="btn ghost" id="sdCheck">Check mine</button>
+      </div>
+      <div class="sd-msg" id="sdMsg" role="status"></div>
+      <div class="row cd-controls">
+        <button class="btn ghost" id="sdSolve">Solve it all</button>
+        <button class="btn ghost" id="sdClear">Clear mine</button>
+      </div>
+      <div class="row cd-controls"><button class="btn ghost" id="sdBlank">Blank grid</button></div>
+    </div>
   </section>
 
   <!-- COUNTDOWN -->
@@ -271,6 +334,7 @@ textarea.field{resize:vertical;line-height:1.5}
     <div class="seg">
       <button aria-pressed="true" data-cd="letters">Letters</button>
       <button aria-pressed="false" data-cd="numbers">Numbers</button>
+      <button aria-pressed="false" data-cd="conundrum">Conundrum</button>
     </div>
 
     <div id="cd-letters">
@@ -296,6 +360,24 @@ textarea.field{resize:vertical;line-height:1.5}
         <div class="row" style="margin-top:12px"><button class="btn ghost" id="revealBtn">Show best words</button></div>
         <div id="cdOut"></div>
       </div>
+    </div>
+
+    <div id="cd-conundrum" hidden>
+      <div class="cd-board">
+        <div class="cd-tiles" id="cnTiles"></div>
+        <div class="clock" aria-hidden="true"><div id="cnBar"></div></div>
+        <div class="cd-meta"><span id="cnMeta">Countdown Conundrum</span><span id="cnTime"></span></div>
+      </div>
+      <div class="row cd-controls"><button class="btn" id="cnNew">New conundrum</button></div>
+      <div id="cnPlay" hidden>
+        <form class="row" style="margin-top:18px" autocomplete="off" onsubmit="return false">
+          <input class="field" id="cnInput" type="text" placeholder="The 9-letter word" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="9">
+          <button class="btn" id="cnBuzz">Buzz</button>
+        </form>
+        <div class="verdict" id="cnVerdict" role="status"></div>
+        <div class="row" style="margin-top:12px"><button class="btn ghost" id="cnReveal">Show the answer</button></div>
+      </div>
+      <div id="cnOut"></div>
     </div>
 
     <div id="cd-numbers" hidden>
@@ -735,6 +817,7 @@ function showPz(mode){
   document.querySelectorAll("[data-pz]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pz === mode));
   $("pz-crossword").hidden = mode !== "crossword";
   $("pz-wordsearch").hidden = mode !== "wordsearch";
+  $("pz-sudoku").hidden = mode !== "sudoku";
   store.set("bd-pz", mode);
 }
 document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
@@ -751,6 +834,7 @@ const DIRS = [[0,1,"left to right"],[0,-1,"right to left"],[1,0,"downwards"],[-1
               [1,1,"diagonal, down and right"],[-1,-1,"diagonal, up and left"],[1,-1,"diagonal, down and left"],[-1,1,"diagonal, up and right"]];
 let wsGrid = [];          // array of row strings, "?" = unread letter
 let wsHits = [];          // [{word, cells:[[r,c]..], dir, colour, guessed, asked, on}]
+let wsSel = null;         // [r, c] of the letter being fixed
 let tessPromise = null, tessWorker = null;
 
 function wsStatus(msg, err){ const el = $("wsStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
@@ -773,13 +857,13 @@ async function getWorker(){
   tessWorker = await T.createWorker("eng", 1, { workerPath: TESS.worker, corePath: TESS.core, langPath: TESS.lang });
   return tessWorker;
 }
-async function ocr(canvas, psm){
+async function ocr(canvas, psm, chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
   const w = await getWorker();
-  await w.setParameters({ tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", tessedit_pageseg_mode: String(psm) });
+  await w.setParameters({ tessedit_char_whitelist: chars, tessedit_pageseg_mode: String(psm) });
   const { data } = await w.recognize(canvas, {}, { blocks: true, text: true });
   const syms = [];
   for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const wd of l.words || []) for (const s of wd.symbols || [])
-    if (/^[A-Z]$/.test(s.text)) syms.push({ t: s.text, x: (s.bbox.x0 + s.bbox.x1) / 2, y: (s.bbox.y0 + s.bbox.y1) / 2, w: s.bbox.x1 - s.bbox.x0, h: s.bbox.y1 - s.bbox.y0 });
+    if (s.text.length === 1 && chars.includes(s.text)) syms.push({ t: s.text, x: (s.bbox.x0 + s.bbox.x1) / 2, y: (s.bbox.y0 + s.bbox.y1) / 2, w: s.bbox.x1 - s.bbox.x0, h: s.bbox.y1 - s.bbox.y0 });
   return syms;
 }
 
@@ -964,7 +1048,7 @@ async function readWordSearch(file){
   wsGrid = grid.map(r => r.join(""));
   $("wsText").value = wsGrid.join("\n");
   const unread = wsGrid.join("").split("?").length - 1;
-  wsStatus(`Read a ${C} × ${R} grid. ${unread ? `${unread} letter${unread === 1 ? "" : "s"} couldn't be read (shown as red ?). ` : ""}Give it a quick check against the puzzle; you can fix any letter under “Check or type the grid”.`);
+  wsStatus(`Read a ${C} × ${R} grid. ${unread ? `${unread} letter${unread === 1 ? "" : "s"} couldn't be read (shown as red ?). ` : ""}Give it a quick check against the puzzle; tap any letter on the grid to fix it.`);
   if (unread) $("wsFix").open = true;
   saveWS();
   wsRun();
@@ -1003,10 +1087,12 @@ function findInGrid(word, allowGuess){
 
 function renderBoard(){
   const board = $("wsBoard");
-  if (!wsGrid.length) { board.hidden = true; return; }
+  if (!wsGrid.length) { board.hidden = true; $("wsTapHint").hidden = true; return; }
   board.hidden = false;
+  $("wsTapHint").hidden = false;
   const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length));
-  let svg = `<svg viewBox="0 0 ${C * 10} ${R * 10}" role="img" aria-label="Word search grid">`;
+  let svg = `<svg viewBox="0 0 ${C * 10} ${R * 10}" role="img" aria-label="Word search grid. Tap a letter to fix it.">`;
+  if (wsSel) svg += `<rect class="sel" x="${wsSel[1] * 10 + .5}" y="${wsSel[0] * 10 + .5}" width="9" height="9" rx="2"/>`;
   for (const hit of wsHits) {
     if (!hit.on) continue;
     const [a, b] = [hit.cells[0], hit.cells[hit.cells.length - 1]];
@@ -1088,6 +1174,35 @@ $("wsOut").addEventListener("click", e => {
   const h = wsHits.find(x => !x.asked && x.word === b.dataset.ws);
   if (h) { h.on = !h.on; renderBoard(); renderHits(); }
 });
+function closeFix(){ wsSel = null; $("wsEdit").hidden = true; renderBoard(); }
+$("wsBoard").addEventListener("click", e => {
+  const svg = $("wsBoard").querySelector("svg");
+  if (!svg || !wsGrid.length) return;
+  const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length)), box = svg.getBoundingClientRect();
+  const r = Math.floor((e.clientY - box.top) / box.height * R), c = Math.floor((e.clientX - box.left) / box.width * C);
+  if (r < 0 || r >= R || c < 0 || c >= C) return;
+  if (wsSel && wsSel[0] === r && wsSel[1] === c) { closeFix(); return; }
+  wsSel = [r, c];
+  const ch = wsGrid[r][c] || "?";
+  $("wsEditLbl").textContent = `Row ${r + 1}, column ${c + 1} ${ch === "?" ? "couldn't be read" : `says ${ch}`}. Type the right letter:`;
+  $("wsEdit").hidden = false;
+  const inp = $("wsEditIn"); inp.value = "";
+  inp.focus({ preventScroll: true });
+  $("wsEdit").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  renderBoard();
+});
+$("wsEditIn").addEventListener("input", e => {
+  const ch = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
+  if (!ch || !wsSel) { e.target.value = ""; return; }
+  const [r, c] = wsSel;
+  const row = wsGrid[r].padEnd(c + 1, "?").split("");
+  row[c] = ch; wsGrid[r] = row.join("");
+  $("wsText").value = wsGrid.join("\n");
+  wsSel = null; $("wsEdit").hidden = true; e.target.blur();
+  wsRun();
+});
+$("wsEditIn").addEventListener("keydown", e => { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); closeFix(); } });
+$("wsEditDone").addEventListener("click", closeFix);
 $("wsText").addEventListener("input", () => { wsGrid = parseGridText($("wsText").value); wsRun(); });
 $("wsWords").addEventListener("input", () => { if (wsGrid.length) wsRun(); else saveWS(); });
 $("wsFind").addEventListener("click", () => { if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; } wsRun(); });
@@ -1102,11 +1217,394 @@ function loadWordSearch(){
   if (wsGrid.length) wsRun();
 }
 
+/* ================= SUDOKU ================= */
+const SD_R = i => Math.floor(i / 9), SD_C = i => i % 9, SD_B = i => Math.floor(i / 27) * 3 + Math.floor((i % 9) / 3);
+const SD_HOUSES = [];   // 27 houses: 9 rows, 9 columns, 9 boxes, each a list of cell indexes
+for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `row ${k + 1}`, cells: [...Array(9)].map((_, j) => k * 9 + j) });
+for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `column ${k + 1}`, cells: [...Array(9)].map((_, j) => j * 9 + k) });
+for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `the ${["top-left","top-middle","top-right","middle-left","centre","middle-right","bottom-left","bottom-middle","bottom-right"][k]} box`, cells: [...Array(81).keys()].filter(i => SD_B(i) === k) });
+const SD_PEERS = [...Array(81).keys()].map(i => [...Array(81).keys()].filter(j => j !== i && (SD_R(j) === SD_R(i) || SD_C(j) === SD_C(i) || SD_B(j) === SD_B(i))));
+const bits = m => { let n = 0; while (m) { m &= m - 1; n++; } return n; };
+const where = i => `row ${SD_R(i) + 1}, column ${SD_C(i) + 1}`;
+
+let sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
+let sdSel = -1, sdHintCell = -1, sdHintHouse = null, sdWrong = new Set(), sdPending = null;
+
+function sdStatus(msg, err){ const el = $("sdStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function sdMsg(html, cls){ const el = $("sdMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
+function sdSave(){ store.set("bd-sd", sd); }
+const sdBoard = () => sd.given.map((g, i) => g || sd.user[i]);
+function sdConflicts(b){
+  const bad = new Set();
+  for (let i = 0; i < 81; i++) if (b[i]) for (const j of SD_PEERS[i]) if (b[j] === b[i]) { bad.add(i); bad.add(j); }
+  return bad;
+}
+function sdCands(b){
+  return b.map((v, i) => { if (v) return 0; let m = 0x3FE; for (const j of SD_PEERS[i]) if (b[j]) m &= ~(1 << b[j]); return m; });
+}
+
+/* Backtracking solver: fills the most constrained square first; stops once it finds `limit` answers */
+function sdSolve(b, limit = 2){
+  const g = b.slice(), rows = new Int16Array(9), cols = new Int16Array(9), boxes = new Int16Array(9);
+  for (let i = 0; i < 81; i++) if (g[i]) {
+    const bit = 1 << g[i];
+    if ((rows[SD_R(i)] | cols[SD_C(i)] | boxes[SD_B(i)]) & bit) return { count: 0, sol: null };
+    rows[SD_R(i)] |= bit; cols[SD_C(i)] |= bit; boxes[SD_B(i)] |= bit;
+  }
+  let count = 0, sol = null;
+  (function go(){
+    let bi = -1, bm = 0, bc = 10;
+    for (let i = 0; i < 81; i++) if (!g[i]) {
+      const m = ~(rows[SD_R(i)] | cols[SD_C(i)] | boxes[SD_B(i)]) & 0x3FE, c = bits(m);
+      if (c < bc) { bc = c; bi = i; bm = m; if (!c) return; }
+    }
+    if (bi < 0) { count++; if (!sol) sol = g.slice(); return; }
+    const r = SD_R(bi), c = SD_C(bi), x = SD_B(bi);
+    for (let n = 1; n <= 9; n++) if (bm & (1 << n)) {
+      const bit = 1 << n;
+      g[bi] = n; rows[r] |= bit; cols[c] |= bit; boxes[x] |= bit;
+      go();
+      g[bi] = 0; rows[r] &= ~bit; cols[c] &= ~bit; boxes[x] &= ~bit;
+      if (count >= limit) return;
+    }
+  })();
+  return { count, sol };
+}
+
+function sdRender(){
+  const b = sdBoard(), bad = sdConflicts(b), selV = sdSel >= 0 ? b[sdSel] : 0;
+  const house = sdHintHouse ? new Set(sdHintHouse) : null;
+  let html = "";
+  for (let i = 0; i < 81; i++) {
+    const cls = ["sd-c"];
+    if (sd.given[i]) cls.push("g"); else if (sd.shown[i] && sd.user[i]) cls.push("s");
+    if (sdSel >= 0) {
+      if (i === sdSel) cls.push("sel");
+      else if (selV && b[i] === selV) cls.push("same");
+      else if (SD_R(i) === SD_R(sdSel) || SD_C(i) === SD_C(sdSel) || SD_B(i) === SD_B(sdSel)) cls.push("peer");
+    }
+    if (house && house.has(i) && i !== sdSel) cls.push("hint-house");
+    if (bad.has(i) || sdWrong.has(i)) cls.push("bad");
+    if (i === sdHintCell) cls.push("hint");
+    html += `<button class="${cls.join(" ")}" data-i="${i}" aria-label="${where(i)}: ${b[i] || "empty"}">${b[i] || ""}</button>`;
+  }
+  $("sdGrid").innerHTML = html;
+  // Dim a number on the pad once all nine are placed
+  const counts = Array(10).fill(0); b.forEach(v => counts[v]++);
+  document.querySelectorAll("#sdPad [data-n]").forEach(btn => btn.classList.toggle("done", +btn.dataset.n > 0 && counts[+btn.dataset.n] >= 9));
+}
+
+function sdClearMarks(){ sdHintCell = -1; sdHintHouse = null; sdWrong = new Set(); sdPending = null; }
+function sdPlace(n){
+  if (sdSel < 0) { sdMsg("Tap a square first."); return; }
+  const editing = $("sdEdit").checked;
+  if (!editing && sd.given[sdSel]) { sdMsg(`That's one of the puzzle's own numbers. Tick “Fix the puzzle's numbers” if the camera got it wrong.`); return; }
+  if (editing) { sd.given[sdSel] = n; sd.user[sdSel] = 0; }
+  else sd.user[sdSel] = n;
+  sd.shown[sdSel] = 0;
+  sdClearMarks(); sdMsg("");
+  const b = sdBoard();
+  if (!editing && b.every(Boolean) && !sdConflicts(b).size) sdMsg("Solved! Every row, column and box checks out. 🎉", "ok");
+  sdRender(); sdSave();
+}
+
+function sdHint(){
+  sdClearMarks();
+  const b = sdBoard();
+  if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first: take a photo, or tick “Fix the puzzle's numbers” and type it in. A proper sudoku has at least 17 numbers to start.", "no"); sdRender(); return; }
+  if (sdConflicts(b).size) { sdMsg("There's a clash: the same number twice in a row, column or box (shown in red). Sort that out first.", "no"); sdRender(); return; }
+  const res = sdSolve(sd.given, 2);
+  if (!res.count) { sdMsg("The puzzle's own numbers can't all be right, as there's no answer. One was probably misread: tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
+  const sol = res.sol, note = res.count > 1 ? " (This puzzle has more than one answer, so a starting number may be missing or misread.)" : "";
+  const wrong = [...Array(81).keys()].filter(i => sd.user[i] && sd.user[i] !== sol[i]);
+  if (wrong.length) {
+    sdWrong = new Set(wrong.slice(0, 1)); sdSel = wrong[0];
+    sdMsg(`${where(wrong[0])[0].toUpperCase() + where(wrong[0]).slice(1)} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Rub it out and think again.${note}`, "no");
+    sdRender(); return;
+  }
+  if (b.every(Boolean)) { sdMsg("It's already solved! 🎉", "ok"); sdRender(); return; }
+  const cand = sdCands(b);
+  let hint = null;
+  // Easiest for a person first: a number with only one home in a box, then a square with only one option, then rows and columns
+  const houseHint = list => {
+    for (const h of list) for (let n = 1; n <= 9; n++) {
+      if (h.cells.some(i => b[i] === n)) continue;
+      const spots = h.cells.filter(i => cand[i] & (1 << n));
+      if (spots.length === 1) return { i: spots[0], n, house: h.cells, why: `Look at ${h.name}: the ${n} can only go in one square there, ${where(spots[0])}. Everywhere else in it is either filled or already sees a ${n}.` };
+    }
+    return null;
+  };
+  hint = houseHint(SD_HOUSES.slice(18));
+  if (!hint) for (let i = 0; i < 81; i++) if (cand[i] && bits(cand[i]) === 1) {
+    const n = Math.log2(cand[i]);
+    hint = { i, n, house: SD_PEERS[i], why: `${where(i)[0].toUpperCase() + where(i).slice(1)} can only be ${n}: every other number is already in its row, column or box.` };
+    break;
+  }
+  if (!hint) hint = houseHint(SD_HOUSES.slice(0, 18));
+  if (!hint) {
+    let i = -1, best = 10;
+    for (let k = 0; k < 81; k++) if (!b[k] && bits(cand[k]) < best) { best = bits(cand[k]); i = k; }
+    hint = { i, n: sol[i], house: null, why: `No simple step left; this one needs a trickier technique. Here's a nudge: ${where(i)} is ${sol[i]}.` };
+  }
+  sdSel = hint.i; sdHintCell = hint.i; sdHintHouse = hint.house; sdPending = hint;
+  sdMsg(`${esc(hint.why)}${note} <br><button class="btn ghost" id="sdFill">Fill it in</button>`);
+  sdRender();
+}
+
+function sdCheck(){
+  sdClearMarks();
+  const res = sdSolve(sd.given, 1);
+  if (!res.count) { sdMsg("The puzzle's own numbers have no answer, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
+  const mine = [...Array(81).keys()].filter(i => sd.user[i]);
+  if (!mine.length) { sdMsg("You haven't put any numbers in yet."); sdRender(); return; }
+  sdWrong = new Set(mine.filter(i => sd.user[i] !== res.sol[i]));
+  sdMsg(sdWrong.size ? `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your numbers are right so far. 👍`, sdWrong.size ? "no" : "ok");
+  sdRender();
+}
+
+function sdSolveAll(){
+  sdClearMarks();
+  if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first (at least 17 numbers).", "no"); sdRender(); return; }
+  const res = sdSolve(sd.given, 2);
+  if (!res.count) { sdMsg("No answer exists for these starting numbers, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
+  for (let i = 0; i < 81; i++) if (!sd.given[i] && sd.user[i] !== res.sol[i]) { sd.user[i] = res.sol[i]; sd.shown[i] = 1; }
+  sdMsg(res.count > 1 ? "Solved, but this puzzle has more than one answer, so a starting number may be missing or misread." : "Solved. The answers I filled in are in italics.", res.count > 1 ? "no" : "ok");
+  sdRender(); sdSave();
+}
+
+$("sdGrid").addEventListener("click", e => {
+  const c = e.target.closest("[data-i]");
+  if (!c) return;
+  const i = +c.dataset.i;
+  sdSel = sdSel === i ? -1 : i;
+  sdRender();
+});
+$("sdPad").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if (b) sdPlace(+b.dataset.n); });
+$("sdMsg").addEventListener("click", e => {
+  if (e.target.id !== "sdFill" || !sdPending) return;
+  const { i, n } = sdPending;
+  sd.user[i] = n; sd.shown[i] = 1;
+  sdClearMarks(); sdSel = i; sdMsg("");
+  sdRender(); sdSave();
+});
+$("sdHint").addEventListener("click", sdHint);
+$("sdCheck").addEventListener("click", sdCheck);
+$("sdSolve").addEventListener("click", sdSolveAll);
+$("sdClear").addEventListener("click", () => { sd.user.fill(0); sd.shown.fill(0); sdClearMarks(); sdMsg(""); sdRender(); sdSave(); });
+$("sdBlank").addEventListener("click", () => {
+  if (sd.given.some(Boolean) && !confirm("Clear the whole grid?")) return;
+  sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
+  sdSel = 0; sdClearMarks(); $("sdEdit").checked = true; sdMsg(""); sdStatus("");
+  sdRender(); sdSave();
+});
+document.addEventListener("keydown", e => {
+  if ($("pz-sudoku").hidden || $("tab-crossword").hidden || sdSel < 0 || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
+  if (/^[1-9]$/.test(e.key)) { sdPlace(+e.key); e.preventDefault(); }
+  else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") { sdPlace(0); e.preventDefault(); }
+  else {
+    const mv = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 }[e.key];
+    if (mv) { sdSel = Math.min(80, Math.max(0, sdSel + mv)); sdRender(); e.preventDefault(); }
+  }
+});
+
+/* ---------- reading a sudoku from a photo ---------- */
+// Solve for the 3×3 transform that maps the flat square onto the (tilted) grid in the photo
+function homography(from, to){
+  const A = [];
+  for (let k = 0; k < 4; k++) {
+    const [x, y] = from[k], [u, v] = to[k];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
+  }
+  for (let c = 0; c < 8; c++) {
+    let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]];
+    for (let r = 0; r < 8; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k < 9; k++) A[r][k] -= f * A[c][k]; }
+  }
+  const h = A.map((row, i) => row[8] / row[i]);
+  return (x, y) => { const w = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w]; };
+}
+
+// Label the connected ink blobs in a 0/1 image; returns each blob's box and size
+function blobs(ink, W, H){
+  const lab = new Int32Array(W * H), stack = new Int32Array(W * H), out = [];
+  for (let p = 0; p < W * H; p++) {
+    if (!ink[p] || lab[p]) continue;
+    const id = out.length + 1, b = { id, x0: W, y0: H, x1: 0, y1: 0, n: 0 };
+    let sp = 0; stack[sp++] = p; lab[p] = id;
+    while (sp) {
+      const q = stack[--sp], x = q % W, y = (q - x) / W;
+      b.n++; if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x; if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const t = yy * W + xx;
+        if (ink[t] && !lab[t]) { lab[t] = id; stack[sp++] = t; }
+      }
+    }
+    out.push(b);
+  }
+  return { lab, list: out };
+}
+
+// A shape fingerprint for one glyph: scaled into a 24×24 box, centred, normalised
+function glyphVec(src, x, y, w, h){
+  const N = 24, cv = glyphVec.cv || (glyphVec.cv = Object.assign(document.createElement("canvas"), { width: N, height: N }));
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  const k = N / Math.max(w, h), dw = Math.max(1, Math.round(w * k)), dh = Math.max(1, Math.round(h * k));
+  cx.fillStyle = "#fff"; cx.fillRect(0, 0, N, N);
+  cx.drawImage(src, x, y, w, h, (N - dw) >> 1, (N - dh) >> 1, dw, dh);
+  const q = cx.getImageData(0, 0, N, N).data, v = new Float32Array(N * N);
+  let mean = 0; for (let i = 0; i < N * N; i++) { v[i] = 1 - q[i * 4] / 255; mean += v[i]; }
+  mean /= N * N; let norm = 0;
+  for (let i = 0; i < N * N; i++) { v[i] -= mean; norm += v[i] * v[i]; }
+  norm = Math.sqrt(norm) || 1;
+  for (let i = 0; i < N * N; i++) v[i] /= norm;
+  return v;
+}
+// Same typeface throughout, so let every glyph be judged against the average look of each label
+function crossCheck(items){
+  for (let pass = 0; pass < 3; pass++) {
+    const sums = {};
+    for (const it of items) if (it.label !== "?") { const t = sums[it.label] || (sums[it.label] = new Float32Array(it.v.length)); for (let i = 0; i < t.length; i++) t[i] += it.v[i]; }
+    const tmpl = Object.entries(sums).map(([l, t]) => { let n = 0; for (const x of t) n += x * x; n = Math.sqrt(n) || 1; return [l, t.map(x => x / n)]; });
+    let changed = 0;
+    for (const it of items) {
+      let best = null, bs = 0.5;
+      for (const [l, t] of tmpl) { let d = 0; for (let i = 0; i < t.length; i++) d += it.v[i] * t[i]; if (d > bs) { bs = d; best = l; } }
+      if (best && best !== it.label) { it.label = best; changed++; }
+    }
+    if (!changed) break;
+  }
+}
+
+async function readSudoku(file){
+  sdStatus("Loading the number reader (about 5 MB, first time only)…");
+  try { await getWorker(); } catch { sdStatus("Couldn't download the number reader. Check your connection and try again.", true); return; }
+  sdStatus("Cleaning up the photo…");
+  const bin = await photoToBinary(file);
+  const W = bin.width, H = bin.height;
+  const px = bin.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data;
+  const ink = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) ink[i] = px[i * 4] < 128 ? 1 : 0;
+
+  // The grid's lines are all joined up, so the grid is the ink blob with the biggest footprint
+  sdStatus("Finding the grid…");
+  const { lab, list } = blobs(ink, W, H);
+  let grid = null;
+  for (const b of list) {
+    const bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    if (bw < W * 0.2 || bh < H * 0.15 || bw > bh * 1.6 || bh > bw * 1.6) continue;
+    if (!grid || bw * bh > (grid.x1 - grid.x0) * (grid.y1 - grid.y0)) grid = b;
+  }
+  if (!grid) { sdStatus("Couldn't find the grid in that photo. Try again with the whole grid in shot, or type it in.", true); return; }
+  // Its four corners: the extreme points along the diagonals
+  let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity];
+  for (let y = grid.y0; y <= grid.y1; y++) for (let x = grid.x0; x <= grid.x1; x++) {
+    if (lab[y * W + x] !== grid.id) continue;
+    if (x + y < tl[2]) tl = [x, y, x + y];
+    if (x + y > br[2]) br = [x, y, x + y];
+    if (x - y > tr[2]) tr = [x, y, x - y];
+    if (x - y < bl[2]) bl = [x, y, x - y];
+  }
+
+  // Straighten it out into a flat 9×9 of equal squares
+  const CELL = 56, S = CELL * 9;
+  const map = homography([[0, 0], [S, 0], [S, S], [0, S]], [tl, tr, br, bl]);
+  const flat = document.createElement("canvas"); flat.width = flat.height = S;
+  const fx = flat.getContext("2d", { willReadFrequently: true }), fd = fx.createImageData(S, S);
+  const fink = new Uint8Array(S * S);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const [u, v] = map(x + 0.5, y + 0.5), ux = Math.round(u), vy = Math.round(v);
+    const on = ux >= 0 && vy >= 0 && ux < W && vy < H && ink[vy * W + ux];
+    fink[y * S + x] = on ? 1 : 0;
+    const o = (y * S + x) * 4; fd.data[o] = fd.data[o + 1] = fd.data[o + 2] = on ? 0 : 255; fd.data[o + 3] = 255;
+  }
+  fx.putImageData(fd, 0, 0);
+
+  // In each square, keep the blob that looks like a digit: near the middle, not a strip of grid line
+  const m = Math.round(CELL * 0.08), n = CELL - 2 * m, digits = [];
+  for (let i = 0; i < 81; i++) {
+    const X = SD_C(i) * CELL + m, Y = SD_R(i) * CELL + m, sub = new Uint8Array(n * n);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) sub[y * n + x] = fink[(Y + y) * S + X + x];
+    let best = null;
+    for (const b of blobs(sub, n, n).list) {
+      const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+      if (bh < n * 0.3 || bh > n * 0.95 || bw > n * 0.85 || b.n < n * n * 0.015) continue;
+      if (Math.abs(cx - n / 2) > n * 0.3 || Math.abs(cy - n / 2) > n * 0.3) continue;
+      if (!best || b.n > best.n) best = b;
+    }
+    if (best) digits.push({ i, x: X + best.x0, y: Y + best.y0, w: best.x1 - best.x0 + 1, h: best.y1 - best.y0 + 1, label: "?" });
+  }
+  if (digits.length < 17) { sdStatus(`Only found ${digits.length} numbers, which isn't enough for a sudoku. Try a sharper, closer photo, or type it in.`, true); return; }
+
+  // Re-draw the digits evenly spaced and the same height, then read them in one go
+  sdStatus(`Reading ${digits.length} numbers…`);
+  const BOX = 60, G = 60, re = document.createElement("canvas");
+  re.width = re.height = 9 * (BOX + G) + G;
+  const rx = re.getContext("2d", { willReadFrequently: true });
+  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
+  for (const d of digits) {
+    const k = 40 / d.h, dw = Math.max(2, Math.round(d.w * k));
+    const ox = G + SD_C(d.i) * (BOX + G) + ((BOX - dw) >> 1), oy = G + SD_R(d.i) * (BOX + G) + 10;
+    rx.drawImage(flat, d.x, d.y, d.w, d.h, ox, oy, dw, 40);
+    d.rx = ox; d.ry = oy; d.rw = dw;
+  }
+  const byCell = new Map(digits.map(d => [d.i, d]));
+  for (const s of await ocr(re, 6, "123456789")) {
+    const c = Math.floor((s.x - G / 2) / (BOX + G)), r = Math.floor((s.y - G / 2) / (BOX + G));
+    const d = r >= 0 && r < 9 && c >= 0 && c < 9 && byCell.get(r * 9 + c);
+    if (d && d.label === "?") d.label = s.t;
+  }
+  for (const d of digits) {
+    if (d.w < d.h * 0.3) d.label = "1";            // a plain upright stroke can only be a 1
+    d.v = glyphVec(re, d.rx, d.ry, d.rw, 40);
+  }
+  sdStatus("Cross-checking the numbers…");
+  crossCheck(digits);
+  for (const d of digits) if (d.label === "?") {
+    const one = document.createElement("canvas"); one.width = one.height = BOX + 40;
+    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
+    ox.drawImage(re, d.rx - 10, d.ry - 10, d.rw + 20, 60, 20, 20, d.rw + 20, 60);
+    const got = await ocr(one, 10, "123456789");
+    if (got.length) d.label = got[0].t;
+  }
+
+  sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
+  let unread = 0;
+  for (const d of digits) if (d.label === "?") unread++; else sd.given[d.i] = +d.label;
+  $("sdEdit").checked = false; sdSel = -1; sdClearMarks(); sdMsg("");
+  sdRender(); sdSave();
+  const res = sdSolve(sd.given, 2), clash = sdConflicts(sd.given).size;
+  let msg = `Read ${digits.length - unread} numbers.`;
+  if (unread) msg += ` ${unread} couldn't be read, so those squares are blank.`;
+  if (clash || !res.count) msg += " Something doesn't add up (a clash, or no possible answer), so a number was probably misread. Tick “Fix the puzzle's numbers” to correct it.";
+  else if (res.count > 1) msg += " It has more than one answer, so a number may be missing. Give it a check against the paper.";
+  else msg += " It checks out with exactly one answer. Ask for a hint, or fill it in yourself.";
+  sdStatus(msg, !!(clash || !res.count));
+}
+
+$("sdFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { await readSudoku(f); }
+  catch (err) { console.warn(err); sdStatus("Something went wrong reading that photo. Try again, or type it in.", true); }
+});
+
+function loadSudoku(){
+  const saved = store.get("bd-sd", null);
+  if (saved && Array.isArray(saved.given) && saved.given.length === 81) sd = { given: saved.given, user: saved.user || Array(81).fill(0), shown: saved.shown || Array(81).fill(0) };
+  $("sdEdit").checked = !sd.given.some(Boolean);
+  sdRender();
+}
+
 /* ================= COUNTDOWN: switch ================= */
 function showCd(mode){
   document.querySelectorAll("[data-cd]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cd === mode));
   $("cd-letters").hidden = mode !== "letters";
   $("cd-numbers").hidden = mode !== "numbers";
+  $("cd-conundrum").hidden = mode !== "conundrum";
   store.set("bd-cd", mode);
 }
 document.querySelectorAll("[data-cd]").forEach(b => b.addEventListener("click", () => showCd(b.dataset.cd)));
@@ -1179,6 +1677,63 @@ $("newBtn").addEventListener("click", newLetters);
 $("cdCheck").addEventListener("click", checkWord);
 $("cdInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); checkWord(); } });
 $("revealBtn").addEventListener("click", revealLetters);
+
+/* ================= COUNTDOWN: conundrum ================= */
+const cnClock = makeClock($("cnBar"), $("cnTime"), 30);
+const sortKey = w => [...w].sort().join("");
+let cnPool = null, CN = null, cnStart = 0;
+function cnTiles(word, answer){
+  $("cnTiles").className = "cd-tiles" + (answer ? " cn-answer" : "");
+  $("cnTiles").innerHTML = word ? [...word].map(c => `<span class="tile">${c}</span>`).join("") : Array(9).fill(`<span class="tile empty"></span>`).join("");
+}
+function buildConundrums(){
+  // Only common words, and only ones with a single 9-letter answer, so a correct guess is never "wrong"
+  const count = new Map();
+  for (const w of WORDS) if (w.length === 9) { const k = sortKey(w); count.set(k, (count.get(k) || 0) + 1); }
+  cnPool = [...RANK.keys()].filter(w => w.length === 9 && /^[a-z]+$/.test(w) && WORDSET.has(w) && count.get(sortKey(w)) === 1);
+}
+async function newConundrum(){
+  cnClock.reset();
+  if (!await needLists($("cnOut"))) return;
+  $("cnOut").innerHTML = "";
+  if (!cnPool) buildConundrums();
+  const ans = cnPool[Math.floor(Math.random() * cnPool.length)];
+  let mix;
+  do mix = shuffle([...ans]).join(""); while (mix === ans || WORDSET.has(mix));
+  CN = { ans, mix, done: false };
+  cnTiles(mix);
+  $("cnPlay").hidden = false; $("cnReveal").hidden = false; $("cnInput").value = ""; $("cnInput").disabled = false; $("cnBuzz").disabled = false;
+  $("cnVerdict").className = "verdict"; $("cnVerdict").textContent = "";
+  $("cnMeta").textContent = "Find the 9-letter word";
+  $("cnNew").textContent = "Next conundrum";
+  cnStart = Date.now();
+  cnClock.start(() => { if (!CN.done) endConundrum(false, "Time's up!"); });
+  $("cnInput").focus({ preventScroll: true });
+}
+function endConundrum(won, msg){
+  CN.done = true; cnClock.reset();
+  $("cnReveal").hidden = true;
+  cnTiles(CN.ans, true);
+  $("cnInput").disabled = true; $("cnBuzz").disabled = true;
+  const v = $("cnVerdict");
+  v.className = "verdict " + (won ? "ok" : "no");
+  v.innerHTML = won ? esc(msg) : `${esc(msg)} It was <b>${CN.ans.toUpperCase()}</b>.`;
+  $("cnMeta").innerHTML = `<button class="chip" data-word="${CN.ans}">What does it mean?</button>`;
+}
+function cnGuess(){
+  if (!CN || CN.done) return;
+  const w = $("cnInput").value.trim().toLowerCase(), v = $("cnVerdict");
+  if (!w) return;
+  if (w.length !== 9 || sortKey(w) !== sortKey(CN.ans)) { v.className = "verdict no"; v.textContent = `“${w}” doesn't use all nine letters exactly once.`; return; }
+  if (w === CN.ans) { const t = Math.max(1, Math.round((Date.now() - cnStart) / 1000)); endConundrum(true, `Correct, in ${t} second${t === 1 ? "" : "s"}! 10 points.`); return; }
+  v.className = "verdict no"; v.textContent = `“${w}” isn't it. Keep going!`;
+  $("cnInput").select();
+}
+$("cnNew").addEventListener("click", newConundrum);
+$("cnBuzz").addEventListener("click", cnGuess);
+$("cnInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); cnGuess(); } });
+$("cnReveal").addEventListener("click", () => { if (CN && !CN.done) endConundrum(false, "Unlucky."); });
+cnTiles("");
 
 /* ================= COUNTDOWN: numbers ================= */
 const SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
@@ -1344,6 +1899,7 @@ $("ownTarget").addEventListener("keydown", e => { if (e.key === "Enter") { e.pre
 renderRecent();
 renderSpots();
 loadWordSearch();
+loadSudoku();
 showPz(store.get("bd-pz", "crossword"));
 newLetters();
 resetNumbersUI();
