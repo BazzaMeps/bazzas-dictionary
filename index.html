@@ -122,7 +122,7 @@ nav{overflow-x:auto;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{flex:1 0 auto;padding:12px 4px 14px;font-size:clamp(.8rem,3.4vw,.95rem);white-space:nowrap}
 .seg{display:inline-flex;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:3px;margin-bottom:16px}
-.seg button{border:0;background:transparent;padding:8px clamp(10px,3.4vw,18px);white-space:nowrap;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button{border:0;background:transparent;padding:8px clamp(8px,2.6vw,18px);font-size:clamp(.82rem,3.7vw,1rem);flex:none;white-space:nowrap;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--board);color:#fff}
 .lbl{display:block;font-size:.92rem;color:var(--muted);margin:14px 0 6px}
 .field.small{flex:none;width:100%;font-size:1rem;padding:10px 12px}
@@ -188,7 +188,7 @@ textarea.field{resize:vertical;line-height:1.5}
 .sd-c:nth-child(n+19):nth-child(-n+27),.sd-c:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid var(--ink)}
 .sd-c:nth-child(n+73){border-bottom:0}
 .sd-c.g{color:var(--ink);font-weight:800}
-.sd-c.s{font-style:italic;opacity:.8}
+.sd-c.s{font-style:italic;color:color-mix(in srgb,var(--sd-mine) 75%,var(--surface))}
 .sd-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface))}
 .sd-c.same{background:color-mix(in srgb,var(--clock) 30%,var(--surface))}
 .sd-c.sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface));color:#1c2e5a}
@@ -203,6 +203,29 @@ textarea.field{resize:vertical;line-height:1.5}
 .sd-msg.ok{color:var(--good)} .sd-msg.no{color:var(--bad)}
 /* Conundrum */
 .cn-answer .tile{background:#fff6d6;box-shadow:inset 0 0 0 2px var(--clock),inset 0 -3px 0 var(--tile-edge)}
+/* ABC Logic */
+.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.abc-grid{display:grid;gap:0;margin-top:14px;max-width:440px;aspect-ratio:1;user-select:none}
+.abc-grid > *{min-width:0;min-height:0;width:100%;height:100%;padding:0;border:0;background:transparent;font:inherit;font-weight:800;
+  font-size:clamp(1rem,5.4vw,1.5rem);display:grid;place-items:center;touch-action:manipulation}
+.abc-clue{color:var(--ink);cursor:pointer;border-radius:8px}
+.abc-clue:empty::after{content:"·";color:var(--line)}
+.abc-clue.used{color:var(--good)}
+.abc-c{background:var(--surface) !important;border-right:1px solid var(--line) !important;border-bottom:1px solid var(--line) !important;cursor:pointer;color:var(--sd-mine,#2d5fc4)}
+.abc-grid{--sd-mine:#2d5fc4}
+:root[data-theme="dark"] .abc-grid{--sd-mine:var(--clock)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .abc-grid{--sd-mine:var(--clock)}}
+.abc-c.blank.blank{color:var(--muted);font-weight:400}
+.abc-c.s{font-style:italic;color:color-mix(in srgb,var(--sd-mine) 75%,var(--surface))}
+.abc-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface)) !important}
+.abc-c.hint-house{background:color-mix(in srgb,var(--good) 14%,var(--surface)) !important}
+.abc-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
+.abc-c.bad{color:var(--bad)}
+.abc-grid .sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface)) !important;color:#1c2e5a}
+.abc-pad{grid-template-columns:repeat(4,1fr)}
+.abc-c.et{border-top:2px solid var(--ink) !important}.abc-c.el{border-left:2px solid var(--ink) !important}
+.abc-c.er{border-right:2px solid var(--ink) !important}.abc-c.eb{border-bottom:2px solid var(--ink) !important}
 </style>
 </head>
 <body>
@@ -258,6 +281,7 @@ textarea.field{resize:vertical;line-height:1.5}
       <button aria-pressed="true" data-pz="crossword">Crossword</button>
       <button aria-pressed="false" data-pz="wordsearch">Word search</button>
       <button aria-pressed="false" data-pz="sudoku">Sudoku</button>
+      <button aria-pressed="false" data-pz="abc">ABC</button>
     </div>
     <div id="pz-crossword">
     <form class="row" autocomplete="off" onsubmit="return false">
@@ -326,6 +350,30 @@ textarea.field{resize:vertical;line-height:1.5}
         <button class="btn ghost" id="sdClear">Clear mine</button>
       </div>
       <div class="row cd-controls"><button class="btn ghost" id="sdBlank">Blank grid</button></div>
+    </div>
+
+    <div id="pz-abc" hidden>
+      <label class="btn ws-upload" for="abcFile">Photo of an ABC Logic puzzle</label>
+      <input id="abcFile" type="file" accept="image/*" hidden>
+      <p class="hint">Get the grid and the letters round the edge in shot. Or tick “Edit the clues”, tap a spot round the edge and pick its letter.</p>
+      <div class="opts">
+        <label>Grid <select id="abcSize"><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></label>
+        <label>Letters <select id="abcK"><option value="3" selected>A to C</option><option value="4">A to D</option><option value="5">A to E</option><option value="6">A to F</option></select></label>
+      </div>
+      <div class="status" id="abcStatus" role="status"></div>
+      <div class="abc-grid" id="abcGrid" aria-label="ABC Logic grid"></div>
+      <div class="sd-pad abc-pad" id="abcPad"></div>
+      <div class="opts"><label><input type="checkbox" id="abcEdit"> Edit the clues</label></div>
+      <div class="row cd-controls">
+        <button class="btn" id="abcHint">Hint</button>
+        <button class="btn ghost" id="abcCheck">Check mine</button>
+      </div>
+      <div class="sd-msg" id="abcMsg" role="status"></div>
+      <div class="row cd-controls">
+        <button class="btn ghost" id="abcSolve">Solve it all</button>
+        <button class="btn ghost" id="abcClear">Clear mine</button>
+      </div>
+      <div class="row cd-controls"><button class="btn ghost" id="abcBlank">Blank puzzle</button></div>
     </div>
   </section>
 
@@ -818,6 +866,7 @@ function showPz(mode){
   $("pz-crossword").hidden = mode !== "crossword";
   $("pz-wordsearch").hidden = mode !== "wordsearch";
   $("pz-sudoku").hidden = mode !== "sudoku";
+  $("pz-abc").hidden = mode !== "abc";
   store.set("bd-pz", mode);
 }
 document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
@@ -1599,6 +1648,446 @@ function loadSudoku(){
   sdRender();
 }
 
+/* ================= ABC LOGIC ================= */
+const ABC_L = "ABCDEFGH";
+const abcFresh = (n, k) => ({ n, k, top: Array(n).fill(""), bottom: Array(n).fill(""), left: Array(n).fill(""), right: Array(n).fill(""), cells: Array(n * n).fill(""), shown: Array(n * n).fill(0) });
+let abc = abcFresh(5, 3), abcSel = null, abcWrong = new Set(), abcHintCell = -1, abcHintLine = null, abcPending = null;
+const abcPatCache = new Map();
+
+function abcStatus(msg, err){ const el = $("abcStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function abcMsg(html, cls){ const el = $("abcMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
+function abcSave(){ store.set("bd-abc", abc); }
+function abcClearMarks(){ abcWrong = new Set(); abcHintCell = -1; abcHintLine = null; abcPending = null; }
+
+// Every way to lay out one row: each letter once, the rest blank (value k = blank)
+function abcPatterns(n, k){
+  const key = n + "/" + k;
+  if (abcPatCache.has(key)) return abcPatCache.get(key);
+  const out = [], cur = Array(n).fill(k);
+  (function place(letter){
+    if (letter === k) { out.push(cur.slice()); return; }
+    for (let i = 0; i < n; i++) if (cur[i] === k) { cur[i] = letter; place(letter + 1); cur[i] = k; }
+  })(0);
+  abcPatCache.set(key, out);
+  return out;
+}
+const clueIdx = ch => ch ? ABC_L.indexOf(ch) : -1;
+function fitsEnds(p, first, last, k){
+  if (first >= 0) { const v = p.find(x => x !== k); if (v !== first) return false; }
+  if (last >= 0) { let v = -1; for (let i = p.length - 1; i >= 0; i--) if (p[i] !== k) { v = p[i]; break; } if (v !== last) return false; }
+  return true;
+}
+// Lines 0..n-1 are rows, n..2n-1 are columns
+function abcLine(t){
+  const { n } = abc;
+  if (t < n) return { name: `row ${t + 1}`, cells: [...Array(n)].map((_, j) => t * n + j), first: clueIdx(abc.left[t]), last: clueIdx(abc.right[t]) };
+  const c = t - n;
+  return { name: `column ${c + 1}`, cells: [...Array(n)].map((_, j) => j * n + c), first: clueIdx(abc.top[c]), last: clueIdx(abc.bottom[c]) };
+}
+const abcVal = ch => ch === "x" ? abc.k : ch ? ABC_L.indexOf(ch) : -1;
+const abcCh = v => v === abc.k ? "x" : ABC_L[v];
+
+function abcSolve(limit = 2){
+  const { n, k } = abc, pats = abcPatterns(n, k);
+  const rows = [...Array(n)].map((_, r) => pats.filter(p => fitsEnds(p, clueIdx(abc.left[r]), clueIdx(abc.right[r]), k)));
+  const top = abc.top.map(clueIdx), bottom = abc.bottom.map(clueIdx);
+  const used = Array(n).fill(0), blanks = Array(n).fill(0), grid = [];
+  let count = 0, sol = null;
+  (function go(r){
+    if (r === n) { count++; if (!sol) sol = grid.flat(); return; }
+    for (const p of rows[r]) {
+      let ok = true;
+      for (let c = 0; c < n && ok; c++) {
+        const v = p[c];
+        if (v === k) { if (blanks[c] >= n - k) ok = false; continue; }
+        if (used[c] & (1 << v)) ok = false;
+        else if (!used[c] && top[c] >= 0 && v !== top[c]) ok = false;                 // first letter down the column
+        else if (bits(used[c]) === k - 1 && bottom[c] >= 0 && v !== bottom[c]) ok = false; // last letter down the column
+      }
+      if (!ok) continue;
+      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]++ : used[c] |= 1 << p[c];
+      grid.push(p); go(r + 1); grid.pop();
+      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]-- : used[c] &= ~(1 << p[c]);
+      if (count >= limit) return;
+    }
+  })(0);
+  return { count, sol };
+}
+
+function abcRender(){
+  const { n } = abc, g = $("abcGrid");
+  g.style.gridTemplateColumns = g.style.gridTemplateRows = `repeat(${n + 2}, minmax(0, 1fr))`;
+  const selCell = abcSel && abcSel.type === "cell" ? abcSel.i : -1;
+  const house = abcHintLine ? new Set(abcHintLine) : null;
+  const clue = (side, j) => `<button class="abc-clue${abcSel && abcSel.type === side && abcSel.j === j ? " sel" : ""}" data-side="${side}" data-j="${j}" aria-label="${side} clue ${j + 1}">${abc[side][j]}</button>`;
+  let html = "<span></span>";
+  for (let j = 0; j < n; j++) html += clue("top", j);
+  html += "<span></span>";
+  for (let r = 0; r < n; r++) {
+    html += clue("left", r);
+    for (let c = 0; c < n; c++) {
+      const i = r * n + c, v = abc.cells[i], cls = ["abc-c"];
+      if (r === 0) cls.push("et"); if (c === 0) cls.push("el"); if (c === n - 1) cls.push("er"); if (r === n - 1) cls.push("eb");
+      if (v === "x") cls.push("blank");
+      if (abc.shown[i]) cls.push("s");
+      if (i === selCell) cls.push("sel");
+      else if (selCell >= 0 && (Math.floor(selCell / n) === r || selCell % n === c)) cls.push("peer");
+      if (house && house.has(i) && i !== selCell) cls.push("hint-house");
+      if (i === abcHintCell) cls.push("hint");
+      if (abcWrong.has(i)) cls.push("bad");
+      html += `<button class="${cls.join(" ")}" data-i="${i}" aria-label="row ${r + 1} column ${c + 1}: ${v === "x" ? "blank" : v || "empty"}">${v === "x" ? "✕" : v}</button>`;
+    }
+    html += clue("right", r);
+  }
+  html += "<span></span>";
+  for (let j = 0; j < n; j++) html += clue("bottom", j);
+  html += "<span></span>";
+  g.innerHTML = html;
+  const edit = $("abcEdit").checked;
+  $("abcPad").style.gridTemplateColumns = `repeat(${Math.min(abc.k + 2, 5)}, 1fr)`;
+  $("abcPad").innerHTML = [...ABC_L.slice(0, abc.k)].map(ch => `<button class="btn ghost" data-v="${ch}">${ch}</button>`).join("")
+    + (edit && abcSel && abcSel.type !== "cell" ? "" : `<button class="btn ghost" data-v="x" aria-label="Blank square">✕</button>`)
+    + `<button class="btn ghost" data-v="" aria-label="Rub out">⌫</button>`;
+  $("abcSize").value = String(abc.n); $("abcK").value = String(abc.k);
+}
+
+function abcPlace(v){
+  if (!abcSel) { abcMsg("Tap a square first."); return; }
+  if (abcSel.type === "cell") { abc.cells[abcSel.i] = v; abc.shown[abcSel.i] = 0; }
+  else { if (v === "x") return; abc[abcSel.type][abcSel.j] = v; }
+  abcClearMarks(); abcMsg("");
+  if (abcSel.type === "cell" && abc.cells.every(Boolean)) {
+    const res = abcSolve(1);
+    if (res.count && abc.cells.every((ch, i) => abcVal(ch) === res.sol[i])) abcMsg("Solved! Every row and column checks out. 🎉", "ok");
+  }
+  abcRender(); abcSave();
+}
+
+function abcNeedsClues(){
+  if (![...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean)) { abcMsg("Add the clues first: take a photo, or tick “Edit the clues” and tap round the edge.", "no"); return true; }
+  return false;
+}
+function abcProblem(res){
+  if (res.count) return false;
+  abcMsg("No answer fits these clues. Check them against the paper, along with the grid size and letters above. A misread letter is the usual culprit.", "no");
+  return true;
+}
+const capFirst = s => s[0].toUpperCase() + s.slice(1);
+
+function abcHint(){
+  abcClearMarks();
+  if (abcNeedsClues()) { abcRender(); return; }
+  const res = abcSolve(2);
+  if (abcProblem(res)) { abcRender(); return; }
+  const { n, k } = abc, sol = res.sol;
+  const note = res.count > 1 ? " (These clues allow more than one answer, so one may be missing or misread.)" : "";
+  const wrong = abc.cells.map((ch, i) => ch && abcVal(ch) !== sol[i] ? i : -1).filter(i => i >= 0);
+  if (wrong.length) {
+    abcWrong = new Set([wrong[0]]); abcSel = { type: "cell", i: wrong[0] };
+    abcMsg(`Row ${Math.floor(wrong[0] / n) + 1}, column ${wrong[0] % n + 1} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Rub it out and think again.${note}`, "no");
+    abcRender(); return;
+  }
+  if (abc.cells.every(Boolean)) { abcMsg("It's already solved! 🎉", "ok"); abcRender(); return; }
+  const full = (1 << (k + 1)) - 1, pats = abcPatterns(n, k);
+  const poss = abc.cells.map(ch => ch ? 1 << abcVal(ch) : full);
+  const lineUnion = (t, pp) => {
+    const L = abcLine(t), u = Array(n).fill(0);
+    for (const p of pats) if (fitsEnds(p, L.first, L.last, k) && L.cells.every((i, j) => pp[i] & (1 << p[j]))) p.forEach((v, j) => u[j] |= 1 << v);
+    return { L, u };
+  };
+  const describe = (L, i, v, deep) => {
+    const where = L.name.startsWith("row") ? `column ${i % n + 1}` : `row ${Math.floor(i / n) + 1}`;
+    const what = v === k ? `leaves ${where} blank` : `puts ${ABC_L[v]} in ${where}`;
+    const basis = deep ? "fits its clues and everything worked out so far from the other rows and columns" : `fits its clues${abc.cells.some(Boolean) ? " and the squares you've filled" : ""}`;
+    return `${capFirst(L.name)}: every way of filling it that ${basis} ${what}.`;
+  };
+  let hint = null;
+  // 1) A single row or column on its own; letters before blanks
+  for (const wantBlank of [false, true]) {
+    for (let t = 0; t < 2 * n && !hint; t++) {
+      const { L, u } = lineUnion(t, poss);
+      L.cells.forEach((i, j) => {
+        if (hint || abc.cells[i] || bits(u[j]) !== 1) return;
+        const v = Math.log2(u[j]);
+        if ((v === k) === wantBlank) hint = { i, v, line: L.cells, why: describe(L, i, v, false) };
+      });
+    }
+    if (hint) break;
+  }
+  // 2) Rows and columns combined: keep narrowing, remembering which line ruled out what, until a square is forced
+  if (!hint) {
+    const elim = poss.map(() => Array(k + 1).fill(-1));
+    const sym = v => v === k ? "a blank" : ABC_L[v];
+    const list = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+    const explain = (L, t, i, v) => {
+      const r = Math.floor(i / n), c = i % n, isRow = t < n;
+      const crossName = o => isRow ? `column ${o % n + 1}` : `row ${Math.floor(o / n) + 1}`;
+      const crossNum = o => isRow ? o % n + 1 : Math.floor(o / n) + 1;
+      const group = os => `${isRow ? "column" : "row"}${os.length > 1 ? "s" : ""} ${list(os.map(crossNum))}`;
+      const others = L.cells.filter(o => o !== i);
+      // Only place left in this line for the letter?
+      if (v !== k && others.every(o => abc.cells[o] || !(poss[o] & (1 << v)))) {
+        const filled = [], own = [], crossed = [];
+        for (const o of others) {
+          if (abc.cells[o]) filled.push(o);
+          else if (elim[o][v] === t) own.push(o);
+          else crossed.push(o);
+        }
+        const bits2 = [];
+        if (crossed.length) bits2.push(`${group(crossed)} can't take one (${crossed.length === 1 ? `its ${isRow ? "column" : "row"} rules it out` : `their ${isRow ? "columns" : "rows"} rule it out`})`);
+        if (own.length) bits2.push(`${group(own)} ${own.length === 1 ? "doesn't" : "don't"} work once the rest of ${L.name} is fitted together`);
+        if (filled.length) bits2.push(`${group(filled)} ${filled.length === 1 ? "is" : "are"} already filled`);
+        return `${capFirst(L.name)} needs one ${ABC_L[v]}, and ${crossName(i)} is the only place left for it: ${list(bits2)}.`;
+      }
+      // Otherwise this square has only one option left
+      const by = new Map();
+      for (let w = 0; w <= k; w++) if (w !== v && elim[i][w] >= 0) { const nm = abcLine(elim[i][w]).name; by.set(nm, [...(by.get(nm) || []), sym(w)]); }
+      const parts = [...by].map(([nm, ws]) => `${nm} rules out ${list(ws)}`);
+      return `Row ${r + 1}, column ${c + 1} has only one option left, ${v === k ? "blank" : ABC_L[v]}: ${list(parts)}.`;
+    };
+    let changed = true;
+    while (changed && !hint) {
+      changed = false;
+      for (let t = 0; t < 2 * n && !hint; t++) {
+        const { L, u } = lineUnion(t, poss);
+        L.cells.forEach((i, j) => {
+          const nv = poss[i] & u[j];
+          if (nv === poss[i]) return;
+          for (let w = 0; w <= k; w++) if ((poss[i] & ~nv) & (1 << w) && elim[i][w] < 0) elim[i][w] = t;
+          poss[i] = nv; changed = true;
+        });
+        if (!hint) L.cells.forEach(i => {
+          if (hint || abc.cells[i] || bits(poss[i]) !== 1) return;
+          const v = Math.log2(poss[i]);
+          hint = { i, v, line: L.cells, why: explain(L, t, i, v) };
+        });
+      }
+    }
+  }
+  // 3) Nothing simple left: give a nudge from the answer
+  if (!hint) {
+    const i = abc.cells.findIndex(ch => !ch);
+    hint = { i, v: sol[i], line: null, why: `No simple step left; here's a nudge: row ${Math.floor(i / n) + 1}, column ${i % n + 1} is ${sol[i] === k ? "blank" : ABC_L[sol[i]]}.` };
+  }
+  abcSel = { type: "cell", i: hint.i }; abcHintCell = hint.i; abcHintLine = hint.line; abcPending = hint;
+  abcMsg(`${esc(hint.why)}${note} <br><button class="btn ghost" id="abcFill">Fill it in</button>`);
+  abcRender();
+}
+
+function abcCheck(){
+  abcClearMarks();
+  if (abcNeedsClues()) { abcRender(); return; }
+  const res = abcSolve(1);
+  if (abcProblem(res)) { abcRender(); return; }
+  const mine = abc.cells.map((ch, i) => ch ? i : -1).filter(i => i >= 0);
+  if (!mine.length) { abcMsg("You haven't filled any squares yet."); abcRender(); return; }
+  abcWrong = new Set(mine.filter(i => abcVal(abc.cells[i]) !== res.sol[i]));
+  abcMsg(abcWrong.size ? `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, abcWrong.size ? "no" : "ok");
+  abcRender();
+}
+
+function abcSolveAll(){
+  abcClearMarks();
+  if (abcNeedsClues()) { abcRender(); return; }
+  const res = abcSolve(2);
+  if (abcProblem(res)) { abcRender(); return; }
+  res.sol.forEach((v, i) => { const ch = abcCh(v); if (abc.cells[i] !== ch) { abc.cells[i] = ch; abc.shown[i] = 1; } });
+  abcMsg(res.count > 1 ? "Solved, but these clues allow more than one answer, so one may be missing or misread." : "Solved. The squares I filled in are in italics; ✕ means blank.", res.count > 1 ? "no" : "ok");
+  abcRender(); abcSave();
+}
+
+function abcResize(){
+  const n = +$("abcSize").value, k = Math.min(+$("abcK").value, n - 1);
+  const hasAny = abc.cells.some(Boolean) || [...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
+  if (hasAny && !confirm("Changing this clears the puzzle. Carry on?")) { abcRender(); return; }
+  abc = abcFresh(n, k); abcSel = null; abcClearMarks(); abcMsg(""); abcStatus("");
+  $("abcEdit").checked = true;
+  abcRender(); abcSave();
+}
+
+$("abcGrid").addEventListener("click", e => {
+  const cell = e.target.closest("[data-i]"), clue = e.target.closest("[data-side]");
+  if (cell) { const i = +cell.dataset.i; abcSel = abcSel && abcSel.type === "cell" && abcSel.i === i ? null : { type: "cell", i }; }
+  else if (clue) {
+    if (!$("abcEdit").checked) { abcMsg("Tick “Edit the clues” to change the letters round the edge."); return; }
+    const side = clue.dataset.side, j = +clue.dataset.j;
+    abcSel = abcSel && abcSel.type === side && abcSel.j === j ? null : { type: side, j };
+  } else return;
+  abcRender();
+});
+$("abcPad").addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (b) abcPlace(b.dataset.v); });
+$("abcMsg").addEventListener("click", e => {
+  if (e.target.id !== "abcFill" || !abcPending) return;
+  const { i, v } = abcPending;
+  abc.cells[i] = abcCh(v); abc.shown[i] = 1;
+  abcClearMarks(); abcSel = { type: "cell", i }; abcMsg("");
+  if (abc.cells.every(Boolean)) abcMsg("Solved! 🎉", "ok");
+  abcRender(); abcSave();
+});
+$("abcEdit").addEventListener("change", () => { if (!$("abcEdit").checked && abcSel && abcSel.type !== "cell") abcSel = null; abcRender(); });
+$("abcHint").addEventListener("click", abcHint);
+$("abcCheck").addEventListener("click", abcCheck);
+$("abcSolve").addEventListener("click", abcSolveAll);
+$("abcClear").addEventListener("click", () => { abc.cells.fill(""); abc.shown.fill(0); abcClearMarks(); abcMsg(""); abcRender(); abcSave(); });
+$("abcBlank").addEventListener("click", () => { $("abcSize").value = String(abc.n); abcResize(); });
+$("abcSize").addEventListener("change", abcResize);
+$("abcK").addEventListener("change", abcResize);
+document.addEventListener("keydown", e => {
+  if ($("pz-abc").hidden || $("tab-crossword").hidden || !abcSel || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
+  const key = e.key.toUpperCase();
+  if (key.length === 1 && ABC_L.slice(0, abc.k).includes(key)) { abcPlace(key); e.preventDefault(); }
+  else if (key === "X" || key === " " || key === ".") { abcPlace("x"); e.preventDefault(); }
+  else if (e.key === "Backspace" || e.key === "Delete") { abcPlace(""); e.preventDefault(); }
+  else if (abcSel.type === "cell") {
+    const n = abc.n, r = Math.floor(abcSel.i / n), c = abcSel.i % n;
+    const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+    if (mv) { const rr = Math.min(n - 1, Math.max(0, r + mv[0])), cc = Math.min(n - 1, Math.max(0, c + mv[1])); abcSel = { type: "cell", i: rr * n + cc }; abcRender(); e.preventDefault(); }
+  }
+});
+
+/* ---------- reading an ABC Logic puzzle from a photo ---------- */
+async function readABC(file){
+  abcStatus("Loading the letter reader (about 5 MB, first time only)…");
+  try { await getWorker(); } catch { abcStatus("Couldn't download the letter reader. Check your connection and try again.", true); return; }
+  abcStatus("Cleaning up the photo…");
+  const bin = await photoToBinary(file);
+  const W = bin.width, H = bin.height;
+  const px = bin.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data;
+  const ink = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) ink[i] = px[i * 4] < 128 ? 1 : 0;
+
+  abcStatus("Finding the grid…");
+  const { lab, list } = blobs(ink, W, H);
+  let grid = null;
+  for (const b of list) {
+    const bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    if (bw < W * 0.12 || bh < H * 0.12 || bw > bh * 1.6 || bh > bw * 1.6) continue;
+    if (!grid || bw * bh > (grid.x1 - grid.x0) * (grid.y1 - grid.y0)) grid = b;
+  }
+  if (!grid) { abcStatus("Couldn't find the grid in that photo. Try again with the whole puzzle in shot, or type the clues in.", true); return; }
+  let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity];
+  for (let y = grid.y0; y <= grid.y1; y++) for (let x = grid.x0; x <= grid.x1; x++) {
+    if (lab[y * W + x] !== grid.id) continue;
+    if (x + y < tl[2]) tl = [x, y, x + y];
+    if (x + y > br[2]) br = [x, y, x + y];
+    if (x - y > tr[2]) tr = [x, y, x - y];
+    if (x - y < bl[2]) bl = [x, y, x - y];
+  }
+
+  // Straighten the grid plus a border round it, where the clues live
+  const S = 600, PAD = 220, F = S + 2 * PAD;
+  const map = homography([[0, 0], [S, 0], [S, S], [0, S]], [tl, tr, br, bl]);
+  const flat = document.createElement("canvas"); flat.width = flat.height = F;
+  const fx = flat.getContext("2d", { willReadFrequently: true }), fd = fx.createImageData(F, F), fink = new Uint8Array(F * F);
+  for (let y = 0; y < F; y++) for (let x = 0; x < F; x++) {
+    const [u, v] = map(x - PAD + 0.5, y - PAD + 0.5), ux = Math.round(u), vy = Math.round(v);
+    const on = ux >= 0 && vy >= 0 && ux < W && vy < H && ink[vy * W + ux];
+    fink[y * F + x] = on ? 1 : 0;
+    const o = (y * F + x) * 4; fd.data[o] = fd.data[o + 1] = fd.data[o + 2] = on ? 0 : 255; fd.data[o + 3] = 255;
+  }
+  fx.putImageData(fd, 0, 0);
+
+  // Count the grid lines to get the size
+  const countLines = vertical => {
+    const prof = [];
+    for (let a = -4; a <= S + 4; a++) {
+      let c = 0;
+      for (let b = Math.round(S * 0.05); b < S * 0.95; b++) c += vertical ? fink[(b + PAD) * F + a + PAD] : fink[(a + PAD) * F + b + PAD];
+      prof.push(c / (S * 0.9));
+    }
+    let lines = 0, inRun = false, last = -999;
+    prof.forEach((f, idx) => {
+      if (f > 0.45 && !inRun) { if (idx - last > S * 0.04) lines++; inRun = true; }
+      if (f <= 0.45 && inRun) { inRun = false; last = idx; }
+    });
+    return lines - 1;
+  };
+  const nv = countLines(true), nh = countLines(false);
+  let n = +$("abcSize").value;
+  if (nv === nh && nv >= 4 && nv <= 8) n = nv;
+  const cell = S / n;
+
+  // Find a letter beside each row and column
+  const spots = [];
+  const look = (side, j, x0, y0, w, h) => {
+    x0 = Math.round(x0 + PAD); y0 = Math.round(y0 + PAD); w = Math.round(w); h = Math.round(h);
+    if (x0 < 0 || y0 < 0 || x0 + w > F || y0 + h > F) return;
+    const sub = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) sub[y * w + x] = fink[(y0 + y) * F + x0 + x];
+    let best = null;
+    for (const b of blobs(sub, w, h).list) {
+      const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
+      if (bh < cell * 0.18 || bh > cell * 0.9 || bw > cell * 0.9 || b.n < cell * cell * 0.006) continue;
+      if (b.x0 === 0 || b.y0 === 0 || b.x1 === w - 1 || b.y1 === h - 1) continue;   // cut off at the edge: not a whole letter
+      if (!best || b.n > best.n) best = b;
+    }
+    if (best) spots.push({ side, j, x: x0 + best.x0, y: y0 + best.y0, w: best.x1 - best.x0 + 1, h: best.y1 - best.y0 + 1, label: "?" });
+  };
+  const out = Math.min(cell * 1.15, PAD - 2), gap = cell * 0.1;
+  for (let j = 0; j < n; j++) {
+    look("top", j, j * cell + gap, -out, cell - 2 * gap, out - gap);
+    look("bottom", j, j * cell + gap, S + gap, cell - 2 * gap, out - gap);
+    look("left", j, -out, j * cell + gap, out - gap, cell - 2 * gap);
+    look("right", j, S + gap, j * cell + gap, out - gap, cell - 2 * gap);
+  }
+  if (!spots.length) { abcStatus(`Found a ${n} × ${n} grid but no clue letters round it. Try a closer photo, or tick “Edit the clues” and type them in.`, true); return; }
+
+  // Re-draw the letters evenly spaced, read them in one go, then cross-check them against each other
+  abcStatus(`Reading ${spots.length} clue letters…`);
+  const BOX = 60, G = 60, PER = 8, rows = Math.ceil(spots.length / PER), re = document.createElement("canvas");
+  re.width = PER * (BOX + G) + G; re.height = rows * (BOX + G) + G;
+  const rx = re.getContext("2d", { willReadFrequently: true });
+  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
+  spots.forEach((s, k) => {
+    const sc = 40 / s.h, dw = Math.max(2, Math.min(BOX, Math.round(s.w * sc)));
+    s.rx = G + (k % PER) * (BOX + G) + ((BOX - dw) >> 1); s.ry = G + Math.floor(k / PER) * (BOX + G) + 10; s.rw = dw;
+    rx.drawImage(flat, s.x, s.y, s.w, s.h, s.rx, s.ry, dw, 40);
+  });
+  const chars = ABC_L.slice(0, Math.max(+$("abcK").value, 6));
+  for (const sym of await ocr(re, 6, chars)) {
+    const c = Math.floor((sym.x - G / 2) / (BOX + G)), r = Math.floor((sym.y - G / 2) / (BOX + G)), s = spots[r * PER + c];
+    if (c >= 0 && c < PER && s && s.label === "?") s.label = sym.t;
+  }
+  spots.forEach(s => s.v = glyphVec(re, s.rx, s.ry, s.rw, 40));
+  crossCheck(spots);
+  for (const s of spots) if (s.label === "?") {
+    const one = document.createElement("canvas"); one.width = one.height = BOX + 40;
+    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
+    ox.drawImage(re, s.rx - 10, s.ry - 10, s.rw + 20, 60, 20, 20, s.rw + 20, 60);
+    const got = await ocr(one, 10, chars);
+    if (got.length) s.label = got[0].t;
+  }
+
+  const seen = spots.filter(s => s.label !== "?").map(s => ABC_L.indexOf(s.label));
+  const k = Math.min(n - 1, Math.max(3, ...seen.map(v => v + 1)));
+  abc = abcFresh(n, k);
+  for (const s of spots) if (s.label !== "?") abc[s.side][s.j] = s.label;
+  $("abcEdit").checked = false; abcSel = null; abcClearMarks(); abcMsg("");
+  abcRender(); abcSave();
+  const unread = spots.filter(s => s.label === "?").length, res = abcSolve(2);
+  let msg = `Read a ${n} × ${n} grid using ${ABC_L[0]} to ${ABC_L[k - 1]}, with ${spots.length - unread} clue${spots.length - unread === 1 ? "" : "s"}.`;
+  if (unread) msg += ` ${unread} couldn't be read.`;
+  if (!res.count) msg += " No answer fits, so a letter was probably misread: tick “Edit the clues” to fix it, and check the size and letters above.";
+  else if (res.count > 1) msg += " It has more than one answer, so a clue may be missing. Check it against the paper.";
+  else msg += " It checks out with exactly one answer. Ask for a hint, or have a go.";
+  abcStatus(msg, !res.count);
+}
+
+$("abcFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { await readABC(f); }
+  catch (err) { console.warn(err); abcStatus("Something went wrong reading that photo. Try again, or type the clues in.", true); }
+});
+
+function loadABC(){
+  const saved = store.get("bd-abc", null);
+  if (saved && saved.n >= 4 && saved.n <= 8 && Array.isArray(saved.cells) && saved.cells.length === saved.n * saved.n) abc = saved;
+  $("abcEdit").checked = ![...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
+  abcRender();
+}
+
 /* ================= COUNTDOWN: switch ================= */
 function showCd(mode){
   document.querySelectorAll("[data-cd]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cd === mode));
@@ -1900,6 +2389,7 @@ renderRecent();
 renderSpots();
 loadWordSearch();
 loadSudoku();
+loadABC();
 showPz(store.get("bd-pz", "crossword"));
 newLetters();
 resetNumbersUI();
