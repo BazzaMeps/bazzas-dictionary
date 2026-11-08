@@ -3,2399 +3,960 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bazza's Dictionary</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='8' y='8' width='84' height='84' rx='12' fill='%23fbfaf5' stroke='%231c2e5a' stroke-width='6'/><text x='50' y='70' font-size='58' font-family='Arial' font-weight='700' text-anchor='middle' fill='%231c2e5a'>B</text></svg>">
+<title>Bazza’s Flag Oracle</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏳️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --board:#1c2e5a; --board-2:#24396d;
-  --tile:#fbfaf5; --tile-edge:#cfc8b2; --tile-ink:#1c2e5a;
-  --clock:#f2c230;
-  --bg:#e8edf6; --surface:#ffffff; --ink:#1a1f2b; --muted:#5d6779; --line:#cdd5e4;
-  --good:#2f7d4f; --bad:#b3362c;
-  --ui:"Bricolage Grotesque", "Segoe UI", Roboto, system-ui, sans-serif;
-  --read:"Literata", Georgia, "Times New Roman", serif;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EDF1F5; --surface:#FFFFFF; --ink:#16203A; --muted:#5A6479; --line:#D3DAE3;
+  --accent:#C8102E; --good:#1E7A4C; --bad:#B3261E; --pole:#9AA4B2; --finial:#C9A227;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0f1830; --surface:#17223f; --ink:#e9edf6; --muted:#9aa6c0; --line:#2b3a62;
-    --board:#24396d; --board-2:#2d4580; --good:#5cc489; --bad:#ef7b70;
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0E1424; --surface:#18213A; --ink:#E7ECF4; --muted:#9AA6BC; --line:#2A3552;
+    --accent:#E8455C; --good:#4CC38A; --bad:#FF7A70; --pole:#5A667E; --finial:#D8B23A;
+    color-scheme:dark;
   }
 }
-:root[data-theme="dark"]{
-  --bg:#0f1830; --surface:#17223f; --ink:#e9edf6; --muted:#9aa6c0; --line:#2b3a62;
-  --board:#24396d; --board-2:#2d4580; --good:#5cc489; --bad:#ef7b70;
-}
-*,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
-button,input,select,textarea{font:inherit;color:inherit}
-::placeholder{color:var(--muted);opacity:1}
-:focus-visible{outline:3px solid var(--clock);outline-offset:2px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3,.display{font-family:"Bricolage Grotesque","Public Sans",system-ui,sans-serif}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px}
 
-/* Header: the board */
-header{background:var(--board);color:#fff;padding:18px 16px 0}
-.wrap{max-width:720px;margin:0 auto}
-.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.brand h1{margin:0;font-size:1.05rem;font-weight:600;letter-spacing:.01em;opacity:.85}
-.title-tiles{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 16px}
+/* Header */
+header.top{position:sticky;top:0;z-index:5;padding-top:env(safe-area-inset-top,0px);
+  background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 0 10px}
+.brand h1{margin:0;font-size:1.4rem;font-weight:800;letter-spacing:-.01em}
+.brand a{color:var(--muted);font-size:.85rem;text-decoration:none;white-space:nowrap}
+.brand a:hover{color:var(--ink)}
+.tabs{display:flex;gap:4px;padding-bottom:12px}
+.tab{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 2px;border-radius:999px;font-weight:600;font-size:.88rem;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
-.tile{display:inline-grid;place-items:center;width:2.1em;height:2.1em;background:var(--tile);color:var(--tile-ink);
-  border-radius:4px;box-shadow:inset 0 -3px 0 var(--tile-edge);font-weight:800;font-size:1.15rem;text-transform:uppercase;line-height:1}
-.title-tiles .tile{font-size:1.35rem}
-.tile.blank{background:transparent;color:var(--clock);box-shadow:inset 0 0 0 2px var(--clock)}
-.tile.empty{background:var(--board-2);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+section.view{padding:8px 0 40px}
+section.view[hidden]{display:none}
 
-nav{display:flex;gap:2px}
-nav button{flex:1;background:transparent;border:0;color:#c9d3ea;padding:12px 6px 14px;font-weight:600;cursor:pointer;border-radius:8px 8px 0 0}
-nav button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+/* Buttons */
+.btn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:11px 18px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
-main{padding:20px 16px 48px}
-section[hidden]{display:none}
+/* Today */
+.daybar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:22px 0 22px}
+.date{font-family:"Bricolage Grotesque",sans-serif;font-weight:600;font-size:1.05rem;color:var(--muted);margin:0}
+.daybar .row .btn{padding:8px 14px;font-size:.9rem}
+.hero{display:flex;align-items:stretch;padding-bottom:70px;margin-bottom:6px}
+.pole{position:relative;flex:0 0 8px;border-radius:4px;margin-top:4px;
+  background:linear-gradient(90deg,var(--pole),color-mix(in srgb,var(--pole) 55%,#fff),var(--pole))}
+.pole::before{content:"";position:absolute;top:-14px;left:50%;width:18px;height:18px;border-radius:50%;transform:translateX(-50%);
+  background:radial-gradient(circle at 35% 35%,#fff6,transparent 50%),var(--finial)}
+.cloth{position:relative;width:min(100% - 8px,520px);align-self:flex-start;margin-top:6px}
+.cloth.squarish{width:min(100% - 8px,360px)}
+.cloth img{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 18px rgba(22,32,58,.25))}
+.shine{position:absolute;inset:0;overflow:hidden;pointer-events:none;mix-blend-mode:soft-light;
+  -webkit-mask:var(--flag) 0 0/100% 100% no-repeat;mask:var(--flag) 0 0/100% 100% no-repeat}
+.bands{position:absolute;top:0;bottom:0;left:-240px;right:-240px;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.22) 0,rgba(255,255,255,.32) 70px,rgba(255,255,255,0) 140px,rgba(0,0,0,.22) 240px);
+  animation:wave 6s linear infinite}
+@keyframes wave{to{transform:translateX(240px)}}
+@media (prefers-reduced-motion:reduce){.bands{animation:none}}
 
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.field{flex:1 1 200px;min-width:0;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--surface);font-size:1.1rem}
-.field:focus{border-color:var(--board-2);outline:none}
-.btn{padding:12px 18px;border-radius:10px;border:0;background:var(--board);color:#fff;font-weight:600;cursor:pointer}
-:root[data-theme="dark"] .btn:not(.ghost){background:var(--clock);color:#1c2e5a}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.ghost){background:var(--clock);color:#1c2e5a}}
-.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
-.btn:disabled{opacity:.35;filter:grayscale(1);cursor:not-allowed}
-.hint{color:var(--muted);font-size:.9rem;margin:8px 0 0}
-.status{color:var(--muted);margin:16px 0}
-.status.err{color:var(--bad)}
+/* Card */
+.name{margin:0;font-size:clamp(2.1rem,8vw,3.4rem);font-weight:800;line-height:1.02;letter-spacing:-.02em}
+.sub{margin:8px 0 16px;color:var(--muted)}
+.swatches{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.sw{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px 4px 5px;font-size:.88rem}
+.sw i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.facts{display:grid;gap:12px;margin:0 0 16px}
+.facts div{display:grid;grid-template-columns:8.5rem 1fr;gap:10px;align-items:start}
+.facts dt{color:var(--muted);font-size:.92rem}
+.facts dd{margin:0}
+.note{margin:0 0 6px;padding:14px 16px;background:var(--surface);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;max-width:62ch}
+.twins{display:flex;flex-wrap:wrap;gap:10px}
+.mini{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px 10px 5px 5px;cursor:pointer;color:var(--ink)}
+.mini img{width:36px;height:24px;object-fit:contain}
 
+/* Explore */
+.count{margin:22px 0 2px;font:800 clamp(2.6rem,10vw,3.8rem)/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.02em}
+.countsub{margin:0 0 6px;color:var(--muted)}
+.fgroup h3{font-size:1.02rem;margin:20px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.95rem}
-.chip.rare{color:var(--muted);background:transparent}
-.chip mark{background:transparent;color:inherit;text-decoration:underline wavy var(--clock) 2px;text-underline-offset:3px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:.9rem;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip i{width:13px;height:13px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
+.seg button{border:0;background:var(--surface);color:var(--ink);padding:6px 12px;font-size:.85rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 10px;margin:26px 0}
+.panel h3{margin:0 0 4px;font-size:1.1rem}
+.panel p.lead{margin:0 0 12px;color:var(--muted);font-size:.93rem}
+.bar{display:grid;grid-template-columns:7.2rem 1fr 2.6rem;align-items:center;gap:10px;width:100%;background:none;border:0;color:inherit;padding:5px 0;cursor:pointer;text-align:left}
+.bar .lbl{display:flex;align-items:center;gap:7px;font-size:.92rem}
+.bar .lbl i{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.track{height:12px;background:color-mix(in srgb,var(--line) 70%,transparent);border-radius:6px;overflow:hidden}
+.fill{height:100%;border-radius:6px;background:var(--ink)}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-size:.92rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:16px 12px;margin-top:14px}
+.tile{background:none;border:0;padding:0;text-align:left;color:var(--ink);cursor:pointer}
+.tile img{width:100%;aspect-ratio:3/2;object-fit:contain;object-position:left center;display:block;filter:drop-shadow(0 0 .6px rgba(0,0,0,.55))}
+.tile span{display:block;font-size:.82rem;margin-top:5px;line-height:1.25}
+.empty{padding:30px 0;color:var(--muted)}
 
-/* Define */
-.entry{margin-top:20px}
-.headword{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.headword h2{margin:0;font-size:2.4rem;font-weight:800;line-height:1.05;word-break:break-word}
-.phon{font-family:var(--read);color:var(--muted);font-size:1.1rem}
-.audio{border:2px solid var(--line);background:var(--surface);border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:1rem}
-.pos{margin:24px 0 6px;font-family:var(--read);font-style:italic;font-size:1.15rem;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
-ol.defs{margin:0;padding-left:1.6em;font-family:var(--read);line-height:1.6;max-width:65ch}
-ol.defs li{margin:10px 0}
-ol.defs .ex{display:block;color:var(--muted);font-style:italic}
-.nyms{margin:10px 0 0;font-size:.9rem;color:var(--muted)}
-.nyms .chips{margin-top:6px}
-.source{margin-top:28px;font-size:.85rem;color:var(--muted)}
-.source a{color:inherit}
-.inlist{font-size:.9rem;color:var(--muted);margin-top:6px}
-.recent{margin-top:24px}
-.recent h3,.opts h3{font-size:.95rem;font-weight:600;color:var(--muted);margin:0 0 8px}
+/* Quiz */
+.qintro{margin:22px 0 4px}
+.qintro h2{margin:0 0 4px;font-size:1.6rem;font-weight:800}
+.qintro p{margin:0;color:var(--muted)}
+.qbar{display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 12px;color:var(--muted);font-size:.95rem}
+.qbar strong{color:var(--ink);font-size:1.1rem}
+.prompt{font:800 clamp(1.5rem,6vw,2.2rem)/1.1 "Bricolage Grotesque",sans-serif;margin:0 0 14px}
+.qflag{width:min(100%,420px);margin-bottom:16px}
+.qflag img{width:100%;height:auto;display:block;filter:drop-shadow(0 6px 14px rgba(22,32,58,.22))}
+.closeup{width:min(100%,420px);aspect-ratio:3/2;background-repeat:no-repeat;background-color:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;transition:background-size .35s ease,background-position .35s ease}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.opt{padding:12px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;line-height:1.25}
+.opt img{width:100%;aspect-ratio:3/2;object-fit:contain;display:block}
+.opt.good{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--surface))}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,var(--surface))}
+.opt:disabled{cursor:default}
+.feedback{margin:16px 0 12px}
+.feedback .verdict{font-weight:700}
+.verdict.good{color:var(--good)} .verdict.bad{color:var(--bad)}
+.result{margin:26px 0}
+.result .big{font:800 clamp(3rem,14vw,4.6rem)/1 "Bricolage Grotesque",sans-serif;margin:0}
 
-/* Unscramble */
-.preview{display:flex;gap:4px;flex-wrap:wrap;min-height:2.6em;margin:14px 0 4px}
-.opts{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:.95rem}
-.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
-.opts select{padding:6px 8px;border-radius:8px;border:2px solid var(--line);background:var(--surface)}
-.group{margin-top:22px}
-.group h3{margin:0 0 8px;font-size:1.05rem;font-weight:800}
-.group h3 span{font-weight:400;color:var(--muted)}
-.more{margin-top:8px}
+/* Dialog */
+dialog#sheet{border:0;border-radius:18px;padding:0;width:calc(100% - 24px);max-width:560px;max-height:calc(100% - 40px);background:var(--bg);color:var(--ink)}
+dialog#sheet::backdrop{background:rgba(10,15,30,.55)}
+.sheetin{padding:20px 20px 24px}
+.sheetin .flagbig{width:100%;max-width:400px;height:auto;display:block;margin:6px 0 18px;filter:drop-shadow(0 6px 14px rgba(22,32,58,.25))}
+.closex{float:right;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer}
 
-/* Countdown */
-.cd-board{background:var(--board);border-radius:14px;padding:16px;color:#fff}
-.cd-tiles{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
-.cd-tiles .tile{width:100%;height:auto;aspect-ratio:1;font-size:clamp(1rem,5vw,1.6rem)}
-.clock{height:10px;background:var(--board-2);border-radius:999px;margin:16px 0 4px;overflow:hidden}
-.clock div{height:100%;width:0;background:var(--clock);transition:width .25s linear}
-.cd-meta{display:flex;justify-content:space-between;font-size:.9rem;color:#c9d3ea}
-.cd-controls{margin-top:14px}
-.cd-controls .btn{flex:1}
-.verdict{margin-top:12px;font-weight:600}
-.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+/* Finder */
+.lead{color:var(--muted);margin:0}
+.toprow{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
+.results{display:grid;gap:10px;margin-top:10px}
+.rrow{display:grid;grid-template-columns:88px 1fr auto;gap:12px;align-items:center;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:left;color:var(--ink);cursor:pointer}
+.rrow img{width:88px;aspect-ratio:3/2;object-fit:contain;filter:drop-shadow(0 0 .6px rgba(0,0,0,.55))}
+.rrow .rn{font-weight:600;line-height:1.25}
+.rrow .why{font-size:.84rem;color:var(--muted);margin-top:3px;line-height:1.35}
+.rrow .pc{font:800 1.3rem/1 "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums}
+.sechead{font-size:1.15rem;margin:30px 0 4px}
 
-@media (prefers-reduced-motion: reduce){.clock div{transition:none}}
+/* Flagle */
+.clues{display:grid;gap:8px;margin:18px 0}
+.clue{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.clue .ct{display:block;font-size:.84rem;color:var(--muted)}
+.clue .swatches{margin:6px 0 2px}
+.clue.locked{color:var(--muted);border-style:dashed;background:transparent;font-size:.9rem}
+.blur{width:min(100%,300px);overflow:hidden;border-radius:6px;margin-top:6px}
+.blur img{width:100%;display:block;filter:blur(12px);transform:scale(1.15)}
+.guessbox input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:500 1rem "Public Sans",system-ui,sans-serif}
+.guessbox input:focus{outline:none;border-color:var(--ink)}
+.sugs{display:grid;gap:4px;margin-top:6px}
+.sug{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;color:var(--ink);cursor:pointer;text-align:left}
+.sug img{width:36px;height:24px;object-fit:contain;flex:none}
+.guesses{display:grid;gap:8px;margin:14px 0}
+.grow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.grow .gn{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem}
+.grow .gn img{width:36px;height:24px;object-fit:contain;flex:none}
+.grow .gn .gi{margin-left:auto;color:var(--muted);font-weight:400;font-size:.84rem}
+.tags{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}
+.tag{font-size:.74rem;padding:5px 4px;border-radius:6px;text-align:center;line-height:1.15}
+.tag.g{background:var(--good);color:#fff}
+.tag.y{background:#E0A800;color:#16203A}
+.tag.b{background:color-mix(in srgb,var(--line) 80%,transparent);color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px;text-align:center}
+.stats b{display:block;font:800 1.7rem/1.1 "Bricolage Grotesque",sans-serif}
+.stats span{font-size:.8rem;color:var(--muted)}
 
-/* v2 additions */
-nav{overflow-x:auto;scrollbar-width:none}
-nav::-webkit-scrollbar{display:none}
-nav button{flex:1 0 auto;padding:12px 4px 14px;font-size:clamp(.8rem,3.4vw,.95rem);white-space:nowrap}
-.seg{display:inline-flex;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:3px;margin-bottom:16px}
-.seg button{border:0;background:transparent;padding:8px clamp(8px,2.6vw,18px);font-size:clamp(.82rem,3.7vw,1rem);flex:none;white-space:nowrap;border-radius:9px;font-weight:600;cursor:pointer;color:var(--muted)}
-.seg button[aria-pressed="true"]{background:var(--board);color:#fff}
-.lbl{display:block;font-size:.92rem;color:var(--muted);margin:14px 0 6px}
-.field.small{flex:none;width:100%;font-size:1rem;padding:10px 12px}
-details.more{margin-top:14px;border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface)}
-details.more, details.more *{box-sizing:border-box}
-details.more summary{cursor:pointer;font-weight:600}
-.spots{display:grid;gap:6px}
-.spots label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.8rem;color:var(--muted)}
-.spots input{width:100%;min-width:0;text-align:center;padding:8px 2px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:lowercase}
-.spots input:disabled{opacity:.35}
-
-/* Word search */
-.ws-upload{display:block;text-align:center}
-.ws-board{margin-top:14px;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px}
-.ws-board svg{display:block;width:100%;height:auto}
-.ws-board text{font-family:var(--ui);font-weight:700;fill:var(--ink)}
-.ws-board text.unk{fill:var(--bad)}
-.ws-text{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase}
-textarea.field{resize:vertical;line-height:1.5}
-.ws-list{list-style:none;padding:0;margin:14px 0 0}
-.ws-list li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
-.ws-list .dot{flex:none;width:12px;height:12px;border-radius:50%;transform:translateY(1px)}
-.ws-list b{letter-spacing:.04em}
-.ws-list small{color:var(--muted)}
-.ws-list .miss b{color:var(--bad)}
-.chip.on{background:var(--clock);color:#1c2e5a;border-color:var(--clock)}
-
-/* Numbers round */
-.target{font-size:clamp(2.6rem,14vw,4rem);font-weight:800;letter-spacing:.08em;text-align:center;color:var(--clock);
-  background:#0b1430;border-radius:10px;padding:6px 0;margin-bottom:14px;font-variant-numeric:tabular-nums;line-height:1.1}
-.ntiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.ntile{min-width:3.1em;height:2.6em;padding:0 .5em;border:0;border-radius:6px;background:var(--tile);color:var(--tile-ink);
-  box-shadow:inset 0 -3px 0 var(--tile-edge);font-weight:800;font-size:1.25rem;cursor:pointer;font-variant-numeric:tabular-nums}
-.ntile.made{background:#fff6d6;box-shadow:inset 0 0 0 2px var(--clock),inset 0 -3px 0 var(--tile-edge)}
-.ntile.sel{outline:4px solid var(--clock);outline-offset:2px}
-.ntile:disabled{opacity:.25;cursor:default}
-.ntile.blank{background:var(--board-2);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);cursor:default}
-.large{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
-.large .btn{padding:12px 0}
-.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
-.ops .btn{font-size:1.4rem;padding:10px 0}
-.ops .btn.on{outline:4px solid var(--clock);outline-offset:2px}
-.steps{font-family:var(--read);font-size:1.05rem;padding-left:1.6em;margin:12px 0 0}
-.steps li{margin:4px 0}
-.best{margin-top:10px;font-weight:600}
-.nums-own{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end}
-@media (max-width:420px){.nums-own{grid-template-columns:1fr 1fr}.nums-own .btn{grid-column:1/-1}}
-/* Tap to fix (word search) */
-.ws-board svg{cursor:pointer;touch-action:manipulation}
-.ws-board rect.sel{fill:var(--clock);opacity:.45}
-.ws-edit{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:2px solid var(--clock);border-radius:12px;background:var(--surface)}
-.ws-edit[hidden]{display:none}
-.ws-edit span{flex:1 1 180px;font-size:.95rem}
-.ws-edit input{width:3em;text-align:center;font-size:1.3rem;font-weight:800;padding:6px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:uppercase}
-/* Sudoku */
-.sd-grid{--sd-mine:#2d5fc4;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));margin-top:14px;border:3px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface);user-select:none;max-width:480px}
-.sd-c{aspect-ratio:1;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);
-  width:100%;min-width:0;font-size:clamp(1.05rem,5.6vw,1.6rem);font-variant-numeric:tabular-nums;padding:0;cursor:pointer;color:var(--sd-mine);font-weight:400;touch-action:manipulation}
-:root[data-theme="dark"] .sd-grid{--sd-mine:var(--clock)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sd-grid{--sd-mine:var(--clock)}}
-.sd-c:nth-child(9n){border-right:0}
-.sd-c:nth-child(9n+3),.sd-c:nth-child(9n+6){border-right:2px solid var(--ink)}
-.sd-c:nth-child(n+19):nth-child(-n+27),.sd-c:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid var(--ink)}
-.sd-c:nth-child(n+73){border-bottom:0}
-.sd-c.g{color:var(--ink);font-weight:800}
-.sd-c.s{font-style:italic;color:color-mix(in srgb,var(--sd-mine) 75%,var(--surface))}
-.sd-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface))}
-.sd-c.same{background:color-mix(in srgb,var(--clock) 30%,var(--surface))}
-.sd-c.sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface));color:#1c2e5a}
-.sd-c.bad{color:var(--bad);font-weight:800}
-.sd-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
-.sd-c.hint-house{background:color-mix(in srgb,var(--good) 14%,var(--surface))}
-.sd-pad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px;max-width:480px}
-.sd-pad .btn{padding:12px 0;font-size:1.25rem;font-variant-numeric:tabular-nums}
-.sd-pad .btn.done{opacity:.35}
-.sd-msg{margin-top:12px;font-weight:600}
-.sd-msg .btn{margin-top:8px;padding:8px 14px}
-.sd-msg.ok{color:var(--good)} .sd-msg.no{color:var(--bad)}
-/* Conundrum */
-.cn-answer .tile{background:#fff6d6;box-shadow:inset 0 0 0 2px var(--clock),inset 0 -3px 0 var(--tile-edge)}
-/* ABC Logic */
-.seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
-.seg::-webkit-scrollbar{display:none}
-.abc-grid{display:grid;gap:0;margin-top:14px;max-width:440px;aspect-ratio:1;user-select:none}
-.abc-grid > *{min-width:0;min-height:0;width:100%;height:100%;padding:0;border:0;background:transparent;font:inherit;font-weight:800;
-  font-size:clamp(1rem,5.4vw,1.5rem);display:grid;place-items:center;touch-action:manipulation}
-.abc-clue{color:var(--ink);cursor:pointer;border-radius:8px}
-.abc-clue:empty::after{content:"·";color:var(--line)}
-.abc-clue.used{color:var(--good)}
-.abc-c{background:var(--surface) !important;border-right:1px solid var(--line) !important;border-bottom:1px solid var(--line) !important;cursor:pointer;color:var(--sd-mine,#2d5fc4)}
-.abc-grid{--sd-mine:#2d5fc4}
-:root[data-theme="dark"] .abc-grid{--sd-mine:var(--clock)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .abc-grid{--sd-mine:var(--clock)}}
-.abc-c.blank.blank{color:var(--muted);font-weight:400}
-.abc-c.s{font-style:italic;color:color-mix(in srgb,var(--sd-mine) 75%,var(--surface))}
-.abc-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface)) !important}
-.abc-c.hint-house{background:color-mix(in srgb,var(--good) 14%,var(--surface)) !important}
-.abc-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
-.abc-c.bad{color:var(--bad)}
-.abc-grid .sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface)) !important;color:#1c2e5a}
-.abc-pad{grid-template-columns:repeat(4,1fr)}
-.abc-c.et{border-top:2px solid var(--ink) !important}.abc-c.el{border-left:2px solid var(--ink) !important}
-.abc-c.er{border-right:2px solid var(--ink) !important}.abc-c.eb{border-bottom:2px solid var(--ink) !important}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;padding:18px 0 30px}
+footer p{margin:0 0 6px;max-width:62ch}
+@media (max-width:480px){
+  .facts div{grid-template-columns:1fr;gap:2px}
+  .bar{grid-template-columns:6.2rem 1fr 2.4rem}
+}
 </style>
 </head>
 <body>
-<header>
+<header class="top">
   <div class="wrap">
-    <div class="brand"><h1>Bazza's Dictionary</h1></div>
-    <div class="title-tiles" aria-hidden="true">
-      <span class="tile">w</span><span class="tile">o</span><span class="tile">r</span><span class="tile">d</span><span class="tile">s</span>
+    <div class="brand">
+      <h1>Bazza’s Flag Oracle</h1>
+      <a href="https://bazzameps.github.io/">Bazza Ecosystem</a>
     </div>
-    <nav role="tablist">
-      <button role="tab" aria-selected="true" data-tab="define">Define</button>
-      <button role="tab" aria-selected="false" data-tab="unscramble">Unscramble</button>
-      <button role="tab" aria-selected="false" data-tab="crossword">Puzzles</button>
-      <button role="tab" aria-selected="false" data-tab="countdown">Countdown</button>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="today" aria-selected="true">Today</button>
+      <button class="tab" role="tab" data-tab="flagle" aria-selected="false">Flagle</button>
+      <button class="tab" role="tab" data-tab="finder" aria-selected="false">Finder</button>
+      <button class="tab" role="tab" data-tab="explore" aria-selected="false">Explore</button>
+      <button class="tab" role="tab" data-tab="quiz" aria-selected="false">Quiz</button>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-  <!-- DEFINE -->
-  <section id="tab-define">
-    <form class="row" autocomplete="off" onsubmit="return false">
-      <input class="field" id="defineInput" type="search" placeholder="Type a word" autocapitalize="none" spellcheck="false" enterkeyhint="search">
-      <button class="btn" id="defineBtn">Look up</button>
-    </form>
-    <div id="defineOut"></div>
-    <div class="recent" id="recentWrap" hidden>
-      <h3>Recent</h3>
-      <div class="chips" id="recentChips"></div>
-    </div>
-  </section>
-
-  <!-- UNSCRAMBLE -->
-  <section id="tab-unscramble" hidden>
-    <form class="row" autocomplete="off" onsubmit="return false">
-      <input class="field" id="unInput" type="text" placeholder="Letters, ? for a blank" autocapitalize="none" spellcheck="false" maxlength="15" enterkeyhint="go">
-      <button class="btn" id="unBtn">Unscramble</button>
-    </form>
-    <div class="preview" id="unPreview" aria-hidden="true"></div>
-    <p class="hint">Up to 15 letters. Use ? for a blank tile (up to 3). Letters filled by a blank get a yellow underline.</p>
-    <div class="opts">
-      <label>Shortest word
-        <select id="minLen"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
-      </label>
-      <label><input type="checkbox" id="commonOnly"> Common words only</label>
-    </div>
-    <div id="unOut"></div>
-  </section>
-
-  <!-- PUZZLES: crossword + word search -->
-  <section id="tab-crossword" hidden>
-    <div class="seg">
-      <button aria-pressed="true" data-pz="crossword">Crossword</button>
-      <button aria-pressed="false" data-pz="wordsearch">Word search</button>
-      <button aria-pressed="false" data-pz="sudoku">Sudoku</button>
-      <button aria-pressed="false" data-pz="abc">ABC</button>
-    </div>
-    <div id="pz-crossword">
-    <form class="row" autocomplete="off" onsubmit="return false">
-      <input class="field" id="cwInput" type="text" placeholder="Pattern, e.g. c?o?s?o?d" autocapitalize="none" spellcheck="false" maxlength="20" enterkeyhint="search">
-      <button class="btn" id="cwBtn">Find words</button>
-    </form>
-    <div class="preview" id="cwPreview" aria-hidden="true"></div>
-    <p class="hint">Type the letters you know and ? for each gap. The pattern sets the length, so ????? finds 5-letter words.</p>
-    <details class="more" id="cwMore">
-      <summary>More clues (handy for Wordle)</summary>
-      <label class="lbl" for="cwHas">Letters it must contain (yellow)</label>
-      <input class="field small" id="cwHas" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. ae">
-      <label class="lbl" for="cwNot">Letters it can't contain (grey)</label>
-      <input class="field small" id="cwNot" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. stui">
-      <span class="lbl">Wrong spots: letters in the word but not in that position</span>
-      <div class="spots" id="cwSpots"></div>
-    </details>
-    <div class="opts"><label><input type="checkbox" id="cwCommon"> Common words only</label></div>
-    <div id="cwOut"></div>
-    </div>
-
-    <div id="pz-wordsearch" hidden>
-      <label class="btn ws-upload" for="wsFile">Photo of a word search</label>
-      <input id="wsFile" type="file" accept="image/*" hidden>
-      <p class="hint">Take the photo straight on, in good light, with the whole grid in shot. Or type the grid in below.</p>
-      <div class="status" id="wsStatus" role="status"></div>
-      <div class="ws-board" id="wsBoard" hidden></div>
-      <p class="hint" id="wsTapHint" hidden>Tap any letter on the grid to fix it.</p>
-      <div class="ws-edit" id="wsEdit" hidden>
-        <span id="wsEditLbl"></span>
-        <input id="wsEditIn" type="text" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Correct letter">
-        <button class="btn ghost" id="wsEditDone">Done</button>
-      </div>
-      <details class="more" id="wsFix">
-        <summary>Check or type the grid</summary>
-        <p class="hint">One row per line. Fix any letter the camera got wrong; a ? marks one it couldn't read.</p>
-        <textarea class="field small ws-text" id="wsText" rows="8" autocapitalize="characters" spellcheck="false" placeholder="SZBOOKCASE&#10;SIDEBOARDT&#10;..."></textarea>
-      </details>
-      <label class="lbl" for="wsWords">Words to find</label>
-      <textarea class="field small" id="wsWords" rows="3" autocapitalize="none" spellcheck="false" placeholder="bookcase, sideboard, cabinet"></textarea>
-      <div class="row cd-controls">
-        <button class="btn" id="wsFind">Find them</button>
-        <button class="btn ghost" id="wsAuto">Find every word</button>
-      </div>
-      <div id="wsOut"></div>
-    </div>
-
-    <div id="pz-sudoku" hidden>
-      <label class="btn ws-upload" for="sdFile">Photo of a sudoku</label>
-      <input id="sdFile" type="file" accept="image/*" hidden>
-      <p class="hint">Get the whole grid in shot, as square-on as you can. Or tick “Fix the puzzle's numbers”, tap a square and type them in.</p>
-      <div class="status" id="sdStatus" role="status"></div>
-      <div class="sd-grid" id="sdGrid" role="grid" aria-label="Sudoku grid"></div>
-      <div class="sd-pad" id="sdPad">
-        <button class="btn ghost" data-n="1">1</button><button class="btn ghost" data-n="2">2</button><button class="btn ghost" data-n="3">3</button><button class="btn ghost" data-n="4">4</button><button class="btn ghost" data-n="5">5</button>
-        <button class="btn ghost" data-n="6">6</button><button class="btn ghost" data-n="7">7</button><button class="btn ghost" data-n="8">8</button><button class="btn ghost" data-n="9">9</button><button class="btn ghost" data-n="0" aria-label="Rub out">⌫</button>
-      </div>
-      <div class="opts"><label><input type="checkbox" id="sdEdit"> Fix the puzzle's numbers</label></div>
-      <div class="row cd-controls">
-        <button class="btn" id="sdHint">Hint</button>
-        <button class="btn ghost" id="sdCheck">Check mine</button>
-      </div>
-      <div class="sd-msg" id="sdMsg" role="status"></div>
-      <div class="row cd-controls">
-        <button class="btn ghost" id="sdSolve">Solve it all</button>
-        <button class="btn ghost" id="sdClear">Clear mine</button>
-      </div>
-      <div class="row cd-controls"><button class="btn ghost" id="sdBlank">Blank grid</button></div>
-    </div>
-
-    <div id="pz-abc" hidden>
-      <label class="btn ws-upload" for="abcFile">Photo of an ABC Logic puzzle</label>
-      <input id="abcFile" type="file" accept="image/*" hidden>
-      <p class="hint">Get the grid and the letters round the edge in shot. Or tick “Edit the clues”, tap a spot round the edge and pick its letter.</p>
-      <div class="opts">
-        <label>Grid <select id="abcSize"><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></label>
-        <label>Letters <select id="abcK"><option value="3" selected>A to C</option><option value="4">A to D</option><option value="5">A to E</option><option value="6">A to F</option></select></label>
-      </div>
-      <div class="status" id="abcStatus" role="status"></div>
-      <div class="abc-grid" id="abcGrid" aria-label="ABC Logic grid"></div>
-      <div class="sd-pad abc-pad" id="abcPad"></div>
-      <div class="opts"><label><input type="checkbox" id="abcEdit"> Edit the clues</label></div>
-      <div class="row cd-controls">
-        <button class="btn" id="abcHint">Hint</button>
-        <button class="btn ghost" id="abcCheck">Check mine</button>
-      </div>
-      <div class="sd-msg" id="abcMsg" role="status"></div>
-      <div class="row cd-controls">
-        <button class="btn ghost" id="abcSolve">Solve it all</button>
-        <button class="btn ghost" id="abcClear">Clear mine</button>
-      </div>
-      <div class="row cd-controls"><button class="btn ghost" id="abcBlank">Blank puzzle</button></div>
-    </div>
-  </section>
-
-  <!-- COUNTDOWN -->
-  <section id="tab-countdown" hidden>
-    <div class="seg">
-      <button aria-pressed="true" data-cd="letters">Letters</button>
-      <button aria-pressed="false" data-cd="numbers">Numbers</button>
-      <button aria-pressed="false" data-cd="conundrum">Conundrum</button>
-    </div>
-
-    <div id="cd-letters">
-      <div class="cd-board">
-        <div class="cd-tiles" id="cdTiles"></div>
-        <div class="clock" aria-hidden="true"><div id="cdBar"></div></div>
-        <div class="cd-meta"><span id="cdCounts"></span><span id="cdTime"></span></div>
-      </div>
-      <div class="row cd-controls">
-        <button class="btn" id="vowelBtn">Vowel</button>
-        <button class="btn" id="consBtn">Consonant</button>
-      </div>
-      <div class="row cd-controls">
-        <button class="btn ghost" id="randomBtn">Random 9</button>
-        <button class="btn ghost" id="newBtn">New round</button>
-      </div>
-      <div id="cdPlay" hidden>
-        <form class="row" style="margin-top:18px" autocomplete="off" onsubmit="return false">
-          <input class="field" id="cdInput" type="text" placeholder="Your word" autocapitalize="none" spellcheck="false" enterkeyhint="done">
-          <button class="btn" id="cdCheck">Check</button>
-        </form>
-        <div class="verdict" id="cdVerdict" role="status"></div>
-        <div class="row" style="margin-top:12px"><button class="btn ghost" id="revealBtn">Show best words</button></div>
-        <div id="cdOut"></div>
-      </div>
-    </div>
-
-    <div id="cd-conundrum" hidden>
-      <div class="cd-board">
-        <div class="cd-tiles" id="cnTiles"></div>
-        <div class="clock" aria-hidden="true"><div id="cnBar"></div></div>
-        <div class="cd-meta"><span id="cnMeta">Countdown Conundrum</span><span id="cnTime"></span></div>
-      </div>
-      <div class="row cd-controls"><button class="btn" id="cnNew">New conundrum</button></div>
-      <div id="cnPlay" hidden>
-        <form class="row" style="margin-top:18px" autocomplete="off" onsubmit="return false">
-          <input class="field" id="cnInput" type="text" placeholder="The 9-letter word" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="9">
-          <button class="btn" id="cnBuzz">Buzz</button>
-        </form>
-        <div class="verdict" id="cnVerdict" role="status"></div>
-        <div class="row" style="margin-top:12px"><button class="btn ghost" id="cnReveal">Show the answer</button></div>
-      </div>
-      <div id="cnOut"></div>
-    </div>
-
-    <div id="cd-numbers" hidden>
-      <div class="cd-board">
-        <div class="target" id="nTarget" aria-live="polite">000</div>
-        <div class="ntiles" id="nTiles"></div>
-        <div class="clock" aria-hidden="true"><div id="nBar"></div></div>
-        <div class="cd-meta"><span id="nMeta"></span><span id="nTime"></span></div>
-      </div>
-
-      <div id="nPick">
-        <span class="lbl">How many large numbers?</span>
-        <div class="large" id="largeBtns">
-          <button class="btn" data-large="0">0</button><button class="btn" data-large="1">1</button><button class="btn" data-large="2">2</button><button class="btn" data-large="3">3</button><button class="btn" data-large="4">4</button>
-        </div>
-        <details class="more">
-          <summary>Solve numbers from the telly</summary>
-          <div class="nums-own" style="margin-top:12px">
-            <label><span class="lbl">Six numbers</span><input class="field small" id="ownNums" type="text" inputmode="numeric" placeholder="100 25 3 7 2 8"></label>
-            <label><span class="lbl">Target</span><input class="field small" id="ownTarget" type="text" inputmode="numeric" placeholder="573"></label>
-            <button class="btn" id="ownBtn">Solve</button>
-          </div>
-          <div class="verdict no" id="ownMsg"></div>
-        </details>
-      </div>
-
-      <div id="nPlay" hidden>
-        <div class="ops" id="opsRow">
-          <button class="btn" data-op="+" aria-label="add">+</button>
-          <button class="btn" data-op="-" aria-label="subtract">−</button>
-          <button class="btn" data-op="*" aria-label="multiply">×</button>
-          <button class="btn" data-op="/" aria-label="divide">÷</button>
-        </div>
-        <div class="row cd-controls">
-          <button class="btn ghost" id="nUndo">Undo</button>
-          <button class="btn ghost" id="nReset">Start again</button>
-        </div>
-        <p class="hint">Tap a number, then an operation, then another number. Your answer becomes a new tile to keep going with.</p>
-        <div class="verdict" id="nMsg" role="status"></div>
-        <ol class="steps" id="nSteps"></ol>
-        <div class="best" id="nBest"></div>
-        <div class="row cd-controls">
-          <button class="btn ghost" id="nSolve">Show solution</button>
-          <button class="btn ghost" id="nNew">New round</button>
-        </div>
-        <div id="nSolution"></div>
-      </div>
-    </div>
-  </section>
+  <section class="view" id="view-today"></section>
+  <section class="view" id="view-flagle" hidden></section>
+  <section class="view" id="view-finder" hidden></section>
+  <section class="view" id="view-explore" hidden></section>
+  <section class="view" id="view-quiz" hidden></section>
 </main>
+
+<footer class="wrap">
+  <p>Bazza’s Flag Oracle v2. Flag images from flagcdn.com. Colours count the main design, not every speck inside a coat of arms.</p>
+  <p>Vexillology, not vexatiousness. No flags were shagged in the making of this app.</p>
+</footer>
+
+<dialog id="sheet"><div class="sheetin" id="sheetin"></div></dialog>
+
 <script>
-(() => {
-"use strict";
+/* ---------- Data ----------
+code|Name|Capital|Continent|Colours|Layout|Features|Note
+Colours: R red, W white, B blue, Y yellow/gold, G green, K black, O orange
+Layout: h horizontal, v vertical, k canton, n Nordic cross, c centred cross, x diagonal/saltire, t hoist triangle, p plain field + emblem, q blocks, o other
+Features: s star, S sun, m moon, a animal, l plant, w weapon, e emblem/arms, x writing, M map, u Union Jack, c cross
+*/
+const RAW = `dz|Algeria|Algiers|Af|GWR|v|ms|
+ao|Angola|Luanda|Af|RKY|h|sw|The half cog and machete echo the hammer and sickle, standing for industrial and farm workers.
+bj|Benin|Porto-Novo|Af|GYR|q||
+bw|Botswana|Gaborone|Af|BKW|h||The light blue stands for water, specifically rain, which is precious in a dry country.
+bf|Burkina Faso|Ouagadougou|Af|RGY|h|s|
+bi|Burundi|Gitega|Af|RGW|x|s|
+cv|Cabo Verde|Praia|Af|BWRY|h|s|The ten stars stand for the ten main islands.
+cm|Cameroon|Yaoundé|Af|GRY|v|s|
+cf|Central African Republic|Bangui|Af|BWGYR|h|s|
+td|Chad|N’Djamena|Af|BYR|v||Almost identical to Romania’s. Chad’s blue is a touch darker, which is about the only difference.
+km|Comoros|Moroni|Af|YWRBG|t|ms|The four stars and four stripes stand for the islands of the archipelago.
+cg|Republic of the Congo|Brazzaville|Af|GYR|x||
+cd|DR Congo|Kinshasa|Af|BYR|x|s|
+ci|Côte d’Ivoire|Yamoussoukro|Af|OWG|v||Ireland’s flag flipped. Ireland has green by the pole, Côte d’Ivoire has orange.
+dj|Djibouti|Djibouti|Af|BGWR|t|s|
+eg|Egypt|Cairo|Af|RWKY|h|ae|The golden eagle in the middle is the Eagle of Saladin.
+gq|Equatorial Guinea|Malabo|Af|GWRB|t|els|
+er|Eritrea|Asmara|Af|GRBY|t|l|
+sz|Eswatini|Mbabane|Af|BYRKW|h|we|The shield is a traditional Nguni war shield, laid over two spears and a staff.
+et|Ethiopia|Addis Ababa|Af|GYRB|h|s|Its green, yellow and red became the classic pan-African colours, inspired by Ethiopia’s long independence.
+ga|Gabon|Libreville|Af|GYB|h||
+gm|Gambia|Banjul|Af|RBGW|h||The blue stripe stands for the Gambia River, which runs right through the middle of the country.
+gh|Ghana|Accra|Af|RYGK|h|s|Its black star gave the national football team its nickname, the Black Stars.
+gn|Guinea|Conakry|Af|RYG|v||Mali’s flag backwards.
+gw|Guinea-Bissau|Bissau|Af|RYGK|q|s|
+ke|Kenya|Nairobi|Af|KRGW|h|we|The shield and spears are those of the Maasai people.
+ls|Lesotho|Maseru|Af|BWGK|h|e|The black emblem is a mokorotlo, the traditional Basotho straw hat.
+lr|Liberia|Monrovia|Af|RWB|k|s|Modelled on the US flag. Its 11 stripes stand for the signatories of Liberia’s declaration of independence.
+ly|Libya|Tripoli|Af|RKGW|h|ms|From 1977 to 2011 Libya’s flag was plain green, the only single-colour national flag of modern times.
+mg|Madagascar|Antananarivo|Af|WRG|q||
+mw|Malawi|Lilongwe|Af|KRG|h|S|
+ml|Mali|Bamako|Af|GYR|v||
+mr|Mauritania|Nouakchott|Af|RGY|h|ms|The red stripes were added in 2017 to honour those who fought for independence.
+mu|Mauritius|Port Louis|Af|RBYG|h||Four equal horizontal stripes, which is unusual among world flags.
+ma|Morocco|Rabat|Af|RG|p|s|The green five-pointed star is known as the Seal of Solomon.
+mz|Mozambique|Maputo|Af|GKYWR|t|swe|The only national flag with a modern rifle on it: an AK-47 with a bayonet, crossed with a hoe and resting on a book.
+na|Namibia|Windhoek|Af|BRGWY|x|S|
+ne|Niger|Niamey|Af|OWG|h|S|Often mixed up with India’s. Niger has an orange circle where India has a blue wheel, and its flag is nearly square.
+ng|Nigeria|Abuja|Af|GW|v||
+rw|Rwanda|Kigali|Af|BYG|h|S|
+st|São Tomé and Príncipe|São Tomé|Af|GYRK|t|s|The two black stars stand for the two main islands.
+sn|Senegal|Dakar|Af|GYR|v|s|
+sc|Seychelles|Victoria|Af|BYRWG|x||Five bands fan out from the bottom corner, meant to suggest a country moving forward.
+sl|Sierra Leone|Freetown|Af|GWB|h||
+so|Somalia|Mogadishu|Af|BW|p|s|The five points of the star stand for the five regions where Somali people live.
+za|South Africa|Pretoria, Cape Town, Bloemfontein|Af|RBGYKW|t||Adopted in 1994. Its six colours make it one of the most colourful flags with no emblem at all.
+ss|South Sudan|Juba|Af|KRGWBY|t|s|
+sd|Sudan|Khartoum|Af|RWKG|t||
+tz|Tanzania|Dodoma|Af|GYKB|x||
+tg|Togo|Lomé|Af|GYRW|k|s|
+tn|Tunisia|Tunis|Af|RW|p|ms|
+ug|Uganda|Kampala|Af|KYRW|h|ae|The bird is a grey crowned crane, standing on one leg as if stepping forward.
+zm|Zambia|Lusaka|Af|GRKO|o|a|An African fish eagle flies over the stripes, which unusually sit at the far end of the flag.
+zw|Zimbabwe|Harare|Af|GYRKW|t|as|The bird is the Zimbabwe Bird, from soapstone carvings found at the ruins of Great Zimbabwe.
+al|Albania|Tirana|Eu|RK|p|a|The black double-headed eagle goes back to the medieval hero Skanderbeg.
+ad|Andorra|Andorra la Vella|Eu|BYR|v|ea|Without its coat of arms it would be a dead ringer for Chad, Romania and Moldova.
+at|Austria|Vienna|Eu|RW|h||Legend says it comes from a duke’s tunic, soaked in blood everywhere except under his belt.
+by|Belarus|Minsk|Eu|RGW|h||The red and white strip by the pole is a traditional embroidered towel pattern.
+be|Belgium|Brussels|Eu|KYR|v||Officially almost square (13:15), though usually flown in a wider shape.
+ba|Bosnia and Herzegovina|Sarajevo|Eu|BYW|o|s|The yellow triangle is said to represent the shape of the country.
+bg|Bulgaria|Sofia|Eu|WGR|h||
+hr|Croatia|Zagreb|Eu|RWB|h|e|The red and white chequerboard shield is known as the šahovnica.
+cy|Cyprus|Nicosia|Eu|WOG|p|Ml|One of only two national flags with a map of the country on it. The copper colour is a nod to the island’s name.
+cz|Czechia|Prague|Eu|WRB|t||Kept the old Czechoslovakian flag when the country split in 1993.
+dk|Denmark|Copenhagen|Eu|RW|n||The Dannebrog is often called the oldest national flag still in use. Every Nordic cross copies it.
+ee|Estonia|Tallinn|Eu|BKW|h||
+fi|Finland|Helsinki|Eu|WB|n||Blue for the lakes and sky, white for the snow.
+fr|France|Paris|Eu|BWR|v||The Tricolore, from the French Revolution, inspired dozens of other tricolours.
+de|Germany|Berlin|Eu|KRY|h||
+gr|Greece|Athens|Eu|BW|k|c|Its nine stripes are often said to match the nine syllables of the Greek motto ‘Freedom or Death’.
+hu|Hungary|Budapest|Eu|RWG|h||
+is|Iceland|Reykjavík|Eu|BWR|n||
+ie|Ireland|Dublin|Eu|GWO|v||Green and orange for the two traditions on the island, with white for peace between them.
+it|Italy|Rome|Eu|GWR|v||
+xk|Kosovo|Pristina|Eu|BYW|p|Ms|One of only two national flags with a map of the country. The six stars stand for its main ethnic groups.
+lv|Latvia|Riga|Eu|RW|h||The red is a deep carmine, sometimes called Latvian red.
+li|Liechtenstein|Vaduz|Eu|BRY|h|e|At the 1936 Olympics it turned out to be identical to Haiti’s flag, so a gold crown was added in 1937.
+lt|Lithuania|Vilnius|Eu|YGR|h||
+lu|Luxembourg|Luxembourg|Eu|RWB|h||Like the Dutch flag, but with a lighter blue and a longer shape.
+mt|Malta|Valletta|Eu|WR|v|c|The George Cross in the corner was awarded to the whole island by King George VI in 1942.
+md|Moldova|Chișinău|Eu|BYR|v|ea|
+mc|Monaco|Monaco|Eu|RW|h||Same design as Indonesia’s, but Monaco’s is squarer (4:5 against 2:3).
+me|Montenegro|Podgorica|Eu|RY|p|ea|
+nl|Netherlands|Amsterdam|Eu|RWB|h||Originally orange, white and blue, after William of Orange.
+mk|North Macedonia|Skopje|Eu|RY|o|S|
+no|Norway|Oslo|Eu|RWB|n||
+pl|Poland|Warsaw|Eu|WR|h||Turn it upside down and you get Indonesia or Monaco.
+pt|Portugal|Lisbon|Eu|GRY|v|e|The gold armillary sphere celebrates Portugal’s age of sea exploration.
+ro|Romania|Bucharest|Eu|BYR|v||
+ru|Russia|Moscow|Eu|WBR|h||
+sm|San Marino|San Marino|Eu|WB|h|e|
+rs|Serbia|Belgrade|Eu|RBW|h|ea|
+sk|Slovakia|Bratislava|Eu|WBR|h|ec|
+si|Slovenia|Ljubljana|Eu|WBR|h|es|The coat of arms shows Triglav, the country’s highest mountain.
+es|Spain|Madrid|Eu|RY|h|e|The yellow stripe is twice the height of each red one.
+se|Sweden|Stockholm|Eu|BY|n||
+ch|Switzerland|Bern|Eu|RW|c||One of only two square national flags. The other is Vatican City’s.
+ua|Ukraine|Kyiv|Eu|BY|h||Often read as blue sky over golden wheat fields.
+gb|United Kingdom|London|Eu|BWR|o|u|The Union Jack layers the crosses of St George, St Andrew and St Patrick. Wales isn’t represented at all.
+va|Vatican City|Vatican City|Eu|YW|v|e|Square, like Switzerland’s. The crossed keys are the keys of Saint Peter.
+gb-eng|England|London|Eu|WR|c||The St George’s Cross.
+gb-sct|Scotland|Edinburgh|Eu|BW|x||The Saltire. Legend dates it to a battle in 832 AD, which would make it one of the oldest flags in Europe.
+gb-wls|Wales|Cardiff|Eu|WGR|h|a|Y Ddraig Goch, the red dragon.
+af|Afghanistan|Kabul|As|KRGW|v|ex|This is the Islamic Republic design. Since 2021 the Taliban government has used a white flag with the Shahada written on it.
+am|Armenia|Yerevan|As|RBO|h||
+az|Azerbaijan|Baku|As|BRGW|h|ms|
+bh|Bahrain|Manama|As|WR|o||The five white points stand for the five pillars of Islam.
+bd|Bangladesh|Dhaka|As|GR|p|S|The red disc sits slightly towards the pole, so it looks centred when the flag is flying.
+bt|Bhutan|Thimphu|As|YOW|x|a|The white dragon is Druk, the Thunder Dragon, which gives Bhutan its name in its own language.
+bn|Brunei|Bandar Seri Begawan|As|YWKR|x|exm|
+kh|Cambodia|Phnom Penh|As|BRW|h|e|One of very few national flags with a building on it: the temple of Angkor Wat.
+cn|China|Beijing|As|RY|p|s|
+ge|Georgia|Tbilisi|As|WR|c||The five-cross design goes back to the medieval kingdom of Georgia.
+in|India|New Delhi|As|OWGB|h|e|The blue wheel is the Ashoka Chakra, with 24 spokes.
+id|Indonesia|Jakarta|As|RW|h||
+ir|Iran|Tehran|As|GWR|h|ex|‘Allahu Akbar’ is written 22 times along the edges of the white stripe.
+iq|Iraq|Baghdad|As|RWKG|h|x|
+il|Israel|Jerusalem|As|WB|h|s|The blue stripes are based on the design of a Jewish prayer shawl.
+jp|Japan|Tokyo|As|WR|p|S|The Hinomaru, the ‘circle of the sun’.
+jo|Jordan|Amman|As|KWGR|t|s|The seven points on the star stand for the seven verses of the opening chapter of the Quran.
+kz|Kazakhstan|Astana|As|BY|p|Sa|A golden steppe eagle soars under the sun, with a traditional ornament by the pole.
+kw|Kuwait|Kuwait City|As|GWRK|t||
+kg|Kyrgyzstan|Bishkek|As|RY|p|S|The sun has 40 rays, one for each of the 40 tribes united by the hero Manas. Inside it is the roof of a yurt.
+la|Laos|Vientiane|As|RBW|h|m|The white disc is the full moon over the Mekong River.
+lb|Lebanon|Beirut|As|RWG|h|l|The cedar tree has been a symbol of Lebanon since biblical times.
+my|Malaysia|Kuala Lumpur|As|RWBY|k|ms|Known as the Jalur Gemilang, ‘Stripes of Glory’. It has 14 stripes.
+mv|Maldives|Malé|As|RGW|p|m|
+mn|Mongolia|Ulaanbaatar|As|RBY|v|e|The gold symbol is the Soyombo, an emblem of fire, sun, moon and earth.
+mm|Myanmar|Naypyidaw|As|YGRW|h|s|
+np|Nepal|Kathmandu|As|RBW|o|mS|The only national flag that isn’t a rectangle. Its two pennants hold a moon and a sun.
+kp|North Korea|Pyongyang|As|BWR|h|s|
+om|Oman|Muscat|As|WRG|o|we|The emblem is a khanjar dagger over two crossed swords.
+pk|Pakistan|Islamabad|As|GW|v|ms|
+ps|Palestine|East Jerusalem (proclaimed)|As|KWGR|t||Uses the pan-Arab colours, like Jordan, Sudan and Kuwait.
+ph|Philippines|Manila|As|BRWY|t|Ss|Flown with the red stripe on top in times of war.
+qa|Qatar|Doha|As|WR|o||The widest national flag, at 11:28. The maroon is said to come from red dye darkening in the sun.
+sa|Saudi Arabia|Riyadh|As|GW|p|xw|Because it carries the Shahada, it is never flown at half-mast.
+sg|Singapore|Singapore|As|RW|h|ms|
+kr|South Korea|Seoul|As|WRBK|p|e|The red and blue Taegeuk is surrounded by four trigrams for heaven, earth, water and fire.
+lk|Sri Lanka|Sri Jayawardenepura Kotte|As|YROG|o|awl|A golden lion holding a sword, with a bo leaf in each corner.
+sy|Syria|Damascus|As|GWKR|h|s|Since 2025 Syria has used the green, white and black independence flag with three red stars. Older sources show red, white and black with two green stars.
+tj|Tajikistan|Dushanbe|As|RWGY|h|es|
+th|Thailand|Bangkok|As|RWB|h||
+tl|Timor-Leste|Dili|As|RYKW|t|s|
+tr|Türkiye|Ankara|As|RW|p|ms|
+tm|Turkmenistan|Ashgabat|As|GRW|o|ms|The red strip holds five traditional carpet designs, making it one of the most detailed flags in the world.
+ae|United Arab Emirates|Abu Dhabi|As|RGWK|o||
+uz|Uzbekistan|Tashkent|As|BWGR|h|ms|The twelve stars stand for the months of the year.
+vn|Vietnam|Hanoi|As|RY|p|s|
+ye|Yemen|Sana’a|As|RWK|h||
+tw|Taiwan|Taipei|As|RBW|k|S|The white sun has twelve rays, one for each two-hour period of the day.
+ag|Antigua and Barbuda|St John’s|NA|RKBWY|t|S|The rising sun marks the dawn of a new era.
+bs|The Bahamas|Nassau|NA|BYK|t||Aquamarine for the sea, gold for the sand.
+bb|Barbados|Bridgetown|NA|BYK|v|w|The broken trident stands for the break from colonial rule.
+bz|Belize|Belmopan|NA|BRW|h|el|One of very few national flags to show people: two woodcutters either side of the shield.
+ca|Canada|Ottawa|NA|RW|v|l|The maple leaf flag was adopted in 1965, replacing a design with the Union Jack on it.
+cr|Costa Rica|San José|NA|BWR|h|e|
+cu|Cuba|Havana|NA|BWR|t|s|
+dm|Dominica|Roseau|NA|GYKWR|c|as|The parrot is the sisserou, which makes Dominica’s one of the very few flags with purple in it.
+do|Dominican Republic|Santo Domingo|NA|BRW|c|ex|The only national flag with a picture of a Bible on it.
+sv|El Salvador|San Salvador|NA|BW|h|ex|
+gd|Grenada|St George’s|NA|RYG|x|sl|There’s a nutmeg by the pole, as Grenada is famous for growing it.
+gt|Guatemala|Guatemala City|NA|BW|v|aewl|The bird is a quetzal, which also gives its name to the currency.
+ht|Haiti|Port-au-Prince|NA|BR|h|ewl|
+hn|Honduras|Tegucigalpa|NA|BW|h|s|
+jm|Jamaica|Kingston|NA|GYK|x||The only national flag with no red, white or blue at all.
+mx|Mexico|Mexico City|NA|GWR|v|ael|An eagle eating a snake on a cactus, from the Aztec legend of the founding of Tenochtitlan.
+ni|Nicaragua|Managua|NA|BW|h|e|
+pa|Panama|Panama City|NA|WRB|q|s|
+kn|Saint Kitts and Nevis|Basseterre|NA|GRKYW|x|s|
+lc|Saint Lucia|Castries|NA|BWKY|o||The triangles represent the Pitons, the island’s twin volcanic peaks.
+vc|Saint Vincent and the Grenadines|Kingstown|NA|BYG|v||The three green diamonds form a V for Vincent.
+tt|Trinidad and Tobago|Port of Spain|NA|RKW|x||
+us|United States|Washington, D.C.|NA|RWB|k|s|50 stars for the states, 13 stripes for the original colonies.
+ar|Argentina|Buenos Aires|SA|BWY|h|S|The Sun of May has a face, just like the one on Uruguay’s flag.
+bo|Bolivia|Sucre|SA|RYG|h|e|
+br|Brazil|Brasília|SA|GYBW|o|sx|The stars show the night sky over Rio de Janeiro on 15 November 1889. The motto means ‘Order and Progress’.
+cl|Chile|Santiago|SA|WRB|k|s|Often confused with the Texas state flag, where the blue runs the full height.
+co|Colombia|Bogotá|SA|YBR|h||The yellow takes up the whole top half.
+ec|Ecuador|Quito|SA|YBR|h|ea|Colombia’s layout, with a condor-topped coat of arms in the middle.
+gy|Guyana|Georgetown|SA|GWYKR|t||Known as the Golden Arrowhead.
+py|Paraguay|Asunción|SA|RWB|h|es|The only national flag with a different emblem on each side.
+pe|Peru|Lima|SA|RW|v||
+sr|Suriname|Paramaribo|SA|GWRY|h|s|
+uy|Uruguay|Montevideo|SA|WBY|k|S|
+ve|Venezuela|Caracas|SA|YBRW|h|s|The eighth star was added in 2006.
+au|Australia|Canberra|Oc|BWR|k|us|The big seven-pointed star is the Commonwealth Star. The rest make up the Southern Cross.
+fj|Fiji|Suva|Oc|BWR|k|ueal|
+ki|Kiribati|South Tarawa|Oc|RYBW|o|aS|A frigatebird flies over a sun rising from the Pacific.
+mh|Marshall Islands|Majuro|Oc|BOW|x|s|
+fm|Micronesia|Palikir|Oc|BW|p|s|
+nr|Nauru|Yaren (de facto)|Oc|BYW|h|s|The star sits just below the yellow line, showing Nauru just south of the Equator. Its 12 points stand for the 12 original tribes.
+nz|New Zealand|Wellington|Oc|BRW|k|us|Australia’s near-twin. New Zealand has four red stars with white edges, Australia has six white ones.
+pw|Palau|Ngerulmud|Oc|BY|p|m|The yellow moon sits slightly towards the pole, like Bangladesh’s disc.
+pg|Papua New Guinea|Port Moresby|Oc|RKYW|x|as|The bird is a bird of paradise. The design came from a 15-year-old schoolgirl’s entry in 1971.
+ws|Samoa|Apia|Oc|RBW|k|s|
+sb|Solomon Islands|Honiara|Oc|BGYW|x|s|
+to|Tonga|Nukuʻalofa|Oc|RW|k|c|Tonga’s constitution says the flag can never be changed.
+tv|Tuvalu|Funafuti|Oc|BWRY|k|us|The yellow stars are a map of the islands.
+vu|Vanuatu|Port Vila|Oc|RGKY|t|l|The yellow emblem is a curled boar’s tusk, a symbol of wealth, around two crossed namele leaves.`;
 
-const WORDS_URL  = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt";
-const COMMON_URL = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt";
-const DICT_URL   = "https://api.dictionaryapi.dev/api/v2/entries/en/";
-const WIKT_URL   = "https://en.wiktionary.org/api/rest_v1/page/definition/";
-const CACHE_NAME = "bazza-dict-lists-v1";
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const wait = ms => new Promise(r => setTimeout(r, ms));
-const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const FLAGS = RAW.trim().split('\n').map(line => {
+  const [code,name,capital,cont,cols,layout,feats,note] = line.split('|');
+  return {code,name,capital,cont,cols:[...cols],layout,feats:[...(feats||'')],note:(note||'').trim()};
+});
+const BY = Object.fromEntries(FLAGS.map(f => [f.code,f]));
+const N = FLAGS.length;
 
-/* ---------- storage (never fatal) ---------- */
+const COL = {R:['Red','#CE1126'],W:['White','#FFFFFF'],B:['Blue','#1F4FA3'],Y:['Yellow or gold','#F2C200'],G:['Green','#138A43'],K:['Black','#121212'],O:['Orange','#F08A1C']};
+const CORDER = ['R','W','B','Y','G','K','O'];
+const LAYOUTS = {h:'Horizontal stripes',v:'Vertical stripes',k:'Box in the top corner',n:'Nordic cross',c:'Centred cross',x:'Diagonal or saltire',t:'Triangle at the pole side',p:'Plain field with an emblem',q:'Blocks of colour',o:'Something else entirely'};
+const FEATS = {s:'Star',S:'Sun',m:'Moon or crescent',a:'Animal',l:'Plant or tree',w:'Weapon',e:'Coat of arms or emblem',x:'Writing',M:'Map',u:'Union Jack',c:'Cross'};
+const CONTS = {Af:'Africa',As:'Asia',Eu:'Europe',NA:'North America',SA:'South America',Oc:'Oceania'};
+const TWINS = [['td','ro','ad','md'],['id','mc','pl'],['ie','ci','it'],['it','mx'],['nl','lu'],['au','nz'],['sn','ml','gn','cm'],['co','ec','ve'],['ru','si','sk','rs'],['ne','in'],['jo','ps','sd','kw'],['us','lr','my'],['hn','ni','sv'],['qa','bh'],['at','lv'],['eg','ye','iq','sy'],['tr','tn'],['no','is'],['gb-eng','ge']];
+
+const svgUrl = c => `https://flagcdn.com/${c}.svg`;
+const pngUrl = (c,w=160) => `https://flagcdn.com/w${w}/${c}.png`;
+const hasFeat = (f,k) => f.feats.includes(k) || (k==='c' && (f.layout==='n'||f.layout==='c'));
+const twinsOf = c => [...new Set(TWINS.filter(g=>g.includes(c)).flat())].filter(x=>x!==c);
+const featList = f => Object.keys(FEATS).filter(k=>hasFeat(f,k)).map(k=>FEATS[k]);
+const $ = s => document.querySelector(s);
+
+/* Storage (best scores, last tab) */
 const store = {
-  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  get(k,d){try{const v=localStorage.getItem('bfo.'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('bfo.'+k,JSON.stringify(v))}catch(e){}}
 };
 
-/* ---------- 30-second clock ---------- */
-function makeClock(bar, label, secs){
-  let t = null;
-  return {
-    start(onEnd){
-      this.stop();
-      let left = secs;
-      bar.style.width = "0%"; label.textContent = left + "s";
-      t = setInterval(() => {
-        left--;
-        bar.style.width = ((secs - left) / secs * 100) + "%";
-        label.textContent = left > 0 ? left + "s" : "Time's up";
-        if (left <= 0) { this.stop(); if (onEnd) onEnd(); }
-      }, 1000);
-    },
-    stop(){ clearInterval(t); t = null; },
-    reset(){ this.stop(); bar.style.width = "0"; label.textContent = ""; }
-  };
+/* Random helpers */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,rnd=Math.random){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---------- Shared card ---------- */
+function swatchesHTML(f){
+  return `<div class="swatches">${f.cols.map(c=>`<span class="sw"><i style="background:${COL[c][1]}"></i>${COL[c][0]}</span>`).join('')}</div>`;
+}
+function factsHTML(f){
+  const feats = featList(f);
+  const tw = twinsOf(f.code);
+  return `
+  <h2 class="name">${f.name}</h2>
+  <p class="sub">Capital: ${f.capital}. ${CONTS[f.cont]}.</p>
+  ${swatchesHTML(f)}
+  <dl class="facts">
+    <div><dt>Layout</dt><dd>${LAYOUTS[f.layout]}</dd></div>
+    <div><dt>Features</dt><dd>${feats.length?feats.join(', '):'None, just colours'}</dd></div>
+    ${tw.length?`<div><dt>Easily confused with</dt><dd><div class="twins">${tw.map(c=>`<button class="mini" data-open="${c}"><img src="${pngUrl(c,80)}" alt="" loading="lazy">${BY[c].name}</button>`).join('')}</div></dd></div>`:''}
+  </dl>
+  ${f.note?`<p class="note">${f.note}</p>`:''}`;
 }
 
-/* ---------- word lists ---------- */
-let WORDS = null, WORDSET = null, RANK = null, listsPromise = null;
-
-async function getText(url){
-  if ("caches" in window) {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const hit = await cache.match(url);
-      if (hit) return await hit.text();
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      try { await cache.put(url, res.clone()); } catch {}
-      return await res.text();
-    } catch (e) { /* fall through */ }
-  }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  return res.text();
+/* ---------- Detail sheet ---------- */
+const sheet = $('#sheet');
+function openSheet(code){
+  const f = BY[code]; if(!f) return;
+  $('#sheetin').innerHTML = `<button class="closex" data-close>Close</button>
+    <img class="flagbig" src="${svgUrl(f.code)}" alt="Flag of ${f.name}">${factsHTML(f)}`;
+  if(!sheet.open) sheet.showModal();
+  $('#sheetin').scrollTop = 0; sheet.scrollTop = 0;
 }
-function loadLists(){
-  if (!listsPromise) {
-    listsPromise = Promise.all([getText(WORDS_URL), getText(COMMON_URL)]).then(([all, common]) => {
-      WORDS = all.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(w => /^[a-z]+$/.test(w));
-      WORDSET = new Set(WORDS);
-      RANK = new Map();
-      common.split(/\r?\n/).forEach((w, i) => { w = w.trim().toLowerCase(); if (w && !RANK.has(w)) RANK.set(w, i); });
-    }).catch(e => { listsPromise = null; throw e; });
-  }
-  return listsPromise;
-}
-async function needLists(out){
-  if (WORDS) return true;
-  out.innerHTML = `<p class="status">Loading the word list (about 4 MB, first time only)…</p>`;
-  try { await loadLists(); return true; }
-  catch { out.innerHTML = `<p class="status err">Couldn't download the word list. Check your connection and try again.</p>`; return false; }
-}
-const rankOf = w => RANK.has(w) ? RANK.get(w) : Infinity;
-
-/* ---------- shared result rendering ---------- */
-function wordChip(r){
-  let html = "";
-  for (let i = 0; i < r.w.length; i++) html += r.blanks && r.blanks.includes(i) ? `<mark>${r.w[i]}</mark>` : r.w[i];
-  const rare = r.rank === Infinity ? " rare" : "";
-  return `<button class="chip${rare}" data-word="${r.w}" title="${rare ? "Uncommon word" : "Common word"}">${html}</button>`;
-}
-const KEY_TEXT = "Bold ones are common; faded ones are obscure. Tap any word for its definition.";
-
-function renderGroups(target, results, total, opts = {}){
-  const cap = opts.cap || 60;
-  if (!results.length) { target.innerHTML = `<p class="status">No words found. Try more letters, a blank (?), or a shorter minimum length.</p>`; return; }
-  const groups = new Map();
-  for (const r of results) { if (!groups.has(r.w.length)) groups.set(r.w.length, []); groups.get(r.w.length).push(r); }
-  let html = `<p class="status">${results.length.toLocaleString("en-GB")} words. ${opts.note || ""}${KEY_TEXT}</p>`;
-  let g = 0;
-  for (const [len, list] of groups) {
-    if (opts.maxGroups && g++ >= opts.maxGroups) break;
-    const label = len === total ? `${len} letters, uses them all` : `${len} letters`;
-    html += `<div class="group"><h3>${label} <span>(${list.length})</span></h3><div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>`;
-    if (list.length > cap) html += `<button class="btn ghost more" data-more="${len}">Show all ${list.length}</button>`;
-    html += `</div>`;
-  }
-  target.innerHTML = html;
-  target.querySelectorAll("[data-more]").forEach(btn => btn.addEventListener("click", () => {
-    btn.previousElementSibling.innerHTML = groups.get(+btn.dataset.more).map(wordChip).join("");
-    btn.remove();
-  }));
-}
-
-/* ---------- tabs ---------- */
-function showTab(name){
-  if (!$("tab-" + name)) name = "define";
-  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  ["define","unscramble","crossword","countdown"].forEach(t => $("tab-" + t).hidden = t !== name);
-  store.set("bd-tab", name);
-  if (name !== "define") loadLists().catch(() => {});
-}
-document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
-
-document.addEventListener("click", e => {
-  const chip = e.target.closest("[data-word]");
-  if (!chip) return;
-  showTab("define");
-  $("defineInput").value = chip.dataset.word;
-  define(chip.dataset.word);
-  window.scrollTo({ top: 0 });
+sheet.addEventListener('click', e => { if(e.target===sheet) sheet.close(); });
+document.addEventListener('click', e => {
+  const o = e.target.closest('[data-open]'); if(o){ openSheet(o.dataset.open); return; }
+  if(e.target.closest('[data-close]')) sheet.close();
+  const g = e.target.closest('[data-goto]'); if(g) showTab(g.dataset.goto);
 });
 
-/* ================= DEFINE ================= */
-let recent = store.get("bd-recent", []);
-function renderRecent(){
-  $("recentWrap").hidden = !recent.length;
-  $("recentChips").innerHTML = recent.map(w => `<button class="chip" data-word="${esc(w)}">${esc(w)}</button>`).join("");
+/* ---------- Tabs ---------- */
+function showTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===t));
+  ['today','flagle','finder','explore','quiz'].forEach(v=>$('#view-'+v).hidden = v!==t);
+  if(t==='flagle' && dayNum()!==FL.dn){ flagleLoad(); renderFlagle(); }
+  store.set('tab',t);
+  window.scrollTo(0,0);
 }
-function addRecent(w){
-  recent = [w, ...recent.filter(x => x !== w)].slice(0, 20);
-  store.set("bd-recent", recent); renderRecent();
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+
+/* ---------- Today ---------- */
+const ORDER = shuffle(FLAGS.map((_,i)=>i), mulberry32(1973));
+let dayOffset = 0;
+const dayNum = (d=new Date()) => Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
+const fotdFor = dn => FLAGS[ORDER[((dn%N)+N)%N]];
+function flagForOffset(off){
+  const d = new Date(); d.setDate(d.getDate()+off);
+  const dn = Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
+  return {date:d, f:FLAGS[ORDER[((dn%N)+N)%N]]};
+}
+function renderToday(){
+  const {date,f} = flagForOffset(dayOffset);
+  const label = date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const v = $('#view-today');
+  v.innerHTML = `
+    <div class="daybar">
+      <p class="date">${dayOffset===0?'Flag of the day, ':''}${label}</p>
+      <div class="row">
+        <button class="btn ghost" id="prevDay" aria-label="Previous day">Earlier</button>
+        <button class="btn ghost" id="nextDay" ${dayOffset===0?'disabled':''} aria-label="Next day">Later</button>
+      </div>
+    </div>
+    <div class="hero">
+      <div class="pole" aria-hidden="true"></div>
+      <div class="cloth" id="cloth" style="--flag:url('${svgUrl(f.code)}')">
+        <img src="${svgUrl(f.code)}" alt="Flag of ${f.name}" id="heroImg">
+        <span class="shine" aria-hidden="true"><span class="bands"></span></span>
+      </div>
+    </div>
+    ${factsHTML(f)}
+    <div class="row" style="margin-top:22px">
+      ${dayOffset!==0?'<button class="btn" id="backToday">Back to today</button>':''}
+      <button class="btn ${dayOffset!==0?'ghost':''}" id="randomFlag">Show me a random flag</button>
+      <button class="btn ghost" data-goto="flagle">Play today’s Flagle</button>
+    </div>`;
+  const img = $('#heroImg');
+  const fit = () => { if(img.naturalWidth && img.naturalHeight && img.naturalWidth/img.naturalHeight < 1.25) $('#cloth').classList.add('squarish'); };
+  img.complete ? fit() : img.addEventListener('load',fit);
+  $('#prevDay').onclick = () => { dayOffset--; renderToday(); };
+  $('#nextDay').onclick = () => { if(dayOffset<0){ dayOffset++; renderToday(); } };
+  const bt = $('#backToday'); if(bt) bt.onclick = () => { dayOffset=0; renderToday(); };
+  $('#randomFlag').onclick = () => openSheet(pick(FLAGS).code);
 }
 
-// Saved definitions, so repeat look-ups are instant
-let defCache = store.get("bd-defs", {});
-function cacheDef(word, entry){
-  defCache[word] = { ...entry, t: Date.now() };
-  const keys = Object.keys(defCache);
-  if (keys.length > 150) keys.sort((a, b) => defCache[a].t - defCache[b].t).slice(0, keys.length - 150).forEach(k => delete defCache[k]);
-  store.set("bd-defs", defCache);
-}
-
-const stripHTML = html => { const t = document.createElement("template"); t.innerHTML = html || ""; return t.content.textContent.trim(); };
-async function fetchJSON(url, ms = 8000){
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    let data = null;
-    try { data = await res.json(); } catch {}
-    return { status: res.status, ok: res.ok, data };
-  } finally { clearTimeout(timer); }
-}
-function slotsToList(map){
-  return [...map].filter(([, v]) => v.defs.length).map(([pos, v]) => ({ pos, defs: v.defs, syn: [...v.syn], ant: [...v.ant] }));
-}
-
-async function fromFreeDict(word){
-  const { status, ok, data } = await fetchJSON(DICT_URL + encodeURIComponent(word));
-  if (status === 404) return null;
-  if (!ok || !Array.isArray(data)) throw new Error("Free Dictionary API returned " + status);
-  const phon = data.map(d => d.phonetic).find(Boolean) || (data.flatMap(d => d.phonetics || []).find(p => p.text) || {}).text || "";
-  const audios = data.flatMap(d => d.phonetics || []).map(p => p.audio).filter(Boolean);
-  const byPos = new Map();
-  for (const entry of data) for (const m of entry.meanings || []) {
-    const key = m.partOfSpeech || "other";
-    if (!byPos.has(key)) byPos.set(key, { defs: [], syn: new Set(), ant: new Set() });
-    const slot = byPos.get(key);
-    (m.definitions || []).forEach(d => {
-      slot.defs.push({ text: d.definition, ex: d.example || "" });
-      (d.synonyms || []).forEach(s => slot.syn.add(s));
-      (d.antonyms || []).forEach(s => slot.ant.add(s));
-    });
-    (m.synonyms || []).forEach(s => slot.syn.add(s));
-    (m.antonyms || []).forEach(s => slot.ant.add(s));
+/* ---------- Explore ---------- */
+const F = {cols:new Set(), colMode:'all', ncol:null, layout:null, feats:new Set(), cont:null};
+function matches(f){
+  if(F.cont && f.cont!==F.cont) return false;
+  if(F.layout && f.layout!==F.layout) return false;
+  for(const k of F.feats) if(!hasFeat(f,k)) return false;
+  if(F.ncol!==null){ if(F.ncol===6 ? f.cols.length<6 : f.cols.length!==F.ncol) return false; }
+  if(F.cols.size){
+    if(F.colMode==='all'){ for(const c of F.cols) if(!f.cols.includes(c)) return false; }
+    else { if(!f.cols.every(c=>F.cols.has(c))) return false; }
   }
-  return {
-    word: data[0].word || word, phon,
-    audio: audios.find(a => /-uk\.mp3$/.test(a)) || audios[0] || "",
-    meanings: slotsToList(byPos),
-    sources: [...new Set(data.flatMap(d => d.sourceUrls || []))],
-    credit: "Definitions from Wiktionary (CC BY-SA) via Free Dictionary API"
-  };
+  return true;
 }
-async function fromWiktionary(word){
-  const { status, ok, data } = await fetchJSON(WIKT_URL + encodeURIComponent(word));
-  if (status === 404) return null;
-  if (!ok || !data) throw new Error("Wiktionary returned " + status);
-  const byPos = new Map();
-  for (const sec of data.en || []) {
-    const key = (sec.partOfSpeech || "other").toLowerCase();
-    if (!byPos.has(key)) byPos.set(key, { defs: [], syn: new Set(), ant: new Set() });
-    for (const d of sec.definitions || []) {
-      const text = stripHTML(d.definition);
-      if (!text) continue;
-      const ex = (d.parsedExamples && d.parsedExamples[0] && stripHTML(d.parsedExamples[0].example))
-              || (d.examples && stripHTML(d.examples[0])) || "";
-      byPos.get(key).defs.push({ text, ex });
-    }
-  }
-  const meanings = slotsToList(byPos);
-  if (!meanings.length) return null;
-  return { word, phon: "", audio: "", meanings,
-    sources: ["https://en.wiktionary.org/wiki/" + encodeURIComponent(word)],
-    credit: "Definitions from Wiktionary (CC BY-SA)" };
+function chip(label,pressed,data,sw){
+  return `<button class="chip" aria-pressed="${pressed}" ${data}>${sw?`<i style="background:${sw}"></i>`:''}${label}</button>`;
 }
+function renderExplore(){
+  const list = FLAGS.filter(matches).sort((a,b)=>a.name.localeCompare(b.name));
+  const n = list.length;
+  const anyFilter = F.cols.size||F.ncol!==null||F.layout||F.feats.size||F.cont;
 
-let defineSeq = 0;
-async function define(raw){
-  const word = raw.trim().toLowerCase();
-  if (!word) return;
-  const seq = ++defineSeq;
-  const out = $("defineOut");
+  // Colour league over current results
+  const colCounts = CORDER.map(c=>[c, list.filter(f=>f.cols.includes(c)).length]).sort((a,b)=>b[1]-a[1]);
+  const top = colCounts[0];
+  const nCounts = [1,2,3,4,5,6].map(k=>[k, list.filter(f=>k===6?f.cols.length>=6:f.cols.length===k).length]);
+  const pct = x => n ? Math.round(x/n*100) : 0;
 
-  let entry = defCache[word] || null;
-  let bothFailed = false;
-  if (!entry) {
-    out.innerHTML = `<p class="status">Looking up “${esc(word)}”…</p>`;
-    // Ask both at once. Prefer Free Dictionary (it has pronunciation) if it answers quickly.
-    const settle = p => p.then(r => ({ r }), e => ({ e }));
-    const pFree = settle(fromFreeDict(word));
-    const pWikt = settle(fromWiktionary(word));
-    const quick = await Promise.race([pFree, wait(2500).then(() => null)]);
-    if (quick && quick.r) entry = quick.r;
-    else {
-      const w = await pWikt;
-      if (w.r) entry = w.r;
-      else {
-        const f = quick || await pFree;
-        if (f.r) entry = f.r;
-        else bothFailed = !!(f.e && w.e);
-      }
-    }
-    if (entry) cacheDef(word, entry);
-  }
-  if (seq !== defineSeq) return;
+  $('#view-explore').innerHTML = `
+    <p class="count">${n}</p>
+    <p class="countsub">${n===1?'flag matches':'flags match'}${anyFilter?'':` (the full set: 193 UN members, plus Vatican City, Palestine, Kosovo, Taiwan, England, Scotland and Wales)`}.</p>
+    ${anyFilter?`<button class="btn ghost" id="resetF" style="margin-top:8px">Clear all filters</button>`:''}
 
-  const listNote = WORDSET ? `<div class="inlist">${WORDSET.has(word) ? "Valid in the anagram word list." : "Not in the anagram word list."}</div>` : "";
-  if (!entry) {
-    out.innerHTML = bothFailed
-      ? `<p class="status err">Couldn't reach either dictionary. Check your connection and try again.</p>`
-      : `<div class="entry"><div class="headword"><h2>${esc(word)}</h2></div>${listNote}
-         <p class="status">No definition found for “${esc(word)}”. Try the base form (singular, or without -ed / -ing).</p></div>`;
-    return;
-  }
-  addRecent(word);
+    <div class="fgroup"><h3>Colours</h3>
+      <div class="chips">${CORDER.map(c=>chip(COL[c][0],F.cols.has(c),`data-col="${c}"`,COL[c][1])).join('')}</div>
+      <div class="seg" role="group" aria-label="Colour matching">
+        <button data-cmode="all" aria-pressed="${F.colMode==='all'}">Uses all of these</button>
+        <button data-cmode="only" aria-pressed="${F.colMode==='only'}">Uses only these</button>
+      </div>
+    </div>
+    <div class="fgroup"><h3>Number of colours</h3>
+      <div class="chips">${[1,2,3,4,5,6].map(k=>chip(k===6?'6 or more':String(k),F.ncol===k,`data-ncol="${k}"`)).join('')}</div>
+    </div>
+    <div class="fgroup"><h3>Layout</h3>
+      <div class="chips">${Object.entries(LAYOUTS).map(([k,v])=>chip(v,F.layout===k,`data-layout="${k}"`)).join('')}</div>
+    </div>
+    <div class="fgroup"><h3>Has a</h3>
+      <div class="chips">${Object.entries(FEATS).map(([k,v])=>chip(v,F.feats.has(k),`data-feat="${k}"`)).join('')}</div>
+    </div>
+    <div class="fgroup"><h3>Continent</h3>
+      <div class="chips">${Object.entries(CONTS).map(([k,v])=>chip(v,F.cont===k,`data-cont="${k}"`)).join('')}</div>
+    </div>
 
-  const nymChips = list => list.slice(0, 16).map(s => `<button class="chip" data-word="${esc(s)}">${esc(s)}</button>`).join("");
-  let html = `<div class="entry"><div class="headword"><h2>${esc(entry.word)}</h2>`;
-  if (entry.phon) html += `<span class="phon">${esc(entry.phon)}</span>`;
-  if (entry.audio) html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button>`;
-  html += `</div>${listNote}`;
-  for (const m of entry.meanings) {
-    html += `<div class="pos">${esc(m.pos)}</div><ol class="defs">`;
-    html += m.defs.map(d => `<li>${esc(d.text)}${d.ex ? `<span class="ex">“${esc(d.ex)}”</span>` : ""}</li>`).join("");
-    html += `</ol>`;
-    if (m.syn.length) html += `<div class="nyms">Similar<div class="chips">${nymChips(m.syn)}</div></div>`;
-    if (m.ant.length) html += `<div class="nyms">Opposite<div class="chips">${nymChips(m.ant)}</div></div>`;
-  }
-  if (entry.sources.length) html += `<p class="source">${entry.credit}: ${entry.sources.map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(decodeURIComponent(s.replace(/^https?:\/\//, "")))}</a>`).join(", ")}</p>`;
-  html += `</div>`;
-  out.innerHTML = html;
-  if (entry.audio) $("playAudio").addEventListener("click", () => {
-    new Audio(entry.audio.startsWith("//") ? "https:" + entry.audio : entry.audio).play().catch(() => {});
-  });
+    ${n?`
+    <div class="panel">
+      <h3>Colour league</h3>
+      <p class="lead">${COL[top[0]][0]} is the most common colour here, on ${top[1]} of ${n} flags (${pct(top[1])}%). Tap a bar to filter by it.</p>
+      ${colCounts.map(([c,k])=>`<button class="bar" data-solo="${c}"><span class="lbl"><i style="background:${COL[c][1]}"></i>${COL[c][0]}</span><span class="track"><span class="fill" style="width:${pct(k)}%;background:${c==='W'?'var(--muted)':COL[c][1]}"></span></span><span class="num">${k}</span></button>`).join('')}
+    </div>
+    <div class="panel">
+      <h3>Colours per flag</h3>
+      <p class="lead">How many different colours each flag uses.</p>
+      ${nCounts.map(([k,c])=>`<button class="bar" data-ncolbar="${k}"><span class="lbl">${k===6?'6 or more':k===1?'1 colour':k+' colours'}</span><span class="track"><span class="fill" style="width:${pct(c)}%"></span></span><span class="num">${c}</span></button>`).join('')}
+    </div>
+    <div class="grid">${list.map(f=>`<button class="tile" data-open="${f.code}"><img src="${pngUrl(f.code)}" srcset="${pngUrl(f.code,320)} 2x" alt="" loading="lazy"><span>${f.name}</span></button>`).join('')}</div>
+    `:`<p class="empty">No flags match all of that. Try removing a filter or two.</p>`}
+  `;
 }
-$("defineBtn").addEventListener("click", () => define($("defineInput").value));
-$("defineInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); define($("defineInput").value); } });
-
-/* ================= UNSCRAMBLE ================= */
-function solveLetters(letters, blanks, minLen){
-  const avail = new Int8Array(26);
-  for (const ch of letters) avail[ch.charCodeAt(0) - 97]++;
-  const total = letters.length + blanks;
-  const need = new Int8Array(26);
-  const out = [];
-  for (let k = 0; k < WORDS.length; k++) {
-    const w = WORDS[k], L = w.length;
-    if (L < minLen || L > total) continue;
-    need.set(avail);
-    let b = blanks, ok = true, pos = null;
-    for (let i = 0; i < L; i++) {
-      const c = w.charCodeAt(i) - 97;
-      if (need[c] > 0) need[c]--;
-      else if (b > 0) { b--; (pos || (pos = [])).push(i); }
-      else { ok = false; break; }
-    }
-    if (ok) out.push({ w, blanks: pos || [], rank: rankOf(w) });
-  }
-  out.sort((a, b) => b.w.length - a.w.length || a.rank - b.rank || (a.w < b.w ? -1 : 1));
-  return out;
-}
-function parseLetters(s){
-  s = s.toLowerCase().replace(/\*/g, "?");
-  return { letters: s.replace(/[^a-z]/g, ""), blanks: Math.min(3, (s.match(/\?/g) || []).length) };
-}
-$("unInput").addEventListener("input", () => {
-  const { letters, blanks } = parseLetters($("unInput").value);
-  $("unPreview").innerHTML = [...letters].map(c => `<span class="tile">${c}</span>`).join("") + `<span class="tile blank">?</span>`.repeat(blanks);
+$('#view-explore').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const d = b.dataset;
+  if(d.col){ F.cols.has(d.col)?F.cols.delete(d.col):F.cols.add(d.col); }
+  else if(d.cmode){ F.colMode = d.cmode; }
+  else if(d.ncol){ const k=+d.ncol; F.ncol = F.ncol===k?null:k; }
+  else if(d.layout){ F.layout = F.layout===d.layout?null:d.layout; }
+  else if(d.feat){ F.feats.has(d.feat)?F.feats.delete(d.feat):F.feats.add(d.feat); }
+  else if(d.cont){ F.cont = F.cont===d.cont?null:d.cont; }
+  else if(d.solo){ F.cols = new Set([d.solo]); F.colMode='all'; }
+  else if(d.ncolbar){ F.ncol = +d.ncolbar; }
+  else if(b.id==='resetF'){ F.cols.clear(); F.colMode='all'; F.ncol=null; F.layout=null; F.feats.clear(); F.cont=null; }
+  else return;
+  const y = window.scrollY; renderExplore(); window.scrollTo(0,y);
 });
-async function unscramble(){
-  const { letters, blanks } = parseLetters($("unInput").value);
-  const out = $("unOut");
-  if (letters.length + blanks < 2) { out.innerHTML = `<p class="status">Enter at least 2 letters.</p>`; return; }
-  if (!await needLists(out)) return;
-  let results = solveLetters(letters, blanks, +$("minLen").value);
-  let note = "";
-  if ($("commonOnly").checked) {
-    const common = results.filter(r => r.rank !== Infinity);
-    if (common.length) results = common;
-    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
-  }
-  renderGroups(out, results, letters.length + blanks, { note });
-}
-$("unBtn").addEventListener("click", unscramble);
-$("unInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); unscramble(); } });
-["minLen","commonOnly"].forEach(id => $(id).addEventListener("change", () => { if ($("unOut").innerHTML) unscramble(); }));
 
-/* ================= CROSSWORD / WORDLE ================= */
-const cleanPattern = s => s.toLowerCase().replace(/[.\-_*\s]/g, "?").replace(/[^a-z?]/g, "");
-const cleanLetters = s => s.toLowerCase().replace(/[^a-z]/g, "");
-
-function renderSpots(){
-  const p = cleanPattern($("cwInput").value);
-  const wrap = $("cwSpots");
-  const old = [...wrap.querySelectorAll("input")].map(i => i.value);
-  wrap.style.gridTemplateColumns = `repeat(${Math.max(p.length, 1)}, minmax(0, 1fr))`;
-  wrap.innerHTML = p ? [...p].map((c, i) =>
-    `<label>${c === "?" ? i + 1 : c.toUpperCase()}<input type="text" maxlength="6" autocapitalize="none" spellcheck="false" aria-label="Letters not in position ${i + 1}" value="${esc(old[i] || "")}"${c === "?" ? "" : " disabled"}></label>`
-  ).join("") : `<span class="hint" style="margin:0">Type a pattern first.</span>`;
-  $("cwPreview").innerHTML = [...p].map(c => c === "?" ? `<span class="tile empty"></span>` : `<span class="tile">${c}</span>`).join("");
-}
-$("cwInput").addEventListener("input", renderSpots);
-
-async function crossword(){
-  const p = cleanPattern($("cwInput").value);
-  const out = $("cwOut");
-  if (p.length < 2) { out.innerHTML = `<p class="status">Enter a pattern of at least 2 letters, like c?o?s.</p>`; return; }
-  if (!await needLists(out)) return;
-
-  const spots = [...$("cwSpots").querySelectorAll("input")].map(i => cleanLetters(i.value));
-  const banned = new Set(cleanLetters($("cwNot").value));
-  // Minimum count of each letter that must appear
-  const need = {};
-  for (const c of cleanLetters($("cwHas").value)) need[c] = (need[c] || 0) + 1;
-  for (const s of spots) for (const c of new Set(s)) need[c] = Math.max(need[c] || 0, 1);
-
-  const L = p.length, results = [];
-  outer: for (const w of WORDS) {
-    if (w.length !== L) continue;
-    for (let i = 0; i < L; i++) {
-      const c = w[i];
-      if (p[i] !== "?") { if (c !== p[i]) continue outer; }
-      else if (banned.has(c) || (spots[i] && spots[i].includes(c))) continue outer;
-    }
-    for (const c in need) { let n = 0; for (const x of w) if (x === c) n++; if (n < need[c]) continue outer; }
-    results.push({ w, blanks: [], rank: rankOf(w) });
-  }
-  let list = results, note = "";
-  if ($("cwCommon").checked) {
-    const common = results.filter(r => r.rank !== Infinity);
-    if (common.length) list = common;
-    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
-  }
-  list.sort((a, b) => a.rank - b.rank || (a.w < b.w ? -1 : 1));
-  if (!list.length) { out.innerHTML = `<p class="status">No words match. Check the pattern, or remove a clue.</p>`; return; }
-  const cap = 150;
-  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} matches. ${note}${KEY_TEXT}</p>
-    <div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>
-    ${list.length > cap ? `<button class="btn ghost more" id="cwMoreBtn">Show all ${list.length.toLocaleString("en-GB")}</button>` : ""}`;
-  if (list.length > cap) $("cwMoreBtn").addEventListener("click", e => {
-    e.target.previousElementSibling.innerHTML = list.map(wordChip).join(""); e.target.remove();
-  });
-}
-$("cwBtn").addEventListener("click", crossword);
-["cwInput","cwHas","cwNot"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } }));
-$("cwSpots").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); crossword(); } });
-$("cwCommon").addEventListener("change", () => { if ($("cwOut").innerHTML) crossword(); });
-
-/* ================= PUZZLES: switch ================= */
-function showPz(mode){
-  document.querySelectorAll("[data-pz]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pz === mode));
-  $("pz-crossword").hidden = mode !== "crossword";
-  $("pz-wordsearch").hidden = mode !== "wordsearch";
-  $("pz-sudoku").hidden = mode !== "sudoku";
-  $("pz-abc").hidden = mode !== "abc";
-  store.set("bd-pz", mode);
-}
-document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
-
-/* ================= WORD SEARCH ================= */
-const TESS = {
-  script: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
-  worker: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-  core:   "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
-  lang:   "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"
+/* ---------- Quiz ---------- */
+const MODES = {
+  name:{label:'Name the flag',blurb:'See a flag, pick the country.'},
+  spot:{label:'Spot the flag',blurb:'See a country, pick its flag.'},
+  closeup:{label:'Close-up',blurb:'A zoomed-in corner. Guess straight away for 3 points, or zoom out for fewer.'},
+  twins:{label:'Evil twins',blurb:'Only the lookalikes. Chad or Romania? Good luck.'}
 };
-const WS_COLOURS = ["#f2c230", "#5cc489", "#6aa8ff", "#ff8fa3", "#c49bff", "#ffa94d", "#4fd1c5", "#e57373"];
-const DIRS = [[0,1,"left to right"],[0,-1,"right to left"],[1,0,"downwards"],[-1,0,"upwards"],
-              [1,1,"diagonal, down and right"],[-1,-1,"diagonal, up and left"],[1,-1,"diagonal, down and left"],[-1,1,"diagonal, up and right"]];
-let wsGrid = [];          // array of row strings, "?" = unread letter
-let wsHits = [];          // [{word, cells:[[r,c]..], dir, colour, guessed, asked, on}]
-let wsSel = null;         // [r, c] of the letter being fixed
-let tessPromise = null, tessWorker = null;
+const Q = {mode:store.get('qmode','name'), cont:store.get('qcont','all'), total:10, i:0, score:0, cur:null, opts:[], done:false, chosen:null, zoom:0, pos:[50,50], used:new Set(), phase:'setup'};
+const ZOOMS = [450,250,0]; // 0 = whole flag
+const POSITIONS = [[0,0],[50,0],[100,0],[0,50],[50,50],[100,50],[0,100],[50,100],[100,100]];
+const bestKey = () => `best.${Q.mode}.${Q.mode==='twins'?'all':Q.cont}`;
+const maxScore = () => Q.total*(Q.mode==='closeup'?3:1);
 
-function wsStatus(msg, err){ const el = $("wsStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
-function saveWS(){ store.set("bd-ws", { grid: wsGrid, words: $("wsWords").value }); }
-
-function loadTesseract(){
-  if (!tessPromise) tessPromise = new Promise((res, rej) => {
-    if (window.Tesseract) return res(window.Tesseract);
-    const s = document.createElement("script");
-    s.src = TESS.script;
-    s.onload = () => res(window.Tesseract);
-    s.onerror = () => { tessPromise = null; rej(new Error("Couldn't load the text reader")); };
-    document.head.appendChild(s);
-  });
-  return tessPromise;
+function similar(ans,pool,n,exclude){
+  const ex = new Set([ans.code,...exclude]);
+  return pool.filter(f=>!ex.has(f.code))
+    .map(f=>({f,s:f.cols.filter(c=>ans.cols.includes(c)).length - Math.abs(f.cols.length-ans.cols.length)*.5 + (f.layout===ans.layout?1.2:0) + Math.random()*1.8}))
+    .sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.f);
 }
-async function getWorker(){
-  if (tessWorker) return tessWorker;
-  const T = await loadTesseract();
-  tessWorker = await T.createWorker("eng", 1, { workerPath: TESS.worker, corePath: TESS.core, langPath: TESS.lang });
-  return tessWorker;
-}
-async function ocr(canvas, psm, chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
-  const w = await getWorker();
-  await w.setParameters({ tessedit_char_whitelist: chars, tessedit_pageseg_mode: String(psm) });
-  const { data } = await w.recognize(canvas, {}, { blocks: true, text: true });
-  const syms = [];
-  for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const wd of l.words || []) for (const s of wd.symbols || [])
-    if (s.text.length === 1 && chars.includes(s.text)) syms.push({ t: s.text, x: (s.bbox.x0 + s.bbox.x1) / 2, y: (s.bbox.y0 + s.bbox.y1) / 2, w: s.bbox.x1 - s.bbox.x0, h: s.bbox.y1 - s.bbox.y0 });
-  return syms;
-}
-
-/* Photo → clean black-and-white canvas (adaptive threshold copes with shadows) */
-async function photoToBinary(file){
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = url; });
-    const big = Math.max(img.naturalWidth, img.naturalHeight);
-    const sc = Math.min(2, 1600 / big);
-    const W = Math.round(img.naturalWidth * sc), H = Math.round(img.naturalHeight * sc);
-    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
-    ctx.drawImage(img, 0, 0, W, H);
-    const id = ctx.getImageData(0, 0, W, H), d = id.data;
-    const g = new Float64Array(W * H);
-    for (let i = 0; i < W * H; i++) g[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
-    // Light letters on a dark background (dark-mode screenshots): flip it so the letters are dark
-    const sample = []; for (let i = 0; i < W * H; i += 97) sample.push(g[i]);
-    if (median(sample) < 110) for (let i = 0; i < W * H; i++) g[i] = 255 - g[i];
-    // Bradley adaptive threshold using an integral image
-    const I = new Float64Array((W + 1) * (H + 1));
-    for (let y = 0; y < H; y++) { let row = 0; for (let x = 0; x < W; x++) { row += g[y*W + x]; I[(y+1)*(W+1) + x + 1] = I[y*(W+1) + x + 1] + row; } }
-    const r = Math.max(8, Math.round(Math.max(W, H) / 16));
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const x0 = Math.max(0, x - r), x1 = Math.min(W, x + r + 1), y0 = Math.max(0, y - r), y1 = Math.min(H, y + r + 1);
-      const sum = I[y1*(W+1) + x1] - I[y0*(W+1) + x1] - I[y1*(W+1) + x0] + I[y0*(W+1) + x0];
-      const v = g[y*W + x] * (x1 - x0) * (y1 - y0) < sum * 0.85 ? 0 : 255;
-      d[i4(x, y, W)] = d[i4(x, y, W) + 1] = d[i4(x, y, W) + 2] = v;
-    }
-    ctx.putImageData(id, 0, 0);
-    return cv;
-  } finally { URL.revokeObjectURL(url); }
-}
-const i4 = (x, y, W) => (y * W + x) * 4;
-const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
-
-/* Group positions into evenly spaced rows/columns; keep the longest regular run */
-function lattice(values, gap, minCount){
-  const v = [...values].sort((a, b) => a - b);
-  const groups = [[v[0]]];
-  for (let i = 1; i < v.length; i++) (v[i] - groups[groups.length - 1].slice(-1)[0] < gap) ? groups[groups.length - 1].push(v[i]) : groups.push([v[i]]);
-  let centres = groups.filter(g => g.length >= minCount).map(median);
-  if (centres.length < 3) return centres;
-  const sp = median(centres.slice(1).map((c, i) => c - centres[i]));
-  let best = [centres[0]], cur = [centres[0]];
-  for (let i = 1; i < centres.length; i++) {
-    const step = centres[i] - centres[i - 1];
-    if (Math.abs(step - sp) < sp * 0.35) cur.push(centres[i]); else cur = [centres[i]];
-    if (cur.length > best.length) best = cur.slice();
-  }
-  return best;
-}
-
-async function readWordSearch(file){
-  wsStatus("Loading the text reader (about 5 MB, first time only)…");
-  try { await getWorker(); } catch { wsStatus("Couldn't download the text reader. Check your connection and try again.", true); return; }
-  wsStatus("Cleaning up the photo…");
-  const bin = await photoToBinary(file);
-
-  wsStatus("Finding the grid…");
-  let syms = await ocr(bin, 6);
-  if (syms.length < 9) { wsStatus("Couldn't find a grid of letters in that photo. Try a closer, straighter shot, or type the grid in.", true); $("wsFix").open = true; return; }
-  const h = median(syms.map(s => s.h));
-  syms = syms.filter(s => s.h < 1.6 * h && s.h > 0.4 * h);
-  const rowsY = lattice(syms.map(s => s.y), h * 0.6, 3);
-  const colsX = lattice(syms.map(s => s.x), h * 0.6, Math.max(2, rowsY.length / 3));
-  if (rowsY.length < 3 || colsX.length < 3) { wsStatus("Couldn't line up the rows and columns. Try a straighter photo, or type the grid in.", true); $("wsFix").open = true; return; }
-
-  // Re-draw every cell, evenly spaced and the same size, then read them all in one go
-  wsStatus(`Reading ${rowsY.length * colsX.length} letters…`);
-  const sp = Math.min(median(colsX.slice(1).map((c, i) => c - colsX[i])), median(rowsY.slice(1).map((c, i) => c - rowsY[i])));
-  const half = sp * 0.42, scale = 40 / h, cw = Math.max(16, Math.round(2 * half * scale)), G = cw;
-  const R = rowsY.length, C = colsX.length;
-  const re = document.createElement("canvas");
-  re.width = C * (cw + G) + G; re.height = R * (cw + G) + G;
-  const rx = re.getContext("2d", { willReadFrequently: true });
-  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
-  rx.imageSmoothingEnabled = true;
-  // Photos are rarely perfectly flat, so centre each cell on the nearest letter actually seen there
-  const centreOf = (r, c) => {
-    let best = null, bd = sp * 0.35;
-    for (const s of syms) { const d = Math.hypot(s.x - colsX[c], s.y - rowsY[r]); if (d < bd) { bd = d; best = s; } }
-    return best ? [best.x, best.y] : [colsX[c], rowsY[r]];
-  };
-  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-    const [cx, cy] = centreOf(r, c);
-    rx.drawImage(bin, cx - half, cy - half, 2 * half, 2 * half, G + c * (cw + G), G + r * (cw + G), cw, cw);
-  }
-  // Wipe anything touching a cell's edge (the puzzle's border line, bits of neighbours), keeping the letter in the middle
-  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-    const X = G + c * (cw + G), Y = G + r * (cw + G);
-    const im = rx.getImageData(X, Y, cw, cw), q = im.data, orig = new Uint8ClampedArray(q);
-    const dark = i => q[i * 4] < 128, stack = [];
-    for (let k = 0; k < cw; k++) stack.push(k, (cw - 1) * cw + k, k * cw, k * cw + cw - 1);
-    while (stack.length) {
-      const i = stack.pop();
-      if (!dark(i)) continue;
-      q[i*4] = q[i*4+1] = q[i*4+2] = 255;
-      const x = i % cw, y = (i - x) / cw;
-      if (x > 0) stack.push(i - 1); if (x < cw - 1) stack.push(i + 1);
-      if (y > 0) stack.push(i - cw); if (y < cw - 1) stack.push(i + cw);
-    }
-    let ink = 0;
-    for (let i = 0; i < cw * cw; i++) if (dark(i)) ink++;
-    if (ink < cw * cw * 0.01) q.set(orig); // wiped the letter itself, so put it back
-    rx.putImageData(im, X, Y);
-  }
-  const grid = Array.from({ length: R }, () => Array(C).fill("?"));
-  for (const s of await ocr(re, 6)) {
-    const c = Math.floor((s.x - G / 2) / (cw + G)), r = Math.floor((s.y - G / 2) / (cw + G));
-    if (r >= 0 && r < R && c >= 0 && c < C && grid[r][c] === "?") grid[r][c] = s.t;
-  }
-
-  // Fingerprint every cell's shape. A tall thin stroke can only be an I (the reader often mistakes it for T)
-  const N = 24, fp = document.createElement("canvas");
-  fp.width = fp.height = N;
-  const fx = fp.getContext("2d", { willReadFrequently: true });
-  const vecs = [];
-  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-    const X = G + c * (cw + G), Y = G + r * (cw + G);
-    const px = rx.getImageData(X, Y, cw, cw).data;
-    let x0 = cw, x1 = -1, y0 = cw, y1 = -1;
-    for (let y = 0; y < cw; y++) for (let x = 0; x < cw; x++) if (px[(y * cw + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-    if (x1 < 0) continue;
-    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-    if (bh > cw * 0.4 && bw < bh * 0.4) grid[r][c] = "I";
-    const k = N / Math.max(bw, bh), w = Math.max(1, Math.round(bw * k)), h = Math.max(1, Math.round(bh * k));
-    fx.fillStyle = "#fff"; fx.fillRect(0, 0, N, N);
-    fx.drawImage(re, X + x0, Y + y0, bw, bh, (N - w) >> 1, (N - h) >> 1, w, h);
-    const q = fx.getImageData(0, 0, N, N).data, v = new Float32Array(N * N);
-    let mean = 0;
-    for (let i = 0; i < N * N; i++) { v[i] = 1 - q[i * 4] / 255; mean += v[i]; }
-    mean /= N * N;
-    let norm = 0;
-    for (let i = 0; i < N * N; i++) { v[i] -= mean; norm += v[i] * v[i]; }
-    norm = Math.sqrt(norm);
-    if (norm > 0) { for (let i = 0; i < N * N; i++) v[i] /= norm; vecs.push({ r, c, v }); }
-  }
-
-  // Cross-check: a puzzle uses one typeface, so compare every cell with the average look of each letter
-  // and let the majority correct the odd misread (fixes P read as D, Q read as O, and so on)
-  wsStatus("Cross-checking the letters against each other…");
-  for (let pass = 0; pass < 3; pass++) {
-    const sums = {}, counts = {};
-    for (const { r, c, v } of vecs) {
-      const l = grid[r][c];
-      if (l === "?") continue;
-      if (!sums[l]) { sums[l] = new Float32Array(N * N); counts[l] = 0; }
-      for (let i = 0; i < N * N; i++) sums[l][i] += v[i];
-      counts[l]++;
-    }
-    const tmpl = Object.entries(sums).map(([l, t]) => {
-      let n = 0; for (let i = 0; i < t.length; i++) n += t[i] * t[i];
-      n = Math.sqrt(n) || 1;
-      return [l, t.map(x => x / n)];
-    });
-    let changed = 0;
-    for (const { r, c, v } of vecs) {
-      let best = null, bs = 0.5;
-      for (const [l, t] of tmpl) { let d = 0; for (let i = 0; i < v.length; i++) d += v[i] * t[i]; if (d > bs) { bs = d; best = l; } }
-      if (best && best !== grid[r][c]) { grid[r][c] = best; changed++; }
-    }
-    if (!changed) break;
-  }
-
-  const missing = [];
-  for (const { r, c } of vecs) if (grid[r][c] === "?") missing.push([r, c]);
-  // Second look at anything still unread: read that cell on its own
-  if (missing.length) wsStatus(`Double-checking ${missing.length} letter${missing.length === 1 ? "" : "s"}…`);
-  for (const [r, c] of missing) {
-    const X = G + c * (cw + G), Y = G + r * (cw + G);
-    const one = document.createElement("canvas"); one.width = one.height = cw + 40;
-    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
-    ox.drawImage(re, X, Y, cw, cw, 20, 20, cw, cw);
-    const got = await ocr(one, 10);
-    if (got.length) grid[r][c] = got[0].t;
-  }
-
-  wsGrid = grid.map(r => r.join(""));
-  $("wsText").value = wsGrid.join("\n");
-  const unread = wsGrid.join("").split("?").length - 1;
-  wsStatus(`Read a ${C} × ${R} grid. ${unread ? `${unread} letter${unread === 1 ? "" : "s"} couldn't be read (shown as red ?). ` : ""}Give it a quick check against the puzzle; tap any letter on the grid to fix it.`);
-  if (unread) $("wsFix").open = true;
-  saveWS();
-  wsRun();
-}
-
-$("wsFile").addEventListener("change", async e => {
-  const f = e.target.files && e.target.files[0];
-  e.target.value = "";
-  if (!f) return;
-  try { await readWordSearch(f); }
-  catch (err) { console.warn(err); wsStatus("Something went wrong reading that photo. Try again, or type the grid in.", true); $("wsFix").open = true; }
-});
-
-function parseGridText(t){
-  return t.toUpperCase().split(/\r?\n/).map(l => l.replace(/[^A-Z?]/g, "")).filter(Boolean);
-}
-function parseWords(t){
-  const parts = /[\n,;]/.test(t.trim()) ? t.split(/[\n,;]+/) : t.split(/\s+/);
-  return [...new Set(parts.map(w => w.toUpperCase().replace(/[^A-Z]/g, "")).filter(w => w.length >= 2))];
-}
-
-function findInGrid(word, allowGuess){
-  const R = wsGrid.length;
-  for (let r = 0; r < R; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
-    let guesses = 0, cells = [];
-    for (let k = 0; k < word.length; k++) {
-      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
-      if (ch === word[k]) cells.push([rr, cc]);
-      else if (allowGuess && ch === "?" && guesses < 1) { guesses++; cells.push([rr, cc]); }
-      else { cells = null; break; }
-    }
-    if (cells) return { cells, dir: name, guessed: guesses > 0 };
-  }
-  return null;
-}
-
-function renderBoard(){
-  const board = $("wsBoard");
-  if (!wsGrid.length) { board.hidden = true; $("wsTapHint").hidden = true; return; }
-  board.hidden = false;
-  $("wsTapHint").hidden = false;
-  const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length));
-  let svg = `<svg viewBox="0 0 ${C * 10} ${R * 10}" role="img" aria-label="Word search grid. Tap a letter to fix it.">`;
-  if (wsSel) svg += `<rect class="sel" x="${wsSel[1] * 10 + .5}" y="${wsSel[0] * 10 + .5}" width="9" height="9" rx="2"/>`;
-  for (const hit of wsHits) {
-    if (!hit.on) continue;
-    const [a, b] = [hit.cells[0], hit.cells[hit.cells.length - 1]];
-    svg += `<line x1="${a[1]*10+5}" y1="${a[0]*10+5}" x2="${b[1]*10+5}" y2="${b[0]*10+5}" stroke="${hit.colour}" stroke-width="7.4" stroke-linecap="round" opacity=".55"/>`;
-  }
-  wsGrid.forEach((row, r) => [...row].forEach((ch, c) => {
-    svg += `<text x="${c*10+5}" y="${r*10+5.3}" font-size="6" text-anchor="middle" dominant-baseline="middle"${ch === "?" ? ' class="unk"' : ""}>${ch}</text>`;
-  }));
-  board.innerHTML = svg + "</svg>";
-}
-
-function renderHits(){
-  const asked = wsHits.filter(h => h.asked);
-  let html = "";
-  if (asked.length) {
-    html += `<ul class="ws-list">` + asked.map(h => h.cells
-      ? `<li><span class="dot" style="background:${h.colour}"></span><span><b>${h.word}</b> <small>row ${h.cells[0][0] + 1}, column ${h.cells[0][1] + 1}, ${h.dir}${h.guessed ? " (includes an unread letter)" : ""}</small></span></li>`
-      : `<li class="miss"><span class="dot" style="background:var(--line)"></span><span><b>${h.word}</b> <small>not found. Check the spelling, or the grid for a misread letter.</small></span></li>`
-    ).join("") + `</ul>`;
-  }
-  const auto = wsHits.filter(h => !h.asked);
-  if (auto.length) {
-    html += `<div class="group"><h3>Every word in the grid <span>(${auto.length})</span></h3>
-      <p class="hint" style="margin-top:0">5 letters or more, longest first. Tap one to highlight it.</p>
-      <div class="chips">${auto.map(h => `<button class="chip${h.rank === Infinity ? " rare" : ""}${h.on ? " on" : ""}" data-ws="${h.word}">${h.word.toLowerCase()}</button>`).join("")}</div></div>`;
-  }
-  $("wsOut").innerHTML = html;
-}
-
-function wsRun(){
-  const words = parseWords($("wsWords").value);
-  const keepAuto = wsHits.filter(h => !h.asked).map(h => h.word);
-  const autoOn = new Set(wsHits.filter(h => !h.asked && h.on).map(h => h.word));
-  wsHits = words.map((w, i) => {
-    const f = findInGrid(w, false) || findInGrid(w, true);
-    return { word: w, asked: true, on: !!f, colour: WS_COLOURS[i % WS_COLOURS.length], ...(f || { cells: null }) };
-  });
-  // Keep the "every word" list, re-checked against the current grid
-  keepAuto.forEach((w, i) => {
-    if (words.includes(w)) return;
-    const f = findInGrid(w, false);
-    if (f) wsHits.push({ word: w, asked: false, on: autoOn.has(w), colour: WS_COLOURS[(words.length + i) % WS_COLOURS.length], rank: RANK ? rankOf(w.toLowerCase()) : Infinity, ...f });
-  });
-  renderBoard(); renderHits(); saveWS();
-}
-
-async function wsAutoFind(){
-  if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; }
-  if (!await needLists($("wsOut"))) return;
-  const asked = new Set(parseWords($("wsWords").value));
-  const found = new Map();
-  for (let r = 0; r < wsGrid.length; r++) for (let c = 0; c < wsGrid[r].length; c++) for (const [dr, dc, name] of DIRS) {
-    let s = "", cells = [];
-    for (let k = 0; ; k++) {
-      const rr = r + dr * k, cc = c + dc * k, ch = wsGrid[rr] && wsGrid[rr][cc];
-      if (!ch || ch === "?") break;
-      s += ch; cells.push([rr, cc]);
-      if (s.length >= 5 && !found.has(s) && !asked.has(s) && WORDSET.has(s.toLowerCase())) found.set(s, { cells: cells.slice(), dir: name });
-    }
-  }
-  // Drop words that sit entirely inside a longer find in the same place (e.g. BOOKS inside BOOKSHELF)
-  const list = [...found].map(([word, f]) => ({ word, ...f, rank: rankOf(word.toLowerCase()) }))
-    .sort((a, b) => b.word.length - a.word.length || a.rank - b.rank);
-  const keyOf = cells => "|" + cells.map(x => x.join(",")).join("|") + "|";
-  const kept = wsHits.filter(h => h.asked && h.cells).map(h => ({ cells: h.cells, asked: true }));
-  for (const h of list) {
-    const k = keyOf(h.cells);
-    if (!kept.some(o => keyOf(o.cells).includes(k))) kept.push(h);
-  }
-  const autoKept = kept.filter(h => !h.asked);
-  wsHits = wsHits.filter(h => h.asked).concat(autoKept.map((h, i) => ({ ...h, asked: false, on: false, colour: WS_COLOURS[(i + 3) % WS_COLOURS.length] })));
-  if (!autoKept.length) wsStatus("No other dictionary words of 5 letters or more found.");
-  renderBoard(); renderHits();
-}
-
-$("wsOut").addEventListener("click", e => {
-  const b = e.target.closest("[data-ws]");
-  if (!b) return;
-  const h = wsHits.find(x => !x.asked && x.word === b.dataset.ws);
-  if (h) { h.on = !h.on; renderBoard(); renderHits(); }
-});
-function closeFix(){ wsSel = null; $("wsEdit").hidden = true; renderBoard(); }
-$("wsBoard").addEventListener("click", e => {
-  const svg = $("wsBoard").querySelector("svg");
-  if (!svg || !wsGrid.length) return;
-  const R = wsGrid.length, C = Math.max(...wsGrid.map(r => r.length)), box = svg.getBoundingClientRect();
-  const r = Math.floor((e.clientY - box.top) / box.height * R), c = Math.floor((e.clientX - box.left) / box.width * C);
-  if (r < 0 || r >= R || c < 0 || c >= C) return;
-  if (wsSel && wsSel[0] === r && wsSel[1] === c) { closeFix(); return; }
-  wsSel = [r, c];
-  const ch = wsGrid[r][c] || "?";
-  $("wsEditLbl").textContent = `Row ${r + 1}, column ${c + 1} ${ch === "?" ? "couldn't be read" : `says ${ch}`}. Type the right letter:`;
-  $("wsEdit").hidden = false;
-  const inp = $("wsEditIn"); inp.value = "";
-  inp.focus({ preventScroll: true });
-  $("wsEdit").scrollIntoView({ block: "nearest", behavior: "smooth" });
-  renderBoard();
-});
-$("wsEditIn").addEventListener("input", e => {
-  const ch = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
-  if (!ch || !wsSel) { e.target.value = ""; return; }
-  const [r, c] = wsSel;
-  const row = wsGrid[r].padEnd(c + 1, "?").split("");
-  row[c] = ch; wsGrid[r] = row.join("");
-  $("wsText").value = wsGrid.join("\n");
-  wsSel = null; $("wsEdit").hidden = true; e.target.blur();
-  wsRun();
-});
-$("wsEditIn").addEventListener("keydown", e => { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); closeFix(); } });
-$("wsEditDone").addEventListener("click", closeFix);
-$("wsText").addEventListener("input", () => { wsGrid = parseGridText($("wsText").value); wsRun(); });
-$("wsWords").addEventListener("input", () => { if (wsGrid.length) wsRun(); else saveWS(); });
-$("wsFind").addEventListener("click", () => { if (!wsGrid.length) { wsStatus("Add a photo or type the grid in first.", true); return; } wsRun(); });
-$("wsAuto").addEventListener("click", wsAutoFind);
-
-function loadWordSearch(){
-  const saved = store.get("bd-ws", null);
-  if (!saved) return;
-  wsGrid = saved.grid || [];
-  $("wsText").value = wsGrid.join("\n");
-  $("wsWords").value = saved.words || "";
-  if (wsGrid.length) wsRun();
-}
-
-/* ================= SUDOKU ================= */
-const SD_R = i => Math.floor(i / 9), SD_C = i => i % 9, SD_B = i => Math.floor(i / 27) * 3 + Math.floor((i % 9) / 3);
-const SD_HOUSES = [];   // 27 houses: 9 rows, 9 columns, 9 boxes, each a list of cell indexes
-for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `row ${k + 1}`, cells: [...Array(9)].map((_, j) => k * 9 + j) });
-for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `column ${k + 1}`, cells: [...Array(9)].map((_, j) => j * 9 + k) });
-for (let k = 0; k < 9; k++) SD_HOUSES.push({ name: `the ${["top-left","top-middle","top-right","middle-left","centre","middle-right","bottom-left","bottom-middle","bottom-right"][k]} box`, cells: [...Array(81).keys()].filter(i => SD_B(i) === k) });
-const SD_PEERS = [...Array(81).keys()].map(i => [...Array(81).keys()].filter(j => j !== i && (SD_R(j) === SD_R(i) || SD_C(j) === SD_C(i) || SD_B(j) === SD_B(i))));
-const bits = m => { let n = 0; while (m) { m &= m - 1; n++; } return n; };
-const where = i => `row ${SD_R(i) + 1}, column ${SD_C(i) + 1}`;
-
-let sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
-let sdSel = -1, sdHintCell = -1, sdHintHouse = null, sdWrong = new Set(), sdPending = null;
-
-function sdStatus(msg, err){ const el = $("sdStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
-function sdMsg(html, cls){ const el = $("sdMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
-function sdSave(){ store.set("bd-sd", sd); }
-const sdBoard = () => sd.given.map((g, i) => g || sd.user[i]);
-function sdConflicts(b){
-  const bad = new Set();
-  for (let i = 0; i < 81; i++) if (b[i]) for (const j of SD_PEERS[i]) if (b[j] === b[i]) { bad.add(i); bad.add(j); }
-  return bad;
-}
-function sdCands(b){
-  return b.map((v, i) => { if (v) return 0; let m = 0x3FE; for (const j of SD_PEERS[i]) if (b[j]) m &= ~(1 << b[j]); return m; });
-}
-
-/* Backtracking solver: fills the most constrained square first; stops once it finds `limit` answers */
-function sdSolve(b, limit = 2){
-  const g = b.slice(), rows = new Int16Array(9), cols = new Int16Array(9), boxes = new Int16Array(9);
-  for (let i = 0; i < 81; i++) if (g[i]) {
-    const bit = 1 << g[i];
-    if ((rows[SD_R(i)] | cols[SD_C(i)] | boxes[SD_B(i)]) & bit) return { count: 0, sol: null };
-    rows[SD_R(i)] |= bit; cols[SD_C(i)] |= bit; boxes[SD_B(i)] |= bit;
-  }
-  let count = 0, sol = null;
-  (function go(){
-    let bi = -1, bm = 0, bc = 10;
-    for (let i = 0; i < 81; i++) if (!g[i]) {
-      const m = ~(rows[SD_R(i)] | cols[SD_C(i)] | boxes[SD_B(i)]) & 0x3FE, c = bits(m);
-      if (c < bc) { bc = c; bi = i; bm = m; if (!c) return; }
-    }
-    if (bi < 0) { count++; if (!sol) sol = g.slice(); return; }
-    const r = SD_R(bi), c = SD_C(bi), x = SD_B(bi);
-    for (let n = 1; n <= 9; n++) if (bm & (1 << n)) {
-      const bit = 1 << n;
-      g[bi] = n; rows[r] |= bit; cols[c] |= bit; boxes[x] |= bit;
-      go();
-      g[bi] = 0; rows[r] &= ~bit; cols[c] &= ~bit; boxes[x] &= ~bit;
-      if (count >= limit) return;
-    }
-  })();
-  return { count, sol };
-}
-
-function sdRender(){
-  const b = sdBoard(), bad = sdConflicts(b), selV = sdSel >= 0 ? b[sdSel] : 0;
-  const house = sdHintHouse ? new Set(sdHintHouse) : null;
-  let html = "";
-  for (let i = 0; i < 81; i++) {
-    const cls = ["sd-c"];
-    if (sd.given[i]) cls.push("g"); else if (sd.shown[i] && sd.user[i]) cls.push("s");
-    if (sdSel >= 0) {
-      if (i === sdSel) cls.push("sel");
-      else if (selV && b[i] === selV) cls.push("same");
-      else if (SD_R(i) === SD_R(sdSel) || SD_C(i) === SD_C(sdSel) || SD_B(i) === SD_B(sdSel)) cls.push("peer");
-    }
-    if (house && house.has(i) && i !== sdSel) cls.push("hint-house");
-    if (bad.has(i) || sdWrong.has(i)) cls.push("bad");
-    if (i === sdHintCell) cls.push("hint");
-    html += `<button class="${cls.join(" ")}" data-i="${i}" aria-label="${where(i)}: ${b[i] || "empty"}">${b[i] || ""}</button>`;
-  }
-  $("sdGrid").innerHTML = html;
-  // Dim a number on the pad once all nine are placed
-  const counts = Array(10).fill(0); b.forEach(v => counts[v]++);
-  document.querySelectorAll("#sdPad [data-n]").forEach(btn => btn.classList.toggle("done", +btn.dataset.n > 0 && counts[+btn.dataset.n] >= 9));
-}
-
-function sdClearMarks(){ sdHintCell = -1; sdHintHouse = null; sdWrong = new Set(); sdPending = null; }
-function sdPlace(n){
-  if (sdSel < 0) { sdMsg("Tap a square first."); return; }
-  const editing = $("sdEdit").checked;
-  if (!editing && sd.given[sdSel]) { sdMsg(`That's one of the puzzle's own numbers. Tick “Fix the puzzle's numbers” if the camera got it wrong.`); return; }
-  if (editing) { sd.given[sdSel] = n; sd.user[sdSel] = 0; }
-  else sd.user[sdSel] = n;
-  sd.shown[sdSel] = 0;
-  sdClearMarks(); sdMsg("");
-  const b = sdBoard();
-  if (!editing && b.every(Boolean) && !sdConflicts(b).size) sdMsg("Solved! Every row, column and box checks out. 🎉", "ok");
-  sdRender(); sdSave();
-}
-
-function sdHint(){
-  sdClearMarks();
-  const b = sdBoard();
-  if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first: take a photo, or tick “Fix the puzzle's numbers” and type it in. A proper sudoku has at least 17 numbers to start.", "no"); sdRender(); return; }
-  if (sdConflicts(b).size) { sdMsg("There's a clash: the same number twice in a row, column or box (shown in red). Sort that out first.", "no"); sdRender(); return; }
-  const res = sdSolve(sd.given, 2);
-  if (!res.count) { sdMsg("The puzzle's own numbers can't all be right, as there's no answer. One was probably misread: tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  const sol = res.sol, note = res.count > 1 ? " (This puzzle has more than one answer, so a starting number may be missing or misread.)" : "";
-  const wrong = [...Array(81).keys()].filter(i => sd.user[i] && sd.user[i] !== sol[i]);
-  if (wrong.length) {
-    sdWrong = new Set(wrong.slice(0, 1)); sdSel = wrong[0];
-    sdMsg(`${where(wrong[0])[0].toUpperCase() + where(wrong[0]).slice(1)} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Rub it out and think again.${note}`, "no");
-    sdRender(); return;
-  }
-  if (b.every(Boolean)) { sdMsg("It's already solved! 🎉", "ok"); sdRender(); return; }
-  const cand = sdCands(b);
-  let hint = null;
-  // Easiest for a person first: a number with only one home in a box, then a square with only one option, then rows and columns
-  const houseHint = list => {
-    for (const h of list) for (let n = 1; n <= 9; n++) {
-      if (h.cells.some(i => b[i] === n)) continue;
-      const spots = h.cells.filter(i => cand[i] & (1 << n));
-      if (spots.length === 1) return { i: spots[0], n, house: h.cells, why: `Look at ${h.name}: the ${n} can only go in one square there, ${where(spots[0])}. Everywhere else in it is either filled or already sees a ${n}.` };
-    }
-    return null;
-  };
-  hint = houseHint(SD_HOUSES.slice(18));
-  if (!hint) for (let i = 0; i < 81; i++) if (cand[i] && bits(cand[i]) === 1) {
-    const n = Math.log2(cand[i]);
-    hint = { i, n, house: SD_PEERS[i], why: `${where(i)[0].toUpperCase() + where(i).slice(1)} can only be ${n}: every other number is already in its row, column or box.` };
-    break;
-  }
-  if (!hint) hint = houseHint(SD_HOUSES.slice(0, 18));
-  if (!hint) {
-    let i = -1, best = 10;
-    for (let k = 0; k < 81; k++) if (!b[k] && bits(cand[k]) < best) { best = bits(cand[k]); i = k; }
-    hint = { i, n: sol[i], house: null, why: `No simple step left; this one needs a trickier technique. Here's a nudge: ${where(i)} is ${sol[i]}.` };
-  }
-  sdSel = hint.i; sdHintCell = hint.i; sdHintHouse = hint.house; sdPending = hint;
-  sdMsg(`${esc(hint.why)}${note} <br><button class="btn ghost" id="sdFill">Fill it in</button>`);
-  sdRender();
-}
-
-function sdCheck(){
-  sdClearMarks();
-  const res = sdSolve(sd.given, 1);
-  if (!res.count) { sdMsg("The puzzle's own numbers have no answer, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  const mine = [...Array(81).keys()].filter(i => sd.user[i]);
-  if (!mine.length) { sdMsg("You haven't put any numbers in yet."); sdRender(); return; }
-  sdWrong = new Set(mine.filter(i => sd.user[i] !== res.sol[i]));
-  sdMsg(sdWrong.size ? `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your numbers are right so far. 👍`, sdWrong.size ? "no" : "ok");
-  sdRender();
-}
-
-function sdSolveAll(){
-  sdClearMarks();
-  if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first (at least 17 numbers).", "no"); sdRender(); return; }
-  const res = sdSolve(sd.given, 2);
-  if (!res.count) { sdMsg("No answer exists for these starting numbers, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  for (let i = 0; i < 81; i++) if (!sd.given[i] && sd.user[i] !== res.sol[i]) { sd.user[i] = res.sol[i]; sd.shown[i] = 1; }
-  sdMsg(res.count > 1 ? "Solved, but this puzzle has more than one answer, so a starting number may be missing or misread." : "Solved. The answers I filled in are in italics.", res.count > 1 ? "no" : "ok");
-  sdRender(); sdSave();
-}
-
-$("sdGrid").addEventListener("click", e => {
-  const c = e.target.closest("[data-i]");
-  if (!c) return;
-  const i = +c.dataset.i;
-  sdSel = sdSel === i ? -1 : i;
-  sdRender();
-});
-$("sdPad").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if (b) sdPlace(+b.dataset.n); });
-$("sdMsg").addEventListener("click", e => {
-  if (e.target.id !== "sdFill" || !sdPending) return;
-  const { i, n } = sdPending;
-  sd.user[i] = n; sd.shown[i] = 1;
-  sdClearMarks(); sdSel = i; sdMsg("");
-  sdRender(); sdSave();
-});
-$("sdHint").addEventListener("click", sdHint);
-$("sdCheck").addEventListener("click", sdCheck);
-$("sdSolve").addEventListener("click", sdSolveAll);
-$("sdClear").addEventListener("click", () => { sd.user.fill(0); sd.shown.fill(0); sdClearMarks(); sdMsg(""); sdRender(); sdSave(); });
-$("sdBlank").addEventListener("click", () => {
-  if (sd.given.some(Boolean) && !confirm("Clear the whole grid?")) return;
-  sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
-  sdSel = 0; sdClearMarks(); $("sdEdit").checked = true; sdMsg(""); sdStatus("");
-  sdRender(); sdSave();
-});
-document.addEventListener("keydown", e => {
-  if ($("pz-sudoku").hidden || $("tab-crossword").hidden || sdSel < 0 || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
-  if (/^[1-9]$/.test(e.key)) { sdPlace(+e.key); e.preventDefault(); }
-  else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") { sdPlace(0); e.preventDefault(); }
-  else {
-    const mv = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 }[e.key];
-    if (mv) { sdSel = Math.min(80, Math.max(0, sdSel + mv)); sdRender(); e.preventDefault(); }
-  }
-});
-
-/* ---------- reading a sudoku from a photo ---------- */
-// Solve for the 3×3 transform that maps the flat square onto the (tilted) grid in the photo
-function homography(from, to){
-  const A = [];
-  for (let k = 0; k < 4; k++) {
-    const [x, y] = from[k], [u, v] = to[k];
-    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
-    A.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
-  }
-  for (let c = 0; c < 8; c++) {
-    let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
-    [A[c], A[p]] = [A[p], A[c]];
-    for (let r = 0; r < 8; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k < 9; k++) A[r][k] -= f * A[c][k]; }
-  }
-  const h = A.map((row, i) => row[8] / row[i]);
-  return (x, y) => { const w = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w]; };
-}
-
-// Label the connected ink blobs in a 0/1 image; returns each blob's box and size
-function blobs(ink, W, H){
-  const lab = new Int32Array(W * H), stack = new Int32Array(W * H), out = [];
-  for (let p = 0; p < W * H; p++) {
-    if (!ink[p] || lab[p]) continue;
-    const id = out.length + 1, b = { id, x0: W, y0: H, x1: 0, y1: 0, n: 0 };
-    let sp = 0; stack[sp++] = p; lab[p] = id;
-    while (sp) {
-      const q = stack[--sp], x = q % W, y = (q - x) / W;
-      b.n++; if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x; if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const xx = x + dx, yy = y + dy;
-        if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
-        const t = yy * W + xx;
-        if (ink[t] && !lab[t]) { lab[t] = id; stack[sp++] = t; }
-      }
-    }
-    out.push(b);
-  }
-  return { lab, list: out };
-}
-
-// A shape fingerprint for one glyph: scaled into a 24×24 box, centred, normalised
-function glyphVec(src, x, y, w, h){
-  const N = 24, cv = glyphVec.cv || (glyphVec.cv = Object.assign(document.createElement("canvas"), { width: N, height: N }));
-  const cx = cv.getContext("2d", { willReadFrequently: true });
-  const k = N / Math.max(w, h), dw = Math.max(1, Math.round(w * k)), dh = Math.max(1, Math.round(h * k));
-  cx.fillStyle = "#fff"; cx.fillRect(0, 0, N, N);
-  cx.drawImage(src, x, y, w, h, (N - dw) >> 1, (N - dh) >> 1, dw, dh);
-  const q = cx.getImageData(0, 0, N, N).data, v = new Float32Array(N * N);
-  let mean = 0; for (let i = 0; i < N * N; i++) { v[i] = 1 - q[i * 4] / 255; mean += v[i]; }
-  mean /= N * N; let norm = 0;
-  for (let i = 0; i < N * N; i++) { v[i] -= mean; norm += v[i] * v[i]; }
-  norm = Math.sqrt(norm) || 1;
-  for (let i = 0; i < N * N; i++) v[i] /= norm;
-  return v;
-}
-// Same typeface throughout, so let every glyph be judged against the average look of each label
-function crossCheck(items){
-  for (let pass = 0; pass < 3; pass++) {
-    const sums = {};
-    for (const it of items) if (it.label !== "?") { const t = sums[it.label] || (sums[it.label] = new Float32Array(it.v.length)); for (let i = 0; i < t.length; i++) t[i] += it.v[i]; }
-    const tmpl = Object.entries(sums).map(([l, t]) => { let n = 0; for (const x of t) n += x * x; n = Math.sqrt(n) || 1; return [l, t.map(x => x / n)]; });
-    let changed = 0;
-    for (const it of items) {
-      let best = null, bs = 0.5;
-      for (const [l, t] of tmpl) { let d = 0; for (let i = 0; i < t.length; i++) d += it.v[i] * t[i]; if (d > bs) { bs = d; best = l; } }
-      if (best && best !== it.label) { it.label = best; changed++; }
-    }
-    if (!changed) break;
-  }
-}
-
-async function readSudoku(file){
-  sdStatus("Loading the number reader (about 5 MB, first time only)…");
-  try { await getWorker(); } catch { sdStatus("Couldn't download the number reader. Check your connection and try again.", true); return; }
-  sdStatus("Cleaning up the photo…");
-  const bin = await photoToBinary(file);
-  const W = bin.width, H = bin.height;
-  const px = bin.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data;
-  const ink = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++) ink[i] = px[i * 4] < 128 ? 1 : 0;
-
-  // The grid's lines are all joined up, so the grid is the ink blob with the biggest footprint
-  sdStatus("Finding the grid…");
-  const { lab, list } = blobs(ink, W, H);
-  let grid = null;
-  for (const b of list) {
-    const bw = b.x1 - b.x0, bh = b.y1 - b.y0;
-    if (bw < W * 0.2 || bh < H * 0.15 || bw > bh * 1.6 || bh > bw * 1.6) continue;
-    if (!grid || bw * bh > (grid.x1 - grid.x0) * (grid.y1 - grid.y0)) grid = b;
-  }
-  if (!grid) { sdStatus("Couldn't find the grid in that photo. Try again with the whole grid in shot, or type it in.", true); return; }
-  // Its four corners: the extreme points along the diagonals
-  let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity];
-  for (let y = grid.y0; y <= grid.y1; y++) for (let x = grid.x0; x <= grid.x1; x++) {
-    if (lab[y * W + x] !== grid.id) continue;
-    if (x + y < tl[2]) tl = [x, y, x + y];
-    if (x + y > br[2]) br = [x, y, x + y];
-    if (x - y > tr[2]) tr = [x, y, x - y];
-    if (x - y < bl[2]) bl = [x, y, x - y];
-  }
-
-  // Straighten it out into a flat 9×9 of equal squares
-  const CELL = 56, S = CELL * 9;
-  const map = homography([[0, 0], [S, 0], [S, S], [0, S]], [tl, tr, br, bl]);
-  const flat = document.createElement("canvas"); flat.width = flat.height = S;
-  const fx = flat.getContext("2d", { willReadFrequently: true }), fd = fx.createImageData(S, S);
-  const fink = new Uint8Array(S * S);
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    const [u, v] = map(x + 0.5, y + 0.5), ux = Math.round(u), vy = Math.round(v);
-    const on = ux >= 0 && vy >= 0 && ux < W && vy < H && ink[vy * W + ux];
-    fink[y * S + x] = on ? 1 : 0;
-    const o = (y * S + x) * 4; fd.data[o] = fd.data[o + 1] = fd.data[o + 2] = on ? 0 : 255; fd.data[o + 3] = 255;
-  }
-  fx.putImageData(fd, 0, 0);
-
-  // In each square, keep the blob that looks like a digit: near the middle, not a strip of grid line
-  const m = Math.round(CELL * 0.08), n = CELL - 2 * m, digits = [];
-  for (let i = 0; i < 81; i++) {
-    const X = SD_C(i) * CELL + m, Y = SD_R(i) * CELL + m, sub = new Uint8Array(n * n);
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) sub[y * n + x] = fink[(Y + y) * S + X + x];
-    let best = null;
-    for (const b of blobs(sub, n, n).list) {
-      const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
-      if (bh < n * 0.3 || bh > n * 0.95 || bw > n * 0.85 || b.n < n * n * 0.015) continue;
-      if (Math.abs(cx - n / 2) > n * 0.3 || Math.abs(cy - n / 2) > n * 0.3) continue;
-      if (!best || b.n > best.n) best = b;
-    }
-    if (best) digits.push({ i, x: X + best.x0, y: Y + best.y0, w: best.x1 - best.x0 + 1, h: best.y1 - best.y0 + 1, label: "?" });
-  }
-  if (digits.length < 17) { sdStatus(`Only found ${digits.length} numbers, which isn't enough for a sudoku. Try a sharper, closer photo, or type it in.`, true); return; }
-
-  // Re-draw the digits evenly spaced and the same height, then read them in one go
-  sdStatus(`Reading ${digits.length} numbers…`);
-  const BOX = 60, G = 60, re = document.createElement("canvas");
-  re.width = re.height = 9 * (BOX + G) + G;
-  const rx = re.getContext("2d", { willReadFrequently: true });
-  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
-  for (const d of digits) {
-    const k = 40 / d.h, dw = Math.max(2, Math.round(d.w * k));
-    const ox = G + SD_C(d.i) * (BOX + G) + ((BOX - dw) >> 1), oy = G + SD_R(d.i) * (BOX + G) + 10;
-    rx.drawImage(flat, d.x, d.y, d.w, d.h, ox, oy, dw, 40);
-    d.rx = ox; d.ry = oy; d.rw = dw;
-  }
-  const byCell = new Map(digits.map(d => [d.i, d]));
-  for (const s of await ocr(re, 6, "123456789")) {
-    const c = Math.floor((s.x - G / 2) / (BOX + G)), r = Math.floor((s.y - G / 2) / (BOX + G));
-    const d = r >= 0 && r < 9 && c >= 0 && c < 9 && byCell.get(r * 9 + c);
-    if (d && d.label === "?") d.label = s.t;
-  }
-  for (const d of digits) {
-    if (d.w < d.h * 0.3) d.label = "1";            // a plain upright stroke can only be a 1
-    d.v = glyphVec(re, d.rx, d.ry, d.rw, 40);
-  }
-  sdStatus("Cross-checking the numbers…");
-  crossCheck(digits);
-  for (const d of digits) if (d.label === "?") {
-    const one = document.createElement("canvas"); one.width = one.height = BOX + 40;
-    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
-    ox.drawImage(re, d.rx - 10, d.ry - 10, d.rw + 20, 60, 20, 20, d.rw + 20, 60);
-    const got = await ocr(one, 10, "123456789");
-    if (got.length) d.label = got[0].t;
-  }
-
-  sd = { given: Array(81).fill(0), user: Array(81).fill(0), shown: Array(81).fill(0) };
-  let unread = 0;
-  for (const d of digits) if (d.label === "?") unread++; else sd.given[d.i] = +d.label;
-  $("sdEdit").checked = false; sdSel = -1; sdClearMarks(); sdMsg("");
-  sdRender(); sdSave();
-  const res = sdSolve(sd.given, 2), clash = sdConflicts(sd.given).size;
-  let msg = `Read ${digits.length - unread} numbers.`;
-  if (unread) msg += ` ${unread} couldn't be read, so those squares are blank.`;
-  if (clash || !res.count) msg += " Something doesn't add up (a clash, or no possible answer), so a number was probably misread. Tick “Fix the puzzle's numbers” to correct it.";
-  else if (res.count > 1) msg += " It has more than one answer, so a number may be missing. Give it a check against the paper.";
-  else msg += " It checks out with exactly one answer. Ask for a hint, or fill it in yourself.";
-  sdStatus(msg, !!(clash || !res.count));
-}
-
-$("sdFile").addEventListener("change", async e => {
-  const f = e.target.files && e.target.files[0];
-  e.target.value = "";
-  if (!f) return;
-  try { await readSudoku(f); }
-  catch (err) { console.warn(err); sdStatus("Something went wrong reading that photo. Try again, or type it in.", true); }
-});
-
-function loadSudoku(){
-  const saved = store.get("bd-sd", null);
-  if (saved && Array.isArray(saved.given) && saved.given.length === 81) sd = { given: saved.given, user: saved.user || Array(81).fill(0), shown: saved.shown || Array(81).fill(0) };
-  $("sdEdit").checked = !sd.given.some(Boolean);
-  sdRender();
-}
-
-/* ================= ABC LOGIC ================= */
-const ABC_L = "ABCDEFGH";
-const abcFresh = (n, k) => ({ n, k, top: Array(n).fill(""), bottom: Array(n).fill(""), left: Array(n).fill(""), right: Array(n).fill(""), cells: Array(n * n).fill(""), shown: Array(n * n).fill(0) });
-let abc = abcFresh(5, 3), abcSel = null, abcWrong = new Set(), abcHintCell = -1, abcHintLine = null, abcPending = null;
-const abcPatCache = new Map();
-
-function abcStatus(msg, err){ const el = $("abcStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
-function abcMsg(html, cls){ const el = $("abcMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
-function abcSave(){ store.set("bd-abc", abc); }
-function abcClearMarks(){ abcWrong = new Set(); abcHintCell = -1; abcHintLine = null; abcPending = null; }
-
-// Every way to lay out one row: each letter once, the rest blank (value k = blank)
-function abcPatterns(n, k){
-  const key = n + "/" + k;
-  if (abcPatCache.has(key)) return abcPatCache.get(key);
-  const out = [], cur = Array(n).fill(k);
-  (function place(letter){
-    if (letter === k) { out.push(cur.slice()); return; }
-    for (let i = 0; i < n; i++) if (cur[i] === k) { cur[i] = letter; place(letter + 1); cur[i] = k; }
-  })(0);
-  abcPatCache.set(key, out);
-  return out;
-}
-const clueIdx = ch => ch ? ABC_L.indexOf(ch) : -1;
-function fitsEnds(p, first, last, k){
-  if (first >= 0) { const v = p.find(x => x !== k); if (v !== first) return false; }
-  if (last >= 0) { let v = -1; for (let i = p.length - 1; i >= 0; i--) if (p[i] !== k) { v = p[i]; break; } if (v !== last) return false; }
-  return true;
-}
-// Lines 0..n-1 are rows, n..2n-1 are columns
-function abcLine(t){
-  const { n } = abc;
-  if (t < n) return { name: `row ${t + 1}`, cells: [...Array(n)].map((_, j) => t * n + j), first: clueIdx(abc.left[t]), last: clueIdx(abc.right[t]) };
-  const c = t - n;
-  return { name: `column ${c + 1}`, cells: [...Array(n)].map((_, j) => j * n + c), first: clueIdx(abc.top[c]), last: clueIdx(abc.bottom[c]) };
-}
-const abcVal = ch => ch === "x" ? abc.k : ch ? ABC_L.indexOf(ch) : -1;
-const abcCh = v => v === abc.k ? "x" : ABC_L[v];
-
-function abcSolve(limit = 2){
-  const { n, k } = abc, pats = abcPatterns(n, k);
-  const rows = [...Array(n)].map((_, r) => pats.filter(p => fitsEnds(p, clueIdx(abc.left[r]), clueIdx(abc.right[r]), k)));
-  const top = abc.top.map(clueIdx), bottom = abc.bottom.map(clueIdx);
-  const used = Array(n).fill(0), blanks = Array(n).fill(0), grid = [];
-  let count = 0, sol = null;
-  (function go(r){
-    if (r === n) { count++; if (!sol) sol = grid.flat(); return; }
-    for (const p of rows[r]) {
-      let ok = true;
-      for (let c = 0; c < n && ok; c++) {
-        const v = p[c];
-        if (v === k) { if (blanks[c] >= n - k) ok = false; continue; }
-        if (used[c] & (1 << v)) ok = false;
-        else if (!used[c] && top[c] >= 0 && v !== top[c]) ok = false;                 // first letter down the column
-        else if (bits(used[c]) === k - 1 && bottom[c] >= 0 && v !== bottom[c]) ok = false; // last letter down the column
-      }
-      if (!ok) continue;
-      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]++ : used[c] |= 1 << p[c];
-      grid.push(p); go(r + 1); grid.pop();
-      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]-- : used[c] &= ~(1 << p[c]);
-      if (count >= limit) return;
-    }
-  })(0);
-  return { count, sol };
-}
-
-function abcRender(){
-  const { n } = abc, g = $("abcGrid");
-  g.style.gridTemplateColumns = g.style.gridTemplateRows = `repeat(${n + 2}, minmax(0, 1fr))`;
-  const selCell = abcSel && abcSel.type === "cell" ? abcSel.i : -1;
-  const house = abcHintLine ? new Set(abcHintLine) : null;
-  const clue = (side, j) => `<button class="abc-clue${abcSel && abcSel.type === side && abcSel.j === j ? " sel" : ""}" data-side="${side}" data-j="${j}" aria-label="${side} clue ${j + 1}">${abc[side][j]}</button>`;
-  let html = "<span></span>";
-  for (let j = 0; j < n; j++) html += clue("top", j);
-  html += "<span></span>";
-  for (let r = 0; r < n; r++) {
-    html += clue("left", r);
-    for (let c = 0; c < n; c++) {
-      const i = r * n + c, v = abc.cells[i], cls = ["abc-c"];
-      if (r === 0) cls.push("et"); if (c === 0) cls.push("el"); if (c === n - 1) cls.push("er"); if (r === n - 1) cls.push("eb");
-      if (v === "x") cls.push("blank");
-      if (abc.shown[i]) cls.push("s");
-      if (i === selCell) cls.push("sel");
-      else if (selCell >= 0 && (Math.floor(selCell / n) === r || selCell % n === c)) cls.push("peer");
-      if (house && house.has(i) && i !== selCell) cls.push("hint-house");
-      if (i === abcHintCell) cls.push("hint");
-      if (abcWrong.has(i)) cls.push("bad");
-      html += `<button class="${cls.join(" ")}" data-i="${i}" aria-label="row ${r + 1} column ${c + 1}: ${v === "x" ? "blank" : v || "empty"}">${v === "x" ? "✕" : v}</button>`;
-    }
-    html += clue("right", r);
-  }
-  html += "<span></span>";
-  for (let j = 0; j < n; j++) html += clue("bottom", j);
-  html += "<span></span>";
-  g.innerHTML = html;
-  const edit = $("abcEdit").checked;
-  $("abcPad").style.gridTemplateColumns = `repeat(${Math.min(abc.k + 2, 5)}, 1fr)`;
-  $("abcPad").innerHTML = [...ABC_L.slice(0, abc.k)].map(ch => `<button class="btn ghost" data-v="${ch}">${ch}</button>`).join("")
-    + (edit && abcSel && abcSel.type !== "cell" ? "" : `<button class="btn ghost" data-v="x" aria-label="Blank square">✕</button>`)
-    + `<button class="btn ghost" data-v="" aria-label="Rub out">⌫</button>`;
-  $("abcSize").value = String(abc.n); $("abcK").value = String(abc.k);
-}
-
-function abcPlace(v){
-  if (!abcSel) { abcMsg("Tap a square first."); return; }
-  if (abcSel.type === "cell") { abc.cells[abcSel.i] = v; abc.shown[abcSel.i] = 0; }
-  else { if (v === "x") return; abc[abcSel.type][abcSel.j] = v; }
-  abcClearMarks(); abcMsg("");
-  if (abcSel.type === "cell" && abc.cells.every(Boolean)) {
-    const res = abcSolve(1);
-    if (res.count && abc.cells.every((ch, i) => abcVal(ch) === res.sol[i])) abcMsg("Solved! Every row and column checks out. 🎉", "ok");
-  }
-  abcRender(); abcSave();
-}
-
-function abcNeedsClues(){
-  if (![...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean)) { abcMsg("Add the clues first: take a photo, or tick “Edit the clues” and tap round the edge.", "no"); return true; }
-  return false;
-}
-function abcProblem(res){
-  if (res.count) return false;
-  abcMsg("No answer fits these clues. Check them against the paper, along with the grid size and letters above. A misread letter is the usual culprit.", "no");
-  return true;
-}
-const capFirst = s => s[0].toUpperCase() + s.slice(1);
-
-function abcHint(){
-  abcClearMarks();
-  if (abcNeedsClues()) { abcRender(); return; }
-  const res = abcSolve(2);
-  if (abcProblem(res)) { abcRender(); return; }
-  const { n, k } = abc, sol = res.sol;
-  const note = res.count > 1 ? " (These clues allow more than one answer, so one may be missing or misread.)" : "";
-  const wrong = abc.cells.map((ch, i) => ch && abcVal(ch) !== sol[i] ? i : -1).filter(i => i >= 0);
-  if (wrong.length) {
-    abcWrong = new Set([wrong[0]]); abcSel = { type: "cell", i: wrong[0] };
-    abcMsg(`Row ${Math.floor(wrong[0] / n) + 1}, column ${wrong[0] % n + 1} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Rub it out and think again.${note}`, "no");
-    abcRender(); return;
-  }
-  if (abc.cells.every(Boolean)) { abcMsg("It's already solved! 🎉", "ok"); abcRender(); return; }
-  const full = (1 << (k + 1)) - 1, pats = abcPatterns(n, k);
-  const poss = abc.cells.map(ch => ch ? 1 << abcVal(ch) : full);
-  const lineUnion = (t, pp) => {
-    const L = abcLine(t), u = Array(n).fill(0);
-    for (const p of pats) if (fitsEnds(p, L.first, L.last, k) && L.cells.every((i, j) => pp[i] & (1 << p[j]))) p.forEach((v, j) => u[j] |= 1 << v);
-    return { L, u };
-  };
-  const describe = (L, i, v, deep) => {
-    const where = L.name.startsWith("row") ? `column ${i % n + 1}` : `row ${Math.floor(i / n) + 1}`;
-    const what = v === k ? `leaves ${where} blank` : `puts ${ABC_L[v]} in ${where}`;
-    const basis = deep ? "fits its clues and everything worked out so far from the other rows and columns" : `fits its clues${abc.cells.some(Boolean) ? " and the squares you've filled" : ""}`;
-    return `${capFirst(L.name)}: every way of filling it that ${basis} ${what}.`;
-  };
-  let hint = null;
-  // 1) A single row or column on its own; letters before blanks
-  for (const wantBlank of [false, true]) {
-    for (let t = 0; t < 2 * n && !hint; t++) {
-      const { L, u } = lineUnion(t, poss);
-      L.cells.forEach((i, j) => {
-        if (hint || abc.cells[i] || bits(u[j]) !== 1) return;
-        const v = Math.log2(u[j]);
-        if ((v === k) === wantBlank) hint = { i, v, line: L.cells, why: describe(L, i, v, false) };
-      });
-    }
-    if (hint) break;
-  }
-  // 2) Rows and columns combined: keep narrowing, remembering which line ruled out what, until a square is forced
-  if (!hint) {
-    const elim = poss.map(() => Array(k + 1).fill(-1));
-    const sym = v => v === k ? "a blank" : ABC_L[v];
-    const list = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
-    const explain = (L, t, i, v) => {
-      const r = Math.floor(i / n), c = i % n, isRow = t < n;
-      const crossName = o => isRow ? `column ${o % n + 1}` : `row ${Math.floor(o / n) + 1}`;
-      const crossNum = o => isRow ? o % n + 1 : Math.floor(o / n) + 1;
-      const group = os => `${isRow ? "column" : "row"}${os.length > 1 ? "s" : ""} ${list(os.map(crossNum))}`;
-      const others = L.cells.filter(o => o !== i);
-      // Only place left in this line for the letter?
-      if (v !== k && others.every(o => abc.cells[o] || !(poss[o] & (1 << v)))) {
-        const filled = [], own = [], crossed = [];
-        for (const o of others) {
-          if (abc.cells[o]) filled.push(o);
-          else if (elim[o][v] === t) own.push(o);
-          else crossed.push(o);
-        }
-        const bits2 = [];
-        if (crossed.length) bits2.push(`${group(crossed)} can't take one (${crossed.length === 1 ? `its ${isRow ? "column" : "row"} rules it out` : `their ${isRow ? "columns" : "rows"} rule it out`})`);
-        if (own.length) bits2.push(`${group(own)} ${own.length === 1 ? "doesn't" : "don't"} work once the rest of ${L.name} is fitted together`);
-        if (filled.length) bits2.push(`${group(filled)} ${filled.length === 1 ? "is" : "are"} already filled`);
-        return `${capFirst(L.name)} needs one ${ABC_L[v]}, and ${crossName(i)} is the only place left for it: ${list(bits2)}.`;
-      }
-      // Otherwise this square has only one option left
-      const by = new Map();
-      for (let w = 0; w <= k; w++) if (w !== v && elim[i][w] >= 0) { const nm = abcLine(elim[i][w]).name; by.set(nm, [...(by.get(nm) || []), sym(w)]); }
-      const parts = [...by].map(([nm, ws]) => `${nm} rules out ${list(ws)}`);
-      return `Row ${r + 1}, column ${c + 1} has only one option left, ${v === k ? "blank" : ABC_L[v]}: ${list(parts)}.`;
-    };
-    let changed = true;
-    while (changed && !hint) {
-      changed = false;
-      for (let t = 0; t < 2 * n && !hint; t++) {
-        const { L, u } = lineUnion(t, poss);
-        L.cells.forEach((i, j) => {
-          const nv = poss[i] & u[j];
-          if (nv === poss[i]) return;
-          for (let w = 0; w <= k; w++) if ((poss[i] & ~nv) & (1 << w) && elim[i][w] < 0) elim[i][w] = t;
-          poss[i] = nv; changed = true;
-        });
-        if (!hint) L.cells.forEach(i => {
-          if (hint || abc.cells[i] || bits(poss[i]) !== 1) return;
-          const v = Math.log2(poss[i]);
-          hint = { i, v, line: L.cells, why: explain(L, t, i, v) };
-        });
-      }
-    }
-  }
-  // 3) Nothing simple left: give a nudge from the answer
-  if (!hint) {
-    const i = abc.cells.findIndex(ch => !ch);
-    hint = { i, v: sol[i], line: null, why: `No simple step left; here's a nudge: row ${Math.floor(i / n) + 1}, column ${i % n + 1} is ${sol[i] === k ? "blank" : ABC_L[sol[i]]}.` };
-  }
-  abcSel = { type: "cell", i: hint.i }; abcHintCell = hint.i; abcHintLine = hint.line; abcPending = hint;
-  abcMsg(`${esc(hint.why)}${note} <br><button class="btn ghost" id="abcFill">Fill it in</button>`);
-  abcRender();
-}
-
-function abcCheck(){
-  abcClearMarks();
-  if (abcNeedsClues()) { abcRender(); return; }
-  const res = abcSolve(1);
-  if (abcProblem(res)) { abcRender(); return; }
-  const mine = abc.cells.map((ch, i) => ch ? i : -1).filter(i => i >= 0);
-  if (!mine.length) { abcMsg("You haven't filled any squares yet."); abcRender(); return; }
-  abcWrong = new Set(mine.filter(i => abcVal(abc.cells[i]) !== res.sol[i]));
-  abcMsg(abcWrong.size ? `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, abcWrong.size ? "no" : "ok");
-  abcRender();
-}
-
-function abcSolveAll(){
-  abcClearMarks();
-  if (abcNeedsClues()) { abcRender(); return; }
-  const res = abcSolve(2);
-  if (abcProblem(res)) { abcRender(); return; }
-  res.sol.forEach((v, i) => { const ch = abcCh(v); if (abc.cells[i] !== ch) { abc.cells[i] = ch; abc.shown[i] = 1; } });
-  abcMsg(res.count > 1 ? "Solved, but these clues allow more than one answer, so one may be missing or misread." : "Solved. The squares I filled in are in italics; ✕ means blank.", res.count > 1 ? "no" : "ok");
-  abcRender(); abcSave();
-}
-
-function abcResize(){
-  const n = +$("abcSize").value, k = Math.min(+$("abcK").value, n - 1);
-  const hasAny = abc.cells.some(Boolean) || [...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
-  if (hasAny && !confirm("Changing this clears the puzzle. Carry on?")) { abcRender(); return; }
-  abc = abcFresh(n, k); abcSel = null; abcClearMarks(); abcMsg(""); abcStatus("");
-  $("abcEdit").checked = true;
-  abcRender(); abcSave();
-}
-
-$("abcGrid").addEventListener("click", e => {
-  const cell = e.target.closest("[data-i]"), clue = e.target.closest("[data-side]");
-  if (cell) { const i = +cell.dataset.i; abcSel = abcSel && abcSel.type === "cell" && abcSel.i === i ? null : { type: "cell", i }; }
-  else if (clue) {
-    if (!$("abcEdit").checked) { abcMsg("Tick “Edit the clues” to change the letters round the edge."); return; }
-    const side = clue.dataset.side, j = +clue.dataset.j;
-    abcSel = abcSel && abcSel.type === side && abcSel.j === j ? null : { type: side, j };
-  } else return;
-  abcRender();
-});
-$("abcPad").addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (b) abcPlace(b.dataset.v); });
-$("abcMsg").addEventListener("click", e => {
-  if (e.target.id !== "abcFill" || !abcPending) return;
-  const { i, v } = abcPending;
-  abc.cells[i] = abcCh(v); abc.shown[i] = 1;
-  abcClearMarks(); abcSel = { type: "cell", i }; abcMsg("");
-  if (abc.cells.every(Boolean)) abcMsg("Solved! 🎉", "ok");
-  abcRender(); abcSave();
-});
-$("abcEdit").addEventListener("change", () => { if (!$("abcEdit").checked && abcSel && abcSel.type !== "cell") abcSel = null; abcRender(); });
-$("abcHint").addEventListener("click", abcHint);
-$("abcCheck").addEventListener("click", abcCheck);
-$("abcSolve").addEventListener("click", abcSolveAll);
-$("abcClear").addEventListener("click", () => { abc.cells.fill(""); abc.shown.fill(0); abcClearMarks(); abcMsg(""); abcRender(); abcSave(); });
-$("abcBlank").addEventListener("click", () => { $("abcSize").value = String(abc.n); abcResize(); });
-$("abcSize").addEventListener("change", abcResize);
-$("abcK").addEventListener("change", abcResize);
-document.addEventListener("keydown", e => {
-  if ($("pz-abc").hidden || $("tab-crossword").hidden || !abcSel || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
-  const key = e.key.toUpperCase();
-  if (key.length === 1 && ABC_L.slice(0, abc.k).includes(key)) { abcPlace(key); e.preventDefault(); }
-  else if (key === "X" || key === " " || key === ".") { abcPlace("x"); e.preventDefault(); }
-  else if (e.key === "Backspace" || e.key === "Delete") { abcPlace(""); e.preventDefault(); }
-  else if (abcSel.type === "cell") {
-    const n = abc.n, r = Math.floor(abcSel.i / n), c = abcSel.i % n;
-    const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
-    if (mv) { const rr = Math.min(n - 1, Math.max(0, r + mv[0])), cc = Math.min(n - 1, Math.max(0, c + mv[1])); abcSel = { type: "cell", i: rr * n + cc }; abcRender(); e.preventDefault(); }
-  }
-});
-
-/* ---------- reading an ABC Logic puzzle from a photo ---------- */
-async function readABC(file){
-  abcStatus("Loading the letter reader (about 5 MB, first time only)…");
-  try { await getWorker(); } catch { abcStatus("Couldn't download the letter reader. Check your connection and try again.", true); return; }
-  abcStatus("Cleaning up the photo…");
-  const bin = await photoToBinary(file);
-  const W = bin.width, H = bin.height;
-  const px = bin.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data;
-  const ink = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++) ink[i] = px[i * 4] < 128 ? 1 : 0;
-
-  abcStatus("Finding the grid…");
-  const { lab, list } = blobs(ink, W, H);
-  let grid = null;
-  for (const b of list) {
-    const bw = b.x1 - b.x0, bh = b.y1 - b.y0;
-    if (bw < W * 0.12 || bh < H * 0.12 || bw > bh * 1.6 || bh > bw * 1.6) continue;
-    if (!grid || bw * bh > (grid.x1 - grid.x0) * (grid.y1 - grid.y0)) grid = b;
-  }
-  if (!grid) { abcStatus("Couldn't find the grid in that photo. Try again with the whole puzzle in shot, or type the clues in.", true); return; }
-  let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity];
-  for (let y = grid.y0; y <= grid.y1; y++) for (let x = grid.x0; x <= grid.x1; x++) {
-    if (lab[y * W + x] !== grid.id) continue;
-    if (x + y < tl[2]) tl = [x, y, x + y];
-    if (x + y > br[2]) br = [x, y, x + y];
-    if (x - y > tr[2]) tr = [x, y, x - y];
-    if (x - y < bl[2]) bl = [x, y, x - y];
-  }
-
-  // Straighten the grid plus a border round it, where the clues live
-  const S = 600, PAD = 220, F = S + 2 * PAD;
-  const map = homography([[0, 0], [S, 0], [S, S], [0, S]], [tl, tr, br, bl]);
-  const flat = document.createElement("canvas"); flat.width = flat.height = F;
-  const fx = flat.getContext("2d", { willReadFrequently: true }), fd = fx.createImageData(F, F), fink = new Uint8Array(F * F);
-  for (let y = 0; y < F; y++) for (let x = 0; x < F; x++) {
-    const [u, v] = map(x - PAD + 0.5, y - PAD + 0.5), ux = Math.round(u), vy = Math.round(v);
-    const on = ux >= 0 && vy >= 0 && ux < W && vy < H && ink[vy * W + ux];
-    fink[y * F + x] = on ? 1 : 0;
-    const o = (y * F + x) * 4; fd.data[o] = fd.data[o + 1] = fd.data[o + 2] = on ? 0 : 255; fd.data[o + 3] = 255;
-  }
-  fx.putImageData(fd, 0, 0);
-
-  // Count the grid lines to get the size
-  const countLines = vertical => {
-    const prof = [];
-    for (let a = -4; a <= S + 4; a++) {
-      let c = 0;
-      for (let b = Math.round(S * 0.05); b < S * 0.95; b++) c += vertical ? fink[(b + PAD) * F + a + PAD] : fink[(a + PAD) * F + b + PAD];
-      prof.push(c / (S * 0.9));
-    }
-    let lines = 0, inRun = false, last = -999;
-    prof.forEach((f, idx) => {
-      if (f > 0.45 && !inRun) { if (idx - last > S * 0.04) lines++; inRun = true; }
-      if (f <= 0.45 && inRun) { inRun = false; last = idx; }
-    });
-    return lines - 1;
-  };
-  const nv = countLines(true), nh = countLines(false);
-  let n = +$("abcSize").value;
-  if (nv === nh && nv >= 4 && nv <= 8) n = nv;
-  const cell = S / n;
-
-  // Find a letter beside each row and column
-  const spots = [];
-  const look = (side, j, x0, y0, w, h) => {
-    x0 = Math.round(x0 + PAD); y0 = Math.round(y0 + PAD); w = Math.round(w); h = Math.round(h);
-    if (x0 < 0 || y0 < 0 || x0 + w > F || y0 + h > F) return;
-    const sub = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) sub[y * w + x] = fink[(y0 + y) * F + x0 + x];
-    let best = null;
-    for (const b of blobs(sub, w, h).list) {
-      const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
-      if (bh < cell * 0.18 || bh > cell * 0.9 || bw > cell * 0.9 || b.n < cell * cell * 0.006) continue;
-      if (b.x0 === 0 || b.y0 === 0 || b.x1 === w - 1 || b.y1 === h - 1) continue;   // cut off at the edge: not a whole letter
-      if (!best || b.n > best.n) best = b;
-    }
-    if (best) spots.push({ side, j, x: x0 + best.x0, y: y0 + best.y0, w: best.x1 - best.x0 + 1, h: best.y1 - best.y0 + 1, label: "?" });
-  };
-  const out = Math.min(cell * 1.15, PAD - 2), gap = cell * 0.1;
-  for (let j = 0; j < n; j++) {
-    look("top", j, j * cell + gap, -out, cell - 2 * gap, out - gap);
-    look("bottom", j, j * cell + gap, S + gap, cell - 2 * gap, out - gap);
-    look("left", j, -out, j * cell + gap, out - gap, cell - 2 * gap);
-    look("right", j, S + gap, j * cell + gap, out - gap, cell - 2 * gap);
-  }
-  if (!spots.length) { abcStatus(`Found a ${n} × ${n} grid but no clue letters round it. Try a closer photo, or tick “Edit the clues” and type them in.`, true); return; }
-
-  // Re-draw the letters evenly spaced, read them in one go, then cross-check them against each other
-  abcStatus(`Reading ${spots.length} clue letters…`);
-  const BOX = 60, G = 60, PER = 8, rows = Math.ceil(spots.length / PER), re = document.createElement("canvas");
-  re.width = PER * (BOX + G) + G; re.height = rows * (BOX + G) + G;
-  const rx = re.getContext("2d", { willReadFrequently: true });
-  rx.fillStyle = "#fff"; rx.fillRect(0, 0, re.width, re.height);
-  spots.forEach((s, k) => {
-    const sc = 40 / s.h, dw = Math.max(2, Math.min(BOX, Math.round(s.w * sc)));
-    s.rx = G + (k % PER) * (BOX + G) + ((BOX - dw) >> 1); s.ry = G + Math.floor(k / PER) * (BOX + G) + 10; s.rw = dw;
-    rx.drawImage(flat, s.x, s.y, s.w, s.h, s.rx, s.ry, dw, 40);
-  });
-  const chars = ABC_L.slice(0, Math.max(+$("abcK").value, 6));
-  for (const sym of await ocr(re, 6, chars)) {
-    const c = Math.floor((sym.x - G / 2) / (BOX + G)), r = Math.floor((sym.y - G / 2) / (BOX + G)), s = spots[r * PER + c];
-    if (c >= 0 && c < PER && s && s.label === "?") s.label = sym.t;
-  }
-  spots.forEach(s => s.v = glyphVec(re, s.rx, s.ry, s.rw, 40));
-  crossCheck(spots);
-  for (const s of spots) if (s.label === "?") {
-    const one = document.createElement("canvas"); one.width = one.height = BOX + 40;
-    const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
-    ox.drawImage(re, s.rx - 10, s.ry - 10, s.rw + 20, 60, 20, 20, s.rw + 20, 60);
-    const got = await ocr(one, 10, chars);
-    if (got.length) s.label = got[0].t;
-  }
-
-  const seen = spots.filter(s => s.label !== "?").map(s => ABC_L.indexOf(s.label));
-  const k = Math.min(n - 1, Math.max(3, ...seen.map(v => v + 1)));
-  abc = abcFresh(n, k);
-  for (const s of spots) if (s.label !== "?") abc[s.side][s.j] = s.label;
-  $("abcEdit").checked = false; abcSel = null; abcClearMarks(); abcMsg("");
-  abcRender(); abcSave();
-  const unread = spots.filter(s => s.label === "?").length, res = abcSolve(2);
-  let msg = `Read a ${n} × ${n} grid using ${ABC_L[0]} to ${ABC_L[k - 1]}, with ${spots.length - unread} clue${spots.length - unread === 1 ? "" : "s"}.`;
-  if (unread) msg += ` ${unread} couldn't be read.`;
-  if (!res.count) msg += " No answer fits, so a letter was probably misread: tick “Edit the clues” to fix it, and check the size and letters above.";
-  else if (res.count > 1) msg += " It has more than one answer, so a clue may be missing. Check it against the paper.";
-  else msg += " It checks out with exactly one answer. Ask for a hint, or have a go.";
-  abcStatus(msg, !res.count);
-}
-
-$("abcFile").addEventListener("change", async e => {
-  const f = e.target.files && e.target.files[0];
-  e.target.value = "";
-  if (!f) return;
-  try { await readABC(f); }
-  catch (err) { console.warn(err); abcStatus("Something went wrong reading that photo. Try again, or type the clues in.", true); }
-});
-
-function loadABC(){
-  const saved = store.get("bd-abc", null);
-  if (saved && saved.n >= 4 && saved.n <= 8 && Array.isArray(saved.cells) && saved.cells.length === saved.n * saved.n) abc = saved;
-  $("abcEdit").checked = ![...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
-  abcRender();
-}
-
-/* ================= COUNTDOWN: switch ================= */
-function showCd(mode){
-  document.querySelectorAll("[data-cd]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cd === mode));
-  $("cd-letters").hidden = mode !== "letters";
-  $("cd-numbers").hidden = mode !== "numbers";
-  $("cd-conundrum").hidden = mode !== "conundrum";
-  store.set("bd-cd", mode);
-}
-document.querySelectorAll("[data-cd]").forEach(b => b.addEventListener("click", () => showCd(b.dataset.cd)));
-
-/* ================= COUNTDOWN: letters ================= */
-const VOWEL_POOL = { a:15, e:21, i:13, o:13, u:5 };
-const CONS_POOL  = { b:2,c:3,d:6,f:2,g:3,h:2,j:1,k:1,l:5,m:4,n:8,p:4,q:1,r:9,s:9,t:9,v:1,w:1,x:1,y:1,z:1 };
-const letterClock = makeClock($("cdBar"), $("cdTime"), 30);
-let vDeck, cDeck, board;
-const makeDeck = pool => shuffle(Object.entries(pool).flatMap(([ch, n]) => Array(n).fill(ch)));
-const isVowel = c => "aeiou".includes(c);
-
-function newLetters(){
-  letterClock.reset();
-  vDeck = makeDeck(VOWEL_POOL); cDeck = makeDeck(CONS_POOL); board = [];
-  $("cdPlay").hidden = true; $("cdOut").innerHTML = ""; $("cdVerdict").textContent = ""; $("cdInput").value = "";
-  renderLetters();
-}
-function renderLetters(){
-  let html = "";
-  for (let i = 0; i < 9; i++) html += board[i] ? `<span class="tile">${board[i]}</span>` : `<span class="tile empty"></span>`;
-  $("cdTiles").innerHTML = html;
-  const v = board.filter(isVowel).length, c = board.length - v, full = board.length === 9;
-  $("vowelBtn").disabled = full || v >= 5;
-  $("consBtn").disabled = full || c >= 6;
-  $("randomBtn").disabled = board.length > 0;
-  $("cdCounts").textContent = full ? `${v} vowels, ${c} consonants` : board.length ? `${board.length} of 9 picked` : "Pick 9: at least 3 vowels and 4 consonants";
-}
-function pickLetter(vowel){
-  if (board.length >= 9) return;
-  board.push(vowel ? vDeck.pop() : cDeck.pop());
-  renderLetters();
-  if (board.length === 9) startLetters();
-}
-function randomNine(){
-  const vowels = 3 + Math.floor(Math.random() * 3);
-  shuffle([...Array(vowels).fill(true), ...Array(9 - vowels).fill(false)]).forEach(v => board.push(v ? vDeck.pop() : cDeck.pop()));
-  renderLetters(); startLetters();
-}
-function startLetters(){
-  $("cdPlay").hidden = false;
-  letterClock.start();
-  $("cdInput").focus({ preventScroll: true });
-}
-async function checkWord(){
-  const w = $("cdInput").value.trim().toLowerCase();
-  const v = $("cdVerdict");
-  if (!w) return;
-  const avail = {}; board.forEach(c => avail[c] = (avail[c] || 0) + 1);
-  for (const c of w) {
-    if (!avail[c]) { v.className = "verdict no"; v.textContent = `“${w}” can't be made from these letters.`; return; }
-    avail[c]--;
-  }
-  try { await loadLists(); } catch { v.className = "verdict no"; v.textContent = "Couldn't load the word list to check it."; return; }
-  if (WORDSET.has(w)) {
-    const pts = w.length === 9 ? 18 : w.length;
-    v.className = "verdict ok"; v.textContent = `“${w}” is valid: ${pts} point${pts === 1 ? "" : "s"}.`;
-  } else { v.className = "verdict no"; v.textContent = `“${w}” isn't in the word list.`; }
-}
-async function revealLetters(){
-  letterClock.reset();
-  const out = $("cdOut");
-  if (!await needLists(out)) return;
-  renderGroups(out, solveLetters(board.join(""), 0, 4), 9, { cap: 40, maxGroups: 3 });
-}
-$("vowelBtn").addEventListener("click", () => pickLetter(true));
-$("consBtn").addEventListener("click", () => pickLetter(false));
-$("randomBtn").addEventListener("click", randomNine);
-$("newBtn").addEventListener("click", newLetters);
-$("cdCheck").addEventListener("click", checkWord);
-$("cdInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); checkWord(); } });
-$("revealBtn").addEventListener("click", revealLetters);
-
-/* ================= COUNTDOWN: conundrum ================= */
-const cnClock = makeClock($("cnBar"), $("cnTime"), 30);
-const sortKey = w => [...w].sort().join("");
-let cnPool = null, CN = null, cnStart = 0;
-function cnTiles(word, answer){
-  $("cnTiles").className = "cd-tiles" + (answer ? " cn-answer" : "");
-  $("cnTiles").innerHTML = word ? [...word].map(c => `<span class="tile">${c}</span>`).join("") : Array(9).fill(`<span class="tile empty"></span>`).join("");
-}
-function buildConundrums(){
-  // Only common words, and only ones with a single 9-letter answer, so a correct guess is never "wrong"
-  const count = new Map();
-  for (const w of WORDS) if (w.length === 9) { const k = sortKey(w); count.set(k, (count.get(k) || 0) + 1); }
-  cnPool = [...RANK.keys()].filter(w => w.length === 9 && /^[a-z]+$/.test(w) && WORDSET.has(w) && count.get(sortKey(w)) === 1);
-}
-async function newConundrum(){
-  cnClock.reset();
-  if (!await needLists($("cnOut"))) return;
-  $("cnOut").innerHTML = "";
-  if (!cnPool) buildConundrums();
-  const ans = cnPool[Math.floor(Math.random() * cnPool.length)];
-  let mix;
-  do mix = shuffle([...ans]).join(""); while (mix === ans || WORDSET.has(mix));
-  CN = { ans, mix, done: false };
-  cnTiles(mix);
-  $("cnPlay").hidden = false; $("cnReveal").hidden = false; $("cnInput").value = ""; $("cnInput").disabled = false; $("cnBuzz").disabled = false;
-  $("cnVerdict").className = "verdict"; $("cnVerdict").textContent = "";
-  $("cnMeta").textContent = "Find the 9-letter word";
-  $("cnNew").textContent = "Next conundrum";
-  cnStart = Date.now();
-  cnClock.start(() => { if (!CN.done) endConundrum(false, "Time's up!"); });
-  $("cnInput").focus({ preventScroll: true });
-}
-function endConundrum(won, msg){
-  CN.done = true; cnClock.reset();
-  $("cnReveal").hidden = true;
-  cnTiles(CN.ans, true);
-  $("cnInput").disabled = true; $("cnBuzz").disabled = true;
-  const v = $("cnVerdict");
-  v.className = "verdict " + (won ? "ok" : "no");
-  v.innerHTML = won ? esc(msg) : `${esc(msg)} It was <b>${CN.ans.toUpperCase()}</b>.`;
-  $("cnMeta").innerHTML = `<button class="chip" data-word="${CN.ans}">What does it mean?</button>`;
-}
-function cnGuess(){
-  if (!CN || CN.done) return;
-  const w = $("cnInput").value.trim().toLowerCase(), v = $("cnVerdict");
-  if (!w) return;
-  if (w.length !== 9 || sortKey(w) !== sortKey(CN.ans)) { v.className = "verdict no"; v.textContent = `“${w}” doesn't use all nine letters exactly once.`; return; }
-  if (w === CN.ans) { const t = Math.max(1, Math.round((Date.now() - cnStart) / 1000)); endConundrum(true, `Correct, in ${t} second${t === 1 ? "" : "s"}! 10 points.`); return; }
-  v.className = "verdict no"; v.textContent = `“${w}” isn't it. Keep going!`;
-  $("cnInput").select();
-}
-$("cnNew").addEventListener("click", newConundrum);
-$("cnBuzz").addEventListener("click", cnGuess);
-$("cnInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); cnGuess(); } });
-$("cnReveal").addEventListener("click", () => { if (CN && !CN.done) endConundrum(false, "Unlucky."); });
-cnTiles("");
-
-/* ================= COUNTDOWN: numbers ================= */
-const SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
-const numberClock = makeClock($("nBar"), $("nTime"), 30);
-let N = null; // { start:[], target, tiles:[{id,v,used,made}], history:[], sel, op, nextId }
-
-function solveNumbers(nums, target){
-  let best = { diff: Infinity, value: null, steps: [] };
-  for (const n of nums) { const d = Math.abs(n - target); if (d < best.diff) best = { diff: d, value: n, steps: [] }; }
-  if (best.diff === 0) return best;
-  // Iterative deepening: try 1 step, then 2, and so on, so the answer uses as few steps as possible
-  for (let limit = 1; limit < nums.length && best.diff > 0; limit++) {
-    const seen = new Set();
-    const dfs = (arr, steps) => {
-      const key = arr.slice().sort((a, b) => a - b).join(",");
-      if (seen.has(key)) return false;
-      seen.add(key);
-      for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) {
-        const hi = Math.max(arr[i], arr[j]), lo = Math.min(arr[i], arr[j]);
-        const rest = arr.filter((_, k) => k !== i && k !== j);
-        const cands = [["+", hi + lo]];
-        if (lo > 1) cands.push(["*", hi * lo]);
-        if (hi > lo) cands.push(["-", hi - lo]);
-        if (lo > 1 && hi % lo === 0) cands.push(["/", hi / lo]);
-        for (const [op, r] of cands) {
-          const s = `${hi} ${SYM[op]} ${lo} = ${r}`;
-          const d = Math.abs(r - target);
-          if (d < best.diff) { best = { diff: d, value: r, steps: [...steps, s] }; if (d === 0) return true; }
-          if (rest.length && steps.length + 1 < limit && dfs([...rest, r], [...steps, s])) return true;
-        }
-      }
-      return false;
-    };
-    dfs(nums.slice(), []);
-  }
-  return best;
-}
-const pointsFor = diff => diff === 0 ? 10 : diff <= 5 ? 7 : diff <= 10 ? 5 : 0;
-
-function resetNumbersUI(){
-  numberClock.reset();
-  N = null;
-  $("nTarget").textContent = "000";
-  $("nTiles").innerHTML = `<span class="ntile blank"></span>`.repeat(6);
-  $("nMeta").textContent = "Choose how many large numbers";
-  $("nPick").hidden = false; $("nPlay").hidden = true;
-  $("nSolution").innerHTML = ""; $("nMsg").textContent = ""; $("ownMsg").textContent = "";
-}
-function startNumbers(nums, target, timed){
-  N = { start: nums.slice(), target, history: [], sel: null, op: null, nextId: 0, tiles: [] };
-  N.tiles = nums.map(v => ({ id: N.nextId++, v, used: false, made: false }));
-  $("nPick").hidden = true; $("nPlay").hidden = false;
-  $("nSolution").innerHTML = ""; $("nMsg").textContent = "";
-  renderNumbers();
-  if (timed) {
-    // A quick spin of the target display, then the clock starts
-    let spins = 0;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const spin = setInterval(() => {
-      $("nTarget").textContent = 101 + Math.floor(Math.random() * 899);
-      if (reduce || ++spins > 12) { clearInterval(spin); $("nTarget").textContent = target; numberClock.start(); }
-    }, 60);
+function quizPool(){ return FLAGS.filter(f=>Q.cont==='all'||f.cont===Q.cont); }
+
+function startRound(){ Q.i=0; Q.score=0; Q.used=new Set(); Q.phase='play'; nextQ(); }
+function nextQ(){
+  if(Q.i>=Q.total){ endRound(); return; }
+  Q.i++; Q.done=false; Q.chosen=null; Q.zoom=0; Q.pos=pick(POSITIONS);
+  if(Q.mode==='twins'){
+    const g = pick(TWINS);
+    Q.cur = BY[pick(g)];
+    let opts = g.map(c=>BY[c]);
+    if(opts.length<4) opts = opts.concat(similar(Q.cur,FLAGS,4-opts.length,g));
+    Q.opts = shuffle(opts);
   } else {
-    $("nTarget").textContent = target;
-    $("nTime").textContent = "";
+    const pool = quizPool();
+    let fresh = pool.filter(f=>!Q.used.has(f.code));
+    if(!fresh.length) fresh = pool;
+    Q.cur = pick(fresh); Q.used.add(Q.cur.code);
+    Q.opts = shuffle([Q.cur, ...similar(Q.cur,pool,3,[])]);
+  }
+  renderQuiz();
+}
+function answer(code){
+  if(Q.done) return;
+  Q.done = true; Q.chosen = code;
+  if(code===Q.cur.code) Q.score += Q.mode==='closeup' ? [3,2,1][Q.zoom] : 1;
+  renderQuiz();
+}
+function endRound(){
+  Q.phase='end';
+  const prev = store.get(bestKey(),null);
+  Q.newBest = prev===null || Q.score>prev;
+  if(Q.newBest) store.set(bestKey(),Q.score);
+  renderQuiz();
+}
+
+function setupHTML(){
+  const best = store.get(bestKey(),null);
+  return `
+    <div class="qintro"><h2>Quiz</h2><p>Rounds of ${Q.total}. Your best score for each mode is saved on this device.</p></div>
+    <div class="fgroup"><h3>Mode</h3>
+      <div class="chips">${Object.entries(MODES).map(([k,m])=>chip(m.label,Q.mode===k,`data-qmode="${k}"`)).join('')}</div>
+      <p style="margin:10px 0 0;color:var(--muted)">${MODES[Q.mode].blurb}</p>
+    </div>
+    ${Q.mode!=='twins'?`<div class="fgroup"><h3>Flags from</h3>
+      <div class="chips">${chip('Everywhere',Q.cont==='all','data-qcont="all"')}${Object.entries(CONTS).map(([k,v])=>chip(v,Q.cont===k,`data-qcont="${k}"`)).join('')}</div>
+    </div>`:''}
+    <div class="row" style="margin-top:24px">
+      <button class="btn" data-qstart>Start a round</button>
+      ${best!==null?`<span style="color:var(--muted)">Best: ${best} out of ${maxScore()}</span>`:''}
+    </div>`;
+}
+function playHTML(){
+  const f = Q.cur, done = Q.done;
+  const cls = o => !done ? '' : o.code===f.code ? 'good' : o.code===Q.chosen ? 'bad' : '';
+  let stage = '', opts = '';
+  if(Q.mode==='spot'){
+    stage = `<p class="prompt">Which is the flag of ${f.name}?</p>`;
+    opts = Q.opts.map((o,i)=>`<button class="opt ${cls(o)}" data-ans="${o.code}" ${done?'disabled':''} aria-label="Option ${i+1}${done?', '+o.name:''}"><img src="${pngUrl(o.code,320)}" alt=""></button>`).join('');
+  } else {
+    if(Q.mode==='closeup'){
+      const z = done ? 0 : ZOOMS[Q.zoom];
+      const bg = z ? `background-size:${z}% auto;background-position:${Q.pos[0]}% ${Q.pos[1]}%` : 'background-size:contain;background-position:center';
+      stage = `<p class="prompt">Whose flag is this?</p>
+        <div class="closeup" role="img" aria-label="Zoomed-in mystery flag" style="background-image:url('${svgUrl(f.code)}');${bg}"></div>
+        ${!done && Q.zoom<2?`<button class="btn ghost" data-zoom style="margin-bottom:10px">Zoom out (worth ${[2,1][Q.zoom]} ${Q.zoom===1?'point':'points'})</button>`:''}`;
+    } else {
+      stage = `<p class="prompt">${Q.mode==='twins'?'Which twin is this?':'Whose flag is this?'}</p>
+        <div class="qflag"><img src="${svgUrl(f.code)}" alt="Mystery flag"></div>`;
+    }
+    opts = Q.opts.map(o=>`<button class="opt ${cls(o)}" data-ans="${o.code}" ${done?'disabled':''}>${o.name}</button>`).join('');
+  }
+  let fb = '';
+  if(done){
+    const right = Q.chosen===f.code;
+    const tw = twinsOf(f.code).map(c=>BY[c].name);
+    fb = `<div class="feedback">
+      <p class="verdict ${right?'good':'bad'}">${right?'Correct.':'Not quite.'} That’s ${f.name}.</p>
+      ${tw.length?`<p style="margin:4px 0 0;color:var(--muted)">Easily confused with ${tw.join(', ')}.</p>`:''}
+      <div class="row" style="margin-top:12px">
+        <button class="btn" data-qnext>${Q.i>=Q.total?'See my score':'Next flag'}</button>
+        <button class="btn ghost" data-open="${f.code}">About this flag</button>
+      </div></div>`;
+  }
+  return `<div class="qbar"><span>Question ${Q.i} of ${Q.total}</span><span>Score <strong>${Q.score}</strong></span></div>
+    ${stage}<div class="opts">${opts}</div>${fb}
+    <button class="btn ghost" data-qquit style="margin-top:22px">Stop this round</button>`;
+}
+function endHTML(){
+  const best = store.get(bestKey(),Q.score);
+  return `<div class="result">
+    <p style="margin:0 0 6px;color:var(--muted)">${MODES[Q.mode].label}${Q.mode!=='twins'&&Q.cont!=='all'?', '+CONTS[Q.cont]:''}</p>
+    <p class="big">${Q.score} / ${maxScore()}</p>
+    <p>${Q.newBest?'New personal best.':`Your best is ${best}.`}</p>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" data-qstart>Play again</button>
+      <button class="btn ghost" data-qsetup>Change mode</button>
+    </div></div>`;
+}
+function renderQuiz(){
+  $('#view-quiz').innerHTML = Q.phase==='setup' ? setupHTML() : Q.phase==='play' ? playHTML() : endHTML();
+}
+$('#view-quiz').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const d = b.dataset;
+  if(d.qmode){ Q.mode=d.qmode; store.set('qmode',Q.mode); renderQuiz(); }
+  else if(d.qcont){ Q.cont=d.qcont; store.set('qcont',Q.cont); renderQuiz(); }
+  else if('qstart' in d){ startRound(); }
+  else if('qsetup' in d || 'qquit' in d){ Q.phase='setup'; renderQuiz(); }
+  else if(d.ans){ answer(d.ans); }
+  else if('zoom' in d){ if(Q.zoom<2){ Q.zoom++; renderQuiz(); } }
+  else if('qnext' in d){ nextQ(); }
+});
+
+/* ---------- Flag Finder ---------- */
+const FD = {cols:new Set(), layout:null, feats:new Set(), cont:null};
+function finderScore(f){
+  let s=0, max=0; const hits=[], misses=[];
+  for(const c of FD.cols){ max+=3; if(f.cols.includes(c)){ s+=3; hits.push(COL[c][0].toLowerCase()); } else { s-=3; misses.push(COL[c][0].toLowerCase()); } }
+  if(FD.cols.size) s -= f.cols.filter(c=>!FD.cols.has(c)).length*0.75;
+  if(FD.layout){ max+=4; const l=LAYOUTS[FD.layout].toLowerCase(); if(f.layout===FD.layout){ s+=4; hits.push(l); } else { s-=1; misses.push(l); } }
+  for(const k of FD.feats){ max+=3; const l=FEATS[k].toLowerCase(); if(hasFeat(f,k)){ s+=3; hits.push(l); } else { s-=2.5; misses.push(l); } }
+  if(FD.cont){ max+=1.5; if(f.cont===FD.cont) s+=1.5; }
+  return {f, s, pct: max ? Math.max(0,Math.min(100,Math.round(s/max*100))) : 0, hits, misses};
+}
+function renderFinder(){
+  const any = FD.cols.size||FD.layout||FD.feats.size||FD.cont;
+  const res = any ? FLAGS.map(finderScore).filter(r=>r.pct>0).sort((a,b)=>b.s-a.s||a.f.name.localeCompare(b.f.name)).slice(0,10) : [];
+  $('#view-finder').innerHTML = `
+    <div class="qintro"><h2>Flag Finder</h2>
+      <p>Saw a flag and can’t place it? Tap whatever you remember. It doesn’t need to be perfect: the closest matches rise to the top.</p></div>
+    ${any?`<div class="toprow">${res.slice(0,3).map(r=>`<button class="mini" data-open="${r.f.code}"><img src="${pngUrl(r.f.code,80)}" alt="">${r.f.name}, ${r.pct}%</button>`).join('')||'<span class="lead">No close matches yet. Try removing something you’re unsure of.</span>'}</div>
+      <button class="btn ghost" data-fd-reset>Start again</button>`:''}
+    <div class="fgroup"><h3>Colours you remember</h3>
+      <div class="chips">${CORDER.map(c=>chip(COL[c][0],FD.cols.has(c),`data-fcol="${c}"`,COL[c][1])).join('')}</div></div>
+    <div class="fgroup"><h3>The design</h3>
+      <div class="chips">${Object.entries(LAYOUTS).map(([k,v])=>chip(v,FD.layout===k,`data-flayout="${k}"`)).join('')}</div></div>
+    <div class="fgroup"><h3>Did it have a…</h3>
+      <div class="chips">${Object.entries(FEATS).map(([k,v])=>chip(v,FD.feats.has(k),`data-ffeat="${k}"`)).join('')}</div></div>
+    <div class="fgroup"><h3>Probably from</h3>
+      <div class="chips">${Object.entries(CONTS).map(([k,v])=>chip(v,FD.cont===k,`data-fcont="${k}"`)).join('')}</div></div>
+    ${any?`<h3 class="sechead">Best matches</h3>
+      ${res.length?`<div class="results">${res.map(r=>`<button class="rrow" data-open="${r.f.code}">
+        <img src="${pngUrl(r.f.code)}" srcset="${pngUrl(r.f.code,320)} 2x" alt="" loading="lazy">
+        <span><span class="rn">${r.f.name}</span>
+          <span class="why">${r.hits.length?'Matches: '+r.hits.join(', ')+'.':''}${r.misses.length?` Doesn’t match: ${r.misses.join(', ')}.`:''}</span></span>
+        <span class="pc">${r.pct}%</span></button>`).join('')}</div>`
+      :`<p class="empty">Nothing matches that combination. Try removing something you’re unsure of.</p>`}`:''}`;
+}
+$('#view-finder').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const d = b.dataset;
+  if(d.fcol){ FD.cols.has(d.fcol)?FD.cols.delete(d.fcol):FD.cols.add(d.fcol); }
+  else if(d.flayout){ FD.layout = FD.layout===d.flayout?null:d.flayout; }
+  else if(d.ffeat){ FD.feats.has(d.ffeat)?FD.feats.delete(d.ffeat):FD.feats.add(d.ffeat); }
+  else if(d.fcont){ FD.cont = FD.cont===d.fcont?null:d.fcont; }
+  else if('fdReset' in d){ FD.cols.clear(); FD.layout=null; FD.feats.clear(); FD.cont=null; }
+  else return;
+  const y = window.scrollY; renderFinder(); window.scrollTo(0,y);
+});
+
+/* ---------- Daily Flagle ---------- */
+const LAUNCH = Date.UTC(2026,10,8)/864e5;
+const FORDER = shuffle(FLAGS.map((_,i)=>i), mulberry32(4242));
+function flagleAnswer(dn){
+  let i = ((dn%N)+N)%N, f = FLAGS[FORDER[i]];
+  if(f.code===fotdFor(dn).code) f = FLAGS[FORDER[(i+1)%N]];
+  return f;
+}
+const FL = {dn:null, ans:null, guesses:[], done:false, won:false, msg:''};
+function flagleLoad(){
+  FL.dn = dayNum(); FL.ans = flagleAnswer(FL.dn); FL.msg='';
+  const s = store.get('flagle.today',null);
+  if(s && s.day===FL.dn){ FL.guesses=s.guesses; FL.done=s.done; FL.won=s.won; }
+  else { FL.guesses=[]; FL.done=false; FL.won=false; }
+}
+const flagleSave = () => store.set('flagle.today',{day:FL.dn,guesses:FL.guesses,done:FL.done,won:FL.won});
+const STATS0 = {played:0,wins:0,streak:0,max:0,dist:[0,0,0,0,0,0],last:null,lastWin:null};
+function recordStats(){
+  const st = Object.assign({},STATS0,store.get('flagle.stats',{}));
+  if(st.last===FL.dn) return;
+  st.played++; st.last=FL.dn;
+  if(FL.won){ st.wins++; st.dist[FL.guesses.length-1]++; st.streak = st.lastWin===FL.dn-1 ? st.streak+1 : 1; st.lastWin=FL.dn; st.max=Math.max(st.max,st.streak); }
+  else st.streak = 0;
+  store.set('flagle.stats',st);
+}
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[’'`.]/g,'').replace(/-/g,' ').replace(/\s+/g,' ').trim();
+const ALIASES = {'turkey':'tr','uk':'gb','great britain':'gb','britain':'gb','usa':'us','us':'us','america':'us','united states of america':'us','ivory coast':'ci','czech republic':'cz','swaziland':'sz','burma':'mm','east timor':'tl','holland':'nl','drc':'cd','congo':'cg','democratic republic of the congo':'cd','korea':'kr','macedonia':'mk','vatican':'va','holy see':'va','cape verde':'cv','uae':'ae','emirates':'ae','bahamas':'bs','st kitts':'kn','st lucia':'lc','st vincent':'vc','png':'pg','bosnia':'ba'};
+const NAMEIDX = FLAGS.map(f=>[norm(f.name),f.code]).concat(Object.entries(ALIASES));
+function suggestions(q){
+  q = norm(q); if(!q) return [];
+  const seen = new Set(), starts=[], contains=[];
+  for(const [n,c] of NAMEIDX){
+    if(seen.has(c) || FL.guesses.includes(c)) continue;
+    if(n.startsWith(q) || n.split(' ').some(w=>w.startsWith(q))){ starts.push(c); seen.add(c); }
+    else if(n.includes(q)){ contains.push(c); seen.add(c); }
+  }
+  return starts.concat(contains).slice(0,6).map(c=>BY[c]);
+}
+function compare(g,a){
+  const gc=new Set(g.cols), ac=new Set(a.cols), shared=a.cols.filter(c=>gc.has(c)).length;
+  const gf=Object.keys(FEATS).filter(k=>hasFeat(g,k)), af=Object.keys(FEATS).filter(k=>hasFeat(a,k)), fs=af.filter(k=>gf.includes(k)).length;
+  return {
+    cont: g.cont===a.cont ? 'g':'b',
+    cols: (shared===ac.size && gc.size===ac.size) ? 'g' : shared ? 'y':'b',
+    layout: g.layout===a.layout ? 'g':'b',
+    feats: (gf.length===af.length && fs===af.length) ? 'g' : fs ? 'y':'b'
+  };
+}
+const TAGTXT = {cont:['Continent','Same continent','Other continent'],cols:['Colours','Same colours','Some colours','No shared colours'],layout:['Layout','Same layout','Other layout'],feats:['Features','Same features','Some features','No shared features']};
+function tagHTML(k,v){
+  const t = TAGTXT[k], txt = v==='g'?t[1]: v==='y'?t[2]: t[t.length-1];
+  return `<span class="tag ${v}" title="${t[0]}">${txt}</span>`;
+}
+const CLUES = [
+  a=>['Continent', CONTS[a.cont]],
+  a=>['Colours', `${a.cols.length} ${a.cols.length===1?'colour':'colours'}${swatchesHTML(a)}`],
+  a=>['Layout', LAYOUTS[a.layout]],
+  a=>['Features', featList(a).join(', ')||'None, just colours'],
+  a=>['Capital', a.capital],
+  a=>['A blurry look', `<div class="blur"><img src="${svgUrl(a.code)}" alt="Blurred mystery flag"></div>`]
+];
+function shareText(){
+  const n = FL.dn-LAUNCH+1;
+  const rows = FL.guesses.map(c=>{ const r=compare(BY[c],FL.ans); return ['cont','cols','layout','feats'].map(k=>({g:'🟩',y:'🟨',b:'⬛'})[r[k]]).join(''); });
+  const url = location.protocol.startsWith('http') ? '\n'+location.href.split('#')[0] : '';
+  return `Bazza’s Flagle #${n} ${FL.won?FL.guesses.length:'X'}/6\n${rows.join('\n')}${url}`;
+}
+async function shareFlagle(){
+  const text = shareText();
+  try{
+    if(navigator.share){ await navigator.share({text}); return; }
+    await navigator.clipboard.writeText(text); FL.msg='Result copied. Paste it wherever you like.';
+  }catch(e){ if(e && e.name==='AbortError') return; FL.msg='Couldn’t copy automatically. Your result:\n'+text; }
+  renderFlagle();
+}
+function untilTomorrow(){
+  const now=new Date(), t=new Date(now); t.setHours(24,0,0,0);
+  const m=Math.round((t-now)/6e4); return `${Math.floor(m/60)}h ${m%60}m`;
+}
+function statsHTML(){
+  const st = Object.assign({},STATS0,store.get('flagle.stats',{}));
+  const streak = (st.lastWin===FL.dn||st.lastWin===FL.dn-1) ? st.streak : 0;
+  const top = Math.max(1,...st.dist);
+  return `<div class="stats">
+      <div><b>${st.played}</b><span>Played</span></div>
+      <div><b>${st.played?Math.round(st.wins/st.played*100):0}%</b><span>Won</span></div>
+      <div><b>${streak}</b><span>Streak</span></div>
+      <div><b>${st.max}</b><span>Best streak</span></div></div>
+    ${st.dist.map((c,i)=>`<div class="bar" style="cursor:default"><span class="lbl">${i+1} ${i?'guesses':'guess'}</span><span class="track"><span class="fill" style="width:${Math.round(c/top*100)}%;${FL.won&&FL.guesses.length===i+1?'background:var(--good)':''}"></span></span><span class="num">${c}</span></div>`).join('')}`;
+}
+function renderFlagle(){
+  const a = FL.ans, n = FL.dn-LAUNCH+1;
+  const shown = FL.done ? 6 : Math.min(1+FL.guesses.length, 6);
+  const left = 6-FL.guesses.length;
+  const v = $('#view-flagle');
+  v.innerHTML = `
+    <div class="qintro"><h2>Flagle #${n}</h2>
+      <p>One mystery flag a day, six guesses. Every wrong guess unlocks another clue, and each guess shows how close you were.</p></div>
+    <div class="clues">${CLUES.map((fn,i)=>{ if(i<shown){ const [t,h]=fn(a); return `<div class="clue"><span class="ct">${t}</span>${h}</div>`; }
+      return `<div class="clue locked">${CLUES[i](a)[0]} unlocks after guess ${i}</div>`; }).join('')}</div>
+    ${FL.guesses.length?`<div class="guesses">${FL.guesses.map((c,i)=>{ const g=BY[c], r=compare(g,a); return `<div class="grow">
+        <div class="gn"><img src="${pngUrl(c,80)}" alt="">${g.name}<span class="gi">Guess ${i+1}</span></div>
+        <div class="tags">${['cont','cols','layout','feats'].map(k=>tagHTML(k,r[k])).join('')}</div></div>`; }).join('')}</div>`:''}
+    ${FL.done ? `
+      <div class="result" style="margin-top:20px">
+        <p class="verdict ${FL.won?'good':'bad'}" style="font-weight:700;margin:0 0 12px">${FL.won?`Got it in ${FL.guesses.length}.`:'Out of guesses.'} The answer was ${a.name}.</p>
+        <img class="flagbig" src="${svgUrl(a.code)}" alt="Flag of ${a.name}" style="width:min(100%,400px);height:auto;display:block;margin:0 0 18px;filter:drop-shadow(0 6px 14px rgba(22,32,58,.25))">
+        ${factsHTML(a)}
+        <div class="row" style="margin-top:18px"><button class="btn" data-fl-share>Share my result</button>
+          <span style="color:var(--muted)">Next Flagle in ${untilTomorrow()}</span></div>
+        ${FL.msg?`<p style="white-space:pre-line;margin:10px 0 0">${FL.msg}</p>`:''}
+        <div class="panel"><h3>Your Flagle stats</h3>${statsHTML()}</div>
+      </div>`
+    : `<div class="guessbox">
+        <label for="flInput" style="display:block;font-weight:600;margin-bottom:6px">Guess ${FL.guesses.length+1} of 6 (${left} left)</label>
+        <input id="flInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Start typing a country">
+        <div class="sugs" id="flSugs"></div>
+      </div>`}`;
+  const inp = $('#flInput');
+  if(inp){
+    const draw = () => { $('#flSugs').innerHTML = suggestions(inp.value).map(f=>`<button class="sug" data-fl-guess="${f.code}"><img src="${pngUrl(f.code,80)}" alt="">${f.name}</button>`).join(''); };
+    inp.addEventListener('input', draw);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter'){ const s=suggestions(inp.value); if(s.length) flagleGuess(s[0].code); } });
   }
 }
-function dealNumbers(large){
-  const big = shuffle([25, 50, 75, 100]).slice(0, large);
-  const small = shuffle([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10]).slice(0, 6 - large);
-  startNumbers([...big, ...small], 101 + Math.floor(Math.random() * 899), true);
+function flagleGuess(code){
+  if(FL.done || FL.guesses.includes(code)) return;
+  FL.guesses.push(code);
+  if(code===FL.ans.code){ FL.done=true; FL.won=true; } else if(FL.guesses.length>=6) FL.done=true;
+  flagleSave(); if(FL.done) recordStats();
+  renderFlagle();
+  const inp=$('#flInput'); if(inp) inp.focus({preventScroll:true});
 }
-function renderNumbers(){
-  $("nTiles").innerHTML = N.tiles.map(t =>
-    `<button class="ntile${t.made ? " made" : ""}${N.sel === t.id ? " sel" : ""}" data-tile="${t.id}"${t.used ? " disabled" : ""}>${t.v}</button>`
-  ).join("");
-  document.querySelectorAll("#opsRow [data-op]").forEach(b => b.classList.toggle("on", N.op === b.dataset.op));
-  $("nSteps").innerHTML = N.history.map(h => `<li>${h.text}</li>`).join("");
-  let best = null;
-  for (const t of N.tiles) { const d = Math.abs(t.v - N.target); if (!best || d < best.d) best = { v: t.v, d }; }
-  const pts = pointsFor(best.d);
-  $("nBest").textContent = best.d === 0
-    ? `Spot on! ${best.v}, 10 points.`
-    : `Closest so far: ${best.v}, ${best.d} away (${pts} point${pts === 1 ? "" : "s"}).`;
-  $("nMeta").textContent = `${N.start.filter(n => n >= 25).length} large, ${N.start.filter(n => n < 25).length} small`;
-}
-function tapTile(id){
-  const t = N.tiles.find(x => x.id === id);
-  if (!t || t.used) return;
-  $("nMsg").textContent = "";
-  if (N.sel === null || N.op === null || N.sel === id) { N.sel = N.sel === id && N.op === null ? null : id; renderNumbers(); return; }
-  const a = N.tiles.find(x => x.id === N.sel), b = t;
-  let r;
-  if (N.op === "+") r = a.v + b.v;
-  else if (N.op === "*") r = a.v * b.v;
-  else if (N.op === "-") r = a.v - b.v;
-  else r = b.v !== 0 && a.v % b.v === 0 ? a.v / b.v : NaN;
-  if (N.op === "-" && r <= 0) { $("nMsg").className = "verdict no"; $("nMsg").textContent = "No negatives or zero: take the smaller number from the bigger one."; return; }
-  if (Number.isNaN(r)) { $("nMsg").className = "verdict no"; $("nMsg").textContent = `${a.v} doesn't divide exactly by ${b.v}.`; return; }
-  a.used = b.used = true;
-  const made = { id: N.nextId++, v: r, used: false, made: true };
-  N.tiles.push(made);
-  N.history.push({ a: a.id, b: b.id, made: made.id, text: `${a.v} ${SYM[N.op]} ${b.v} = ${r}` });
-  N.sel = made.id; N.op = null;
-  renderNumbers();
-  if (r === N.target) numberClock.stop();
-}
-function tapOp(op){
-  if (!N) return;
-  if (N.sel === null) { $("nMsg").className = "verdict no"; $("nMsg").textContent = "Pick a number first."; return; }
-  $("nMsg").textContent = "";
-  N.op = N.op === op ? null : op;
-  renderNumbers();
-}
-function undoNumbers(){
-  const h = N && N.history.pop();
-  if (!h) return;
-  N.tiles = N.tiles.filter(t => t.id !== h.made);
-  N.tiles.forEach(t => { if (t.id === h.a || t.id === h.b) t.used = false; });
-  N.sel = null; N.op = null; $("nMsg").textContent = "";
-  renderNumbers();
-}
-function restartNumbers(){
-  if (!N) return;
-  N.tiles = N.start.map(v => ({ id: N.nextId++, v, used: false, made: false }));
-  N.history = []; N.sel = null; N.op = null; $("nMsg").textContent = "";
-  renderNumbers();
-}
-function showSolution(){
-  if (!N) return;
-  numberClock.stop();
-  $("nTime").textContent = "";
-  $("nSolution").innerHTML = `<p class="status">Working it out…</p>`;
-  setTimeout(() => {
-    const s = solveNumbers(N.start, N.target);
-    const head = s.diff === 0
-      ? `<p class="verdict ok">${N.target} can be made exactly:</p>`
-      : `<p class="verdict no">${N.target} can't be made. The closest is ${s.value}, ${s.diff} away:</p>`;
-    $("nSolution").innerHTML = head + (s.steps.length ? `<ol class="steps">${s.steps.map(x => `<li>${x}</li>`).join("")}</ol>` : `<p class="status">It's one of your numbers already.</p>`);
-  }, 30);
-}
-function solveOwn(){
-  const nums = ($("ownNums").value.match(/\d+/g) || []).map(Number).filter(n => n > 0);
-  const target = parseInt($("ownTarget").value, 10);
-  const msg = $("ownMsg");
-  if (nums.length < 2 || nums.length > 6) { msg.textContent = "Enter between 2 and 6 numbers, separated by spaces."; return; }
-  if (!(target > 0)) { msg.textContent = "Enter a target number."; return; }
-  msg.textContent = "";
-  startNumbers(nums, target, false);
-  showSolution();
-}
-$("nTiles").addEventListener("click", e => { const b = e.target.closest("[data-tile]"); if (b && N) tapTile(+b.dataset.tile); });
-document.querySelectorAll("#opsRow [data-op]").forEach(b => b.addEventListener("click", () => tapOp(b.dataset.op)));
-document.querySelectorAll("[data-large]").forEach(b => b.addEventListener("click", () => dealNumbers(+b.dataset.large)));
-$("nUndo").addEventListener("click", undoNumbers);
-$("nReset").addEventListener("click", restartNumbers);
-$("nSolve").addEventListener("click", showSolution);
-$("nNew").addEventListener("click", resetNumbersUI);
-$("ownBtn").addEventListener("click", solveOwn);
-$("ownTarget").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); solveOwn(); } });
+$('#view-flagle').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.flGuess) flagleGuess(b.dataset.flGuess);
+  else if('flShare' in b.dataset) shareFlagle();
+});
 
-/* ---------- start ---------- */
-renderRecent();
-renderSpots();
-loadWordSearch();
-loadSudoku();
-loadABC();
-showPz(store.get("bd-pz", "crossword"));
-newLetters();
-resetNumbersUI();
-showCd(store.get("bd-cd", "letters"));
-showTab(store.get("bd-tab", "define"));
-})();
+/* ---------- Boot ---------- */
+flagleLoad();
+renderFlagle();
+renderFinder();
+renderToday();
+renderExplore();
+renderQuiz();
+showTab(store.get('tab','today'));
 </script>
 </body>
 </html>
