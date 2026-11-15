@@ -226,6 +226,36 @@ textarea.field{resize:vertical;line-height:1.5}
 .abc-pad{grid-template-columns:repeat(4,1fr)}
 .abc-c.et{border-top:2px solid var(--ink) !important}.abc-c.el{border-left:2px solid var(--ink) !important}
 .abc-c.er{border-right:2px solid var(--ink) !important}.abc-c.eb{border-bottom:2px solid var(--ink) !important}
+/* Nonogram */
+.nn-board{display:grid;gap:0;margin-top:14px;max-width:480px;user-select:none;touch-action:none;font-size:var(--nn-size);font-variant-numeric:tabular-nums}
+.nn-cc{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:4px;line-height:1.15;color:var(--ink);font-weight:700;min-width:0}
+.nn-rc{display:flex;align-items:center;justify-content:flex-end;padding-right:6px;white-space:nowrap;color:var(--ink);font-weight:700}
+.nn-cc.done,.nn-rc.done{color:var(--muted);font-weight:400;opacity:.6}
+.nn-c{aspect-ratio:1;min-width:0;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+.nn-c.f{background:var(--ink)}
+.nn-c.x::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.85em}
+.nn-c.s.f{background:color-mix(in srgb,var(--ink) 60%,var(--surface))}
+.nn-c.v5{border-right:2px solid var(--ink)} .nn-c.h5{border-bottom:2px solid var(--ink)}
+.nn-c.et{border-top:2px solid var(--ink)} .nn-c.el{border-left:2px solid var(--ink)}
+.nn-c.er{border-right:2px solid var(--ink)} .nn-c.eb{border-bottom:2px solid var(--ink)}
+.nn-cc.v5{border-right:2px solid transparent}
+.nn-c.hint-house:not(.f){background:color-mix(in srgb,var(--good) 18%,var(--surface))}
+.nn-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
+.nn-c.bad{box-shadow:inset 0 0 0 3px var(--bad)}
+.nn-board .nn-c:nth-child(n){}
+.nn-wrap{border:0}
+.nn-modes{margin-top:12px}
+/* Binary */
+.bn-board{display:grid;gap:4px;margin-top:14px;max-width:440px;user-select:none}
+.bn-c{aspect-ratio:1;min-width:0;width:100%;padding:0;border:0;border-radius:8px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);
+  font:inherit;font-weight:800;font-size:clamp(.95rem,4.6vw,1.4rem);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.bn-c.z{background:var(--board-2);color:#fff}
+.bn-c.o{background:var(--clock);color:#1c2e5a}
+.bn-c.g{cursor:default;box-shadow:inset 0 -4px 0 rgba(0,0,0,.28)}
+.bn-c.s{font-style:italic}
+.bn-c.hint-house:not(.z):not(.o){background:color-mix(in srgb,var(--good) 18%,var(--surface))}
+.bn-c.hint{outline:3px solid var(--good);outline-offset:-3px}
+.bn-c.bad{outline:3px solid var(--bad);outline-offset:-3px}
 </style>
 </head>
 <body>
@@ -282,6 +312,8 @@ textarea.field{resize:vertical;line-height:1.5}
       <button aria-pressed="false" data-pz="wordsearch">Word search</button>
       <button aria-pressed="false" data-pz="sudoku">Sudoku</button>
       <button aria-pressed="false" data-pz="abc">ABC</button>
+      <button aria-pressed="false" data-pz="nono">Nonogram</button>
+      <button aria-pressed="false" data-pz="binary">Binary</button>
     </div>
     <div id="pz-crossword">
     <form class="row" autocomplete="off" onsubmit="return false">
@@ -380,6 +412,55 @@ textarea.field{resize:vertical;line-height:1.5}
         <button class="btn ghost" id="abcClear">Clear mine</button>
       </div>
       <div class="row cd-controls"><button class="btn ghost" id="abcBlank">Blank puzzle</button></div>
+    </div>
+
+    <div id="pz-nono" hidden>
+      <div class="row cd-controls" style="margin-top:0">
+        <select class="field small" id="nnKind" style="flex:1 1 150px;width:auto" aria-label="Puzzle type">
+          <option value="pic" selected>Hidden picture, 10 × 10</option><option value="5">Quick 5 × 5</option><option value="10">Random 10 × 10</option><option value="15">Big 15 × 15</option>
+        </select>
+        <button class="btn" id="nnNew" style="flex:1 1 140px">New puzzle</button>
+      </div>
+      <p class="hint">Each number is a block of filled squares in that row or column, in order, with at least one gap between blocks. Tap or drag to fill; switch to ✕ to mark squares you know are empty.</p>
+      <div class="status" id="nnStatus" role="status"></div>
+      <div class="seg nn-modes" role="group" aria-label="Pen">
+        <button aria-pressed="true" data-nnmode="1">■ Fill</button>
+        <button aria-pressed="false" data-nnmode="2">✕ Mark empty</button>
+      </div>
+      <div class="nn-board" id="nnBoard" aria-label="Nonogram grid"></div>
+      <div class="row cd-controls">
+        <button class="btn" id="nnHint">Hint</button>
+        <button class="btn ghost" id="nnCheck">Check mine</button>
+      </div>
+      <div class="sd-msg" id="nnMsg" role="status"></div>
+      <div class="row cd-controls">
+        <button class="btn ghost" id="nnSolve">Solve it all</button>
+        <button class="btn ghost" id="nnClear">Clear mine</button>
+      </div>
+    </div>
+
+    <div id="pz-binary" hidden>
+      <div class="opts" style="margin:0 0 10px">
+        <label>Grid <select id="bnSize"><option>6</option><option selected>8</option><option>10</option></select></label>
+      </div>
+      <div class="row cd-controls" style="margin-top:0">
+        <select class="field small" id="bnLevel" style="flex:1 1 120px;width:auto" aria-label="Difficulty">
+          <option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option>
+        </select>
+        <button class="btn" id="bnNew" style="flex:2 1 160px">New puzzle</button>
+      </div>
+      <p class="hint">Fill every square with 0 or 1. No more than two the same next to each other, each row and column has as many 0s as 1s, and no two rows (or two columns) are the same. Tap a square to cycle 0 → 1 → empty.</p>
+      <div class="status" id="bnStatus" role="status"></div>
+      <div class="bn-board" id="bnBoard" aria-label="Binary grid"></div>
+      <div class="row cd-controls">
+        <button class="btn" id="bnHint">Hint</button>
+        <button class="btn ghost" id="bnCheck">Check mine</button>
+      </div>
+      <div class="sd-msg" id="bnMsg" role="status"></div>
+      <div class="row cd-controls">
+        <button class="btn ghost" id="bnSolve">Solve it all</button>
+        <button class="btn ghost" id="bnClear">Clear mine</button>
+      </div>
     </div>
   </section>
 
@@ -873,6 +954,8 @@ function showPz(mode){
   $("pz-wordsearch").hidden = mode !== "wordsearch";
   $("pz-sudoku").hidden = mode !== "sudoku";
   $("pz-abc").hidden = mode !== "abc";
+  $("pz-nono").hidden = mode !== "nono";
+  $("pz-binary").hidden = mode !== "binary";
   store.set("bd-pz", mode);
 }
 document.querySelectorAll("[data-pz]").forEach(b => b.addEventListener("click", () => showPz(b.dataset.pz)));
@@ -2197,6 +2280,497 @@ function loadABC(){
   abcRender();
 }
 
+const NN_PICS = {
+  heart: "0110000110/1111001111/1111111111/1111111111/1111111111/0111111110/0011111100/0001111000/0000110000/0000000000",
+  house: "0000110000/0001111000/0011111100/0111111110/1111111111/0100000010/0101101010/0101101010/0101100010/0111111110",
+  tree: "0000110000/0001111000/0011111100/0001111000/0011111100/0111111110/1111111111/0000110000/0000110000/0011111100",
+  boat: "0000100000/0000110000/0000111000/0000111100/0000111110/0000100000/1111111111/0111111110/0011111100/0000000000",
+  fish: "0000000000/0001111000/0111111101/1101111110/1111111110/0111111110/0011111101/0001111000/0000000000/0000000000",
+  star: "0000110000/0000110000/0001111000/1111111111/0111111110/0011111100/0011111100/0111001110/0110000110/0000000000",
+  umbrella: "0001111000/0111111110/1111111111/1111111111/1010110101/0000110000/0000110000/0000110000/0100110000/0011100000",
+  cat: "1000000001/1100000011/1110000111/1111111111/1001111001/1111111111/1111001111/0111001110/0011111100/0001111000",
+  duck: "0001110000/0011111000/0011011110/0011111100/0001110000/0111111100/1111111111/1111111111/0111111110/0011111100",
+  mushroom: "0001111000/0110110110/1111111111/1011111101/1111111111/0001001000/0001001000/0001001000/0001111000/0000000000",
+  car: "0000000000/0001111000/0010100100/0111111110/1111111111/1111111111/0110000110/0110000110/0000000000/0000000000"
+};
+
+/* ================= shared: timer + best times for made puzzles ================= */
+function madeDoneMsg(made, key){
+  if (!made || made.done) return "Solved! 🎉";
+  made.done = true;
+  const secs = Math.round((Date.now() - made.start) / 1000), fmt = x => `${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}`;
+  if (made.helped) return `Solved in ${fmt(secs)} (with some help)! 🎉`;
+  const best = store.get("bd-best", {});
+  let extra = "";
+  if (!best[key] || secs < best[key]) { if (best[key]) extra = " New best time!"; best[key] = secs; store.set("bd-best", best); }
+  else extra = ` Your best is ${fmt(best[key])}.`;
+  return `Solved in ${fmt(secs)}! 🎉${extra}`;
+}
+const ordinalList = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+
+/* ================= NONOGRAM ================= */
+let nn = null, nnMode = 1, nnHintCell = -1, nnHintLine = null, nnPending = null, nnWrong = new Set();
+const nnRuns = line => { const out = []; let c = 0; for (const x of line) { if (x === 1) c++; else if (c) { out.push(c); c = 0; } } if (c) out.push(c); return out; };
+function nnLineCells(t){ const n = nn.n; return t < n ? [...Array(n)].map((_, j) => t * n + j) : [...Array(n)].map((_, j) => j * n + (t - n)); }
+const nnLineName = (t, n) => t < n ? `row ${t + 1}` : `column ${t - n + 1}`;
+// Every way to lay out the runs `cl` in a line of length n that agrees with `known` (-1 unknown, 0 empty, 1 filled)
+function nnFits(cl, known){
+  const n = known.length, out = [], cur = Array(n).fill(0);
+  const suffix = cl.map((_, i) => cl.slice(i).reduce((a, b) => a + b, 0) + cl.length - i - 1);
+  (function go(i, pos){
+    if (i === cl.length) { for (let x = pos; x < n; x++) if (known[x] === 1) return; out.push(cur.slice()); return; }
+    for (let s = pos; s + suffix[i] <= n; s++) {
+      if (known[s - 1] === 1 && s - 1 >= pos) break;        // skipped past a filled square: no good
+      let ok = true;
+      for (let x = s; x < s + cl[i]; x++) if (known[x] === 0) { ok = false; break; }
+      if (ok && known[s + cl[i]] === 1) ok = false;
+      if (ok) { for (let x = s; x < s + cl[i]; x++) cur[x] = 1; go(i + 1, s + cl[i] + 1); for (let x = s; x < s + cl[i]; x++) cur[x] = 0; }
+      if (known[s] === 1) break;
+    }
+  })(0, 0);
+  return out;
+}
+// Line-by-line logic from a starting point; returns the grid of what it could work out
+function nnLogic(rows, cols, start){
+  const n = rows.length, g = start ? start.slice() : Array(n * n).fill(-1);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let t = 0; t < 2 * n; t++) {
+      const cells = t < n ? [...Array(n)].map((_, j) => t * n + j) : [...Array(n)].map((_, j) => j * n + (t - n));
+      if (cells.every(i => g[i] >= 0)) continue;
+      const fits = nnFits(t < n ? rows[t] : cols[t - n], cells.map(i => g[i]));
+      if (!fits.length) return null;
+      cells.forEach((i, j) => {
+        if (g[i] >= 0) return;
+        const v = fits[0][j];
+        if (fits.every(f => f[j] === v)) { g[i] = v; changed = true; }
+      });
+    }
+  }
+  return g;
+}
+function nnFromGrid(sol, n, name){
+  const rows = [...Array(n)].map((_, r) => nnRuns(sol.slice(r * n, r * n + n)));
+  const cols = [...Array(n)].map((_, c) => nnRuns([...Array(n)].map((_, r) => sol[r * n + c])));
+  return { n, rows, cols, sol, name, cells: Array(n * n).fill(0), shown: Array(n * n).fill(0) };
+}
+function nnRandom(n){
+  const t0 = performance.now();
+  while (performance.now() - t0 < 4000) {
+    let g = [...Array(n * n)].map(() => Math.random() < 0.55 ? 1 : 0);
+    // Smooth the noise into blobs so it looks like shapes, not static
+    for (let pass = 0; pass < 2; pass++) g = g.map((v, i) => {
+      const r = Math.floor(i / n), c = i % n; let s = 0, k = 0;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < n && cc < n) { s += g[rr * n + cc]; k++; } }
+      return s * 2 > k ? 1 : s * 2 < k ? 0 : v;
+    });
+    const fill = g.reduce((a, b) => a + b, 0);
+    if (fill < n * n * 0.35 || fill > n * n * 0.7) continue;
+    const p = nnFromGrid(g, n, null), got = nnLogic(p.rows, p.cols);
+    if (got && got.every(v => v >= 0)) return p;
+  }
+  return null;
+}
+function nnStatus(msg, err){ const el = $("nnStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function nnMsg(html, cls){ const el = $("nnMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
+function nnClearMarks(){ nnHintCell = -1; nnHintLine = null; nnPending = null; nnWrong = new Set(); }
+function nnSave(){ store.set("bd-nn", nn); }
+
+function nnRender(){
+  const b = $("nnBoard");
+  if (!nn) { b.innerHTML = ""; return; }
+  const n = nn.n;
+  const lineDone = t => { const cells = nnLineCells(t), want = t < n ? nn.rows[t] : nn.cols[t - n], got = nnRuns(cells.map(i => nn.cells[i] === 1 ? 1 : 0)); return got.length === want.length && got.every((x, j) => x === want[j]); };
+  b.style.gridTemplateColumns = `auto repeat(${n}, minmax(0, 1fr))`;
+  b.style.setProperty("--nn-size", n > 10 ? "clamp(.55rem,2.6vw,.8rem)" : "clamp(.7rem,3.4vw,.95rem)");
+  const hl = nnHintLine ? new Set(nnHintLine) : null;
+  let html = `<span></span>`;
+  for (let c = 0; c < n; c++) html += `<div class="nn-cc${lineDone(n + c) ? " done" : ""}${c % 5 === 4 && c < n - 1 ? " v5" : ""}">${(nn.cols[c].length ? nn.cols[c] : [0]).map(x => `<span>${x}</span>`).join("")}</div>`;
+  for (let r = 0; r < n; r++) {
+    html += `<div class="nn-rc${lineDone(r) ? " done" : ""}">${(nn.rows[r].length ? nn.rows[r] : [0]).join(" ")}</div>`;
+    for (let c = 0; c < n; c++) {
+      const i = r * n + c, v = nn.cells[i], cls = ["nn-c"];
+      if (v === 1) cls.push("f"); else if (v === 2) cls.push("x");
+      if (nn.shown[i]) cls.push("s");
+      if (c % 5 === 4 && c < n - 1) cls.push("v5");
+      if (r % 5 === 4 && r < n - 1) cls.push("h5");
+      if (r === 0) cls.push("et"); if (c === 0) cls.push("el"); if (c === n - 1) cls.push("er"); if (r === n - 1) cls.push("eb");
+      if (hl && hl.has(i)) cls.push("hint-house");
+      if (i === nnHintCell) cls.push("hint");
+      if (nnWrong.has(i)) cls.push("bad");
+      html += `<div class="${cls.join(" ")}" data-i="${i}"></div>`;
+    }
+  }
+  b.innerHTML = html;
+}
+function nnCheckDone(){
+  if (nn.cells.every((v, i) => (v === 1) === (nn.sol[i] === 1))) {
+    nn.cells = nn.cells.map(v => v === 1 ? 1 : 2);
+    const what = nn.name ? ` It's a ${nn.name}!` : "";
+    nnMsg(madeDoneMsg(nn.made, `nn-${nn.kind}`) + what, "ok");
+    nnRender(); nnSave(); return true;
+  }
+  return false;
+}
+// Painting: tap or drag across squares. The first square decides whether you're filling or clearing.
+let nnPaint = null;
+function nnSet(i, v){
+  if (nn.cells[i] === v) return;
+  nn.cells[i] = v; nn.shown[i] = 0;
+  const el = $("nnBoard").querySelector(`[data-i="${i}"]`);
+  if (el) { el.classList.toggle("f", v === 1); el.classList.toggle("x", v === 2); el.classList.remove("s", "bad", "hint"); }
+}
+$("nnBoard").addEventListener("pointerdown", e => {
+  const c = e.target.closest("[data-i]");
+  if (!c || !nn) return;
+  e.preventDefault();
+  const i = +c.dataset.i;
+  nnPaint = { v: nn.cells[i] === nnMode ? 0 : nnMode, last: i };
+  if (nnHintCell >= 0 || nnWrong.size) { nnClearMarks(); nnMsg(""); nnRender(); }
+  nnSet(i, nnPaint.v);
+});
+document.addEventListener("pointermove", e => {
+  if (!nnPaint) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest("#nnBoard [data-i]");
+  if (c && +c.dataset.i !== nnPaint.last) { nnPaint.last = +c.dataset.i; nnSet(nnPaint.last, nnPaint.v); }
+});
+document.addEventListener("pointerup", () => { if (!nnPaint) return; nnPaint = null; nnRender(); nnSave(); nnCheckDone(); });
+document.addEventListener("pointercancel", () => { if (nnPaint) { nnPaint = null; nnRender(); nnSave(); } });
+document.querySelectorAll("[data-nnmode]").forEach(btn => btn.addEventListener("click", () => {
+  nnMode = +btn.dataset.nnmode;
+  document.querySelectorAll("[data-nnmode]").forEach(x => x.setAttribute("aria-pressed", x === btn));
+}));
+
+function nnNew(){
+  const kind = $("nnKind").value;
+  if (nn && nn.made && !nn.made.done && nn.cells.some(v => v === 1) && !confirm("Start a new puzzle? This one will be cleared.")) return;
+  let p;
+  if (kind === "pic") {
+    const names = Object.keys(NN_PICS), last = store.get("bd-nn-last", "");
+    const pick = shuffle(names.filter(x => x !== last))[0];
+    store.set("bd-nn-last", pick);
+    p = nnFromGrid(NN_PICS[pick].split("/").join("").split("").map(Number), 10, pick);
+  } else p = nnRandom(+kind);
+  if (!p) { nnStatus("Couldn't make one just now. Have another go.", true); return; }
+  nn = p; nn.kind = kind; nn.made = { start: Date.now() };
+  nnClearMarks(); nnMsg("");
+  nnStatus(kind === "pic" ? "There's a picture hidden in this one. Exactly one answer, no guessing needed." : `Random ${p.n} × ${p.n} pattern. Exactly one answer, no guessing needed.`);
+  nnRender(); nnSave();
+}
+function nnHint(){
+  if (!nn) { nnMsg("Make a puzzle first."); return; }
+  nnClearMarks();
+  const n = nn.n;
+  if (nn.cells.every((v, i) => (v === 1) === (nn.sol[i] === 1))) { nnMsg(`It's already solved! 🎉${nn.name ? ` It's a ${nn.name}.` : ""}`, "ok"); return; }
+  const wrong = nn.cells.map((v, i) => (v === 1 && !nn.sol[i]) || (v === 2 && nn.sol[i]) ? i : -1).filter(i => i >= 0);
+  if (wrong.length) {
+    nnWrong = new Set([wrong[0]]);
+    const r = Math.floor(wrong[0] / n) + 1, c = wrong[0] % n + 1;
+    nnMsg(`Row ${r}, column ${c} shouldn't be ${nn.cells[wrong[0]] === 1 ? "filled" : "crossed out"}${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Clear it and think again.`, "no");
+    nnRender(); return;
+  }
+  const known = nn.cells.map(v => v === 1 ? 1 : v === 2 ? 0 : -1);
+  let hint = null;
+  for (const want of [1, 0]) {
+    for (let t = 0; t < 2 * n && !hint; t++) {
+      const cells = nnLineCells(t);
+      if (cells.every(i => known[i] >= 0)) continue;
+      const cl = t < n ? nn.rows[t] : nn.cols[t - n], fits = nnFits(cl, cells.map(i => known[i]));
+      cells.forEach((i, j) => {
+        if (hint || known[i] >= 0 || fits[0][j] !== want || !fits.every(f => f[j] === want)) return;
+        const other = t < n ? `column ${i % n + 1}` : `row ${Math.floor(i / n) + 1}`;
+        const clue = cl.length ? cl.join(" ") : "0";
+        hint = { i, v: want ? 1 : 2, line: cells, why: want
+          ? `${capFirst(nnLineName(t, n))} (clue ${clue}): every way of fitting those blocks${cells.some(x => known[x] >= 0) ? " around what's already there" : ""} fills ${other}.`
+          : `${capFirst(nnLineName(t, n))} (clue ${clue}): no way of fitting those blocks${cells.some(x => known[x] >= 0) ? " around what's already there" : ""} reaches ${other}, so cross it out.` };
+      });
+    }
+    if (hint) break;
+  }
+  if (!hint) {
+    const i = nn.cells.findIndex((v, k) => !v);
+    if (i < 0) { nnMsg("Every square is done. If it hasn't said solved, check for a stray filled square."); return; }
+    hint = { i, v: nn.sol[i] ? 1 : 2, line: null, why: `Here's a nudge: row ${Math.floor(i / n) + 1}, column ${i % n + 1} is ${nn.sol[i] ? "filled" : "empty"}.` };
+  }
+  nnHintCell = hint.i; nnHintLine = hint.line; nnPending = hint;
+  nnMsg(`${esc(hint.why)}<br><button class="btn ghost" id="nnFill">Fill it in</button>`);
+  nnRender();
+}
+$("nnMsg").addEventListener("click", e => {
+  if (e.target.id !== "nnFill" || !nnPending) return;
+  nn.cells[nnPending.i] = nnPending.v; nn.shown[nnPending.i] = 1; nn.made && (nn.made.helped = true);
+  nnClearMarks(); nnMsg("");
+  nnRender(); nnSave(); nnCheckDone();
+});
+$("nnHint").addEventListener("click", nnHint);
+$("nnCheck").addEventListener("click", () => {
+  if (!nn) return;
+  nnClearMarks();
+  const mine = nn.cells.map((v, i) => v ? i : -1).filter(i => i >= 0);
+  nnWrong = new Set(mine.filter(i => (nn.cells[i] === 1) !== (nn.sol[i] === 1)));
+  nnMsg(!mine.length ? "You haven't marked anything yet." : nnWrong.size ? `${nnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${nnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, nnWrong.size ? "no" : "ok");
+  nnRender();
+});
+$("nnSolve").addEventListener("click", () => {
+  if (!nn) return;
+  nnClearMarks(); nn.made && (nn.made.helped = true);
+  nn.cells = nn.cells.map((v, i) => { const w = nn.sol[i] ? 1 : 2; if (v !== w) nn.shown[i] = 1; return w; });
+  nnMsg(`Solved.${nn.name ? ` It's a ${nn.name}!` : ""} The squares I filled in are faded.`, "ok");
+  if (nn.made) nn.made.done = true;
+  nnRender(); nnSave();
+});
+$("nnClear").addEventListener("click", () => { if (!nn) return; nn.cells.fill(0); nn.shown.fill(0); nnClearMarks(); nnMsg(""); nnRender(); nnSave(); });
+$("nnNew").addEventListener("click", nnNew);
+function loadNono(){
+  const s = store.get("bd-nn", null);
+  if (s && s.n && Array.isArray(s.cells) && s.cells.length === s.n * s.n) nn = s;
+  nnRender();
+}
+
+/* ================= BINARY (Takuzu) ================= */
+let bn = null, bnHintCell = -1, bnHintLine = null, bnPending = null, bnWrong = new Set();
+const bnPatCache = new Map();
+// Every legal finished line: equal 0s and 1s, never three the same in a row
+function bnPatterns(n){
+  if (bnPatCache.has(n)) return bnPatCache.get(n);
+  const out = [];
+  for (let m = 0; m < 1 << n; m++) {
+    if (bits(m) !== n / 2) continue;
+    const a = [...Array(n)].map((_, j) => (m >> j) & 1);
+    if (a.some((v, j) => j >= 2 && v === a[j - 1] && v === a[j - 2])) continue;
+    out.push(a);
+  }
+  bnPatCache.set(n, out);
+  return out;
+}
+const bnLine = (n, t) => t < n ? [...Array(n)].map((_, j) => t * n + j) : [...Array(n)].map((_, j) => j * n + (t - n));
+const bnName = (n, t) => t < n ? `row ${t + 1}` : `column ${t - n + 1}`;
+// Count answers (stops at `limit`); g holds -1 for unknown
+function bnCount(n, g, limit = 2){
+  const pats = bnPatterns(n);
+  const rows = [...Array(n)].map((_, r) => pats.filter(p => p.every((v, c) => g[r * n + c] < 0 || g[r * n + c] === v)));
+  const cur = [];
+  let count = 0, sol = null;
+  (function go(r){
+    if (r === n) {
+      const cols = [...Array(n)].map((_, c) => cur.map(row => row[c]).join(""));
+      if (new Set(cols).size < n) return;
+      count++; if (!sol) sol = cur.flat(); return;
+    }
+    for (const p of rows[r]) {
+      if (cur.some(q => q.every((v, j) => v === p[j]))) continue;           // no two rows the same
+      let ok = true;
+      for (let c = 0; c < n && ok; c++) {
+        const k = cur.length;
+        if (k >= 2 && cur[k - 1][c] === p[c] && cur[k - 2][c] === p[c]) ok = false;
+        else { let ones = p[c]; for (const q of cur) ones += q[c]; if (ones > n / 2 || (k + 1 - ones) > n / 2) ok = false; }
+      }
+      if (!ok) continue;
+      cur.push(p); go(r + 1); cur.pop();
+      if (count >= limit) return;
+    }
+  })(0);
+  return { count, sol };
+}
+// Simple rules a person spots: pairs, gaps, and a full count. Returns the first move found (or null).
+function bnSimpleStep(n, g){
+  const half = n / 2;
+  for (let t = 0; t < 2 * n; t++) {
+    const L = bnLine(n, t), v = L.map(i => g[i]);
+    for (let j = 0; j < n; j++) {
+      if (v[j] >= 0) continue;
+      if (j >= 2 && v[j - 1] >= 0 && v[j - 1] === v[j - 2]) return { i: L[j], v: 1 - v[j - 1], t, rule: "pair", d: v[j - 1] };
+      if (j + 2 < n && v[j + 1] >= 0 && v[j + 1] === v[j + 2]) return { i: L[j], v: 1 - v[j + 1], t, rule: "pair", d: v[j + 1] };
+      if (j >= 1 && j + 1 < n && v[j - 1] >= 0 && v[j - 1] === v[j + 1]) return { i: L[j], v: 1 - v[j - 1], t, rule: "gap", d: v[j - 1] };
+    }
+    for (const d of [0, 1]) if (v.filter(x => x === d).length === half && v.includes(-1)) return { i: L[v.indexOf(-1)], v: 1 - d, t, rule: "count", d };
+  }
+  return null;
+}
+// Stronger: every legal way to finish this line (that doesn't copy a finished line) agrees on a square
+function bnLineStep(n, g){
+  const pats = bnPatterns(n);
+  for (let t = 0; t < 2 * n; t++) {
+    const L = bnLine(n, t);
+    if (L.every(i => g[i] >= 0)) continue;
+    const done = [];
+    for (let u = t < n ? 0 : n; u < (t < n ? n : 2 * n); u++) { const M = bnLine(n, u); if (u !== t && M.every(i => g[i] >= 0)) done.push(M.map(i => g[i]).join("")); }
+    const fits = pats.filter(p => p.every((x, j) => g[L[j]] < 0 || g[L[j]] === x) && !done.includes(p.join("")));
+    if (!fits.length) continue;
+    for (let j = 0; j < n; j++) if (g[L[j]] < 0 && fits.every(f => f[j] === fits[0][j])) return { i: L[j], v: fits[0][j], t, rule: "line", copy: done.length > 0 };
+  }
+  return null;
+}
+function bnSolvesBy(n, g0, strong){
+  const g = g0.slice();
+  for (;;) {
+    if (g.every(x => x >= 0)) return true;
+    const s = bnSimpleStep(n, g) || (strong ? bnLineStep(n, g) : null);
+    if (!s) return false;
+    g[s.i] = s.v;
+  }
+}
+function bnMake(n, level){
+  const t0 = performance.now();
+  while (performance.now() - t0 < 5000) {
+    // A random finished grid: random row order through the legal rows
+    const pats = shuffle(bnPatterns(n).slice()), cur = [];
+    let tries = 0;
+    const ok = (function go(){
+      if (cur.length === n) { const cols = [...Array(n)].map((_, c) => cur.map(r => r[c]).join("")); return new Set(cols).size === n; }
+      if (++tries > 5000) return false;
+      for (const p of shuffle(pats.slice(0, 200))) {
+        if (cur.includes(p)) continue;
+        const k = cur.length;
+        let good = true;
+        for (let c = 0; c < n && good; c++) {
+          if (k >= 2 && cur[k - 1][c] === p[c] && cur[k - 2][c] === p[c]) good = false;
+          let ones = p[c]; for (const q of cur) ones += q[c];
+          if (ones > n / 2 || k + 1 - ones > n / 2) good = false;
+        }
+        if (!good) continue;
+        cur.push(p); if (go()) return true; cur.pop();
+      }
+      return false;
+    })();
+    if (!ok) continue;
+    const sol = cur.flat(), g = sol.slice();
+    const keep = level === "easy" ? Math.ceil(n * n * 0.45) : 0;
+    let filled = n * n;
+    for (const i of shuffle([...Array(n * n).keys()])) {
+      if (filled <= keep) break;
+      const was = g[i]; g[i] = -1;
+      const fine = level === "easy" ? bnSolvesBy(n, g, false) : level === "medium" ? bnSolvesBy(n, g, true) : bnCount(n, g, 2).count === 1;
+      if (fine) filled--; else g[i] = was;
+    }
+    if (level === "hard" && bnSolvesBy(n, g, true) && performance.now() - t0 < 2500) continue;
+    return { n, sol, given: g.map(x => x >= 0 ? 1 : 0), cells: g.map(x => x), shown: Array(n * n).fill(0) };
+  }
+  return null;
+}
+function bnStatus(msg, err){ const el = $("bnStatus"); el.textContent = msg || ""; el.className = "status" + (err ? " err" : ""); }
+function bnMsg(html, cls){ const el = $("bnMsg"); el.innerHTML = html || ""; el.className = "sd-msg" + (cls ? " " + cls : ""); }
+function bnClearMarks(){ bnHintCell = -1; bnHintLine = null; bnPending = null; bnWrong = new Set(); }
+function bnSave(){ store.set("bd-bn", bn); }
+// Squares breaking a rule right now: three in a row, too many of one digit, or two finished lines the same
+function bnClashes(){
+  const n = bn.n, g = bn.cells, bad = new Set();
+  const seen = [new Map(), new Map()];
+  for (let t = 0; t < 2 * n; t++) {
+    const L = bnLine(n, t), v = L.map(i => g[i]);
+    for (let j = 2; j < n; j++) if (v[j] >= 0 && v[j] === v[j - 1] && v[j] === v[j - 2]) [L[j], L[j - 1], L[j - 2]].forEach(i => bad.add(i));
+    for (const d of [0, 1]) if (v.filter(x => x === d).length > n / 2) L.forEach(i => { if (g[i] === d) bad.add(i); });
+    if (v.every(x => x >= 0)) {
+      const key = v.join(""), m = seen[t < n ? 0 : 1];
+      if (m.has(key)) { L.forEach(i => bad.add(i)); bnLine(n, m.get(key)).forEach(i => bad.add(i)); } else m.set(key, t);
+    }
+  }
+  return bad;
+}
+function bnRender(){
+  const b = $("bnBoard");
+  if (!bn) { b.innerHTML = ""; return; }
+  const n = bn.n, clash = bnClashes(), hl = bnHintLine ? new Set(bnHintLine) : null;
+  b.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+  let html = "";
+  for (let i = 0; i < n * n; i++) {
+    const v = bn.cells[i], cls = ["bn-c"];
+    if (v === 0) cls.push("z"); else if (v === 1) cls.push("o");
+    if (bn.given[i]) cls.push("g"); else if (bn.shown[i]) cls.push("s");
+    if (hl && hl.has(i)) cls.push("hint-house");
+    if (i === bnHintCell) cls.push("hint");
+    if (clash.has(i) || bnWrong.has(i)) cls.push("bad");
+    html += `<button class="${cls.join(" ")}" data-i="${i}" aria-label="row ${Math.floor(i / n) + 1} column ${i % n + 1}: ${v < 0 ? "empty" : v}">${v < 0 ? "" : v}</button>`;
+  }
+  b.innerHTML = html;
+}
+function bnCheckDone(){
+  if (bn.cells.every((v, i) => v === bn.sol[i])) { bnMsg(madeDoneMsg(bn.made, `bn-${bn.n}-${bn.level}`), "ok"); return true; }
+  if (bn.cells.every(v => v >= 0) && !bnClashes().size) { bnMsg("Every square's filled and no rules are broken… but it's not the answer. Tap Check mine to see where.", "no"); }
+  return false;
+}
+$("bnBoard").addEventListener("click", e => {
+  const c = e.target.closest("[data-i]");
+  if (!c || !bn) return;
+  const i = +c.dataset.i;
+  if (bn.given[i]) return;
+  bn.cells[i] = bn.cells[i] === -1 ? 0 : bn.cells[i] === 0 ? 1 : -1;
+  bn.shown[i] = 0;
+  bnClearMarks(); bnMsg("");
+  bnRender(); bnSave(); bnCheckDone();
+});
+function bnHint(){
+  if (!bn) { bnMsg("Make a puzzle first."); return; }
+  bnClearMarks();
+  const n = bn.n;
+  const wrong = bn.cells.map((v, i) => v >= 0 && !bn.given[i] && v !== bn.sol[i] ? i : -1).filter(i => i >= 0);
+  if (wrong.length) {
+    bnWrong = new Set([wrong[0]]);
+    bnMsg(`Row ${Math.floor(wrong[0] / n) + 1}, column ${wrong[0] % n + 1} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Tap it to change it.`, "no");
+    bnRender(); return;
+  }
+  const s = bnSimpleStep(n, bn.cells) || bnLineStep(n, bn.cells);
+  let hint;
+  if (s) {
+    const where = s.t < n ? `column ${s.i % n + 1}` : `row ${Math.floor(s.i / n) + 1}`, ln = capFirst(bnName(n, s.t));
+    const why = {
+      pair: `${ln} has two ${s.d}s side by side, so the square next to them (${where}) must be ${s.v}, or there'd be three in a row.`,
+      gap: `${ln} has a ${s.d} either side of ${where}, so it must be ${s.v}, or there'd be three in a row.`,
+      count: `${ln} already has all its ${n / 2} ${s.d}s, so the rest must be ${s.v}s, starting with ${where}.`,
+      line: `${ln}: every legal way to finish it${s.copy ? " (without copying a finished " + (s.t < n ? "row" : "column") + ")" : ""} puts a ${s.v} in ${where}.`
+    }[s.rule];
+    hint = { i: s.i, v: s.v, line: bnLine(n, s.t), why };
+  } else {
+    const i = bn.cells.findIndex(v => v < 0);
+    if (i < 0) { bnMsg("It's already solved! 🎉", "ok"); return; }
+    hint = { i, v: bn.sol[i], line: null, why: `No simple step left; here's a nudge: row ${Math.floor(i / n) + 1}, column ${i % n + 1} is ${bn.sol[i]}.` };
+  }
+  bnHintCell = hint.i; bnHintLine = hint.line; bnPending = hint;
+  bnMsg(`${esc(hint.why)}<br><button class="btn ghost" id="bnFill">Fill it in</button>`);
+  bnRender();
+}
+$("bnMsg").addEventListener("click", e => {
+  if (e.target.id !== "bnFill" || !bnPending) return;
+  bn.cells[bnPending.i] = bnPending.v; bn.shown[bnPending.i] = 1; bn.made && (bn.made.helped = true);
+  bnClearMarks(); bnMsg("");
+  bnRender(); bnSave(); bnCheckDone();
+});
+$("bnHint").addEventListener("click", bnHint);
+$("bnCheck").addEventListener("click", () => {
+  if (!bn) return;
+  bnClearMarks();
+  const mine = bn.cells.map((v, i) => v >= 0 && !bn.given[i] ? i : -1).filter(i => i >= 0);
+  bnWrong = new Set(mine.filter(i => bn.cells[i] !== bn.sol[i]));
+  bnMsg(!mine.length ? "You haven't filled any squares yet." : bnWrong.size ? `${bnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${bnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, bnWrong.size ? "no" : "ok");
+  bnRender();
+});
+$("bnSolve").addEventListener("click", () => {
+  if (!bn) return;
+  bnClearMarks(); if (bn.made) { bn.made.helped = true; bn.made.done = true; }
+  bn.cells = bn.cells.map((v, i) => { if (v !== bn.sol[i]) bn.shown[i] = 1; return bn.sol[i]; });
+  bnMsg("Solved. The squares I filled in are in italics.", "ok");
+  bnRender(); bnSave();
+});
+$("bnClear").addEventListener("click", () => { if (!bn) return; bn.cells = bn.cells.map((v, i) => bn.given[i] ? v : -1); bn.shown.fill(0); bnClearMarks(); bnMsg(""); bnRender(); bnSave(); });
+$("bnNew").addEventListener("click", async () => {
+  const n = +$("bnSize").value, level = $("bnLevel").value;
+  if (bn && bn.made && !bn.made.done && bn.cells.some((v, i) => v >= 0 && !bn.given[i]) && !confirm("Start a new puzzle? This one will be cleared.")) return;
+  if (n >= 10) bnStatus("Making a puzzle…");
+  await wait(20);
+  const p = bnMake(n, level);
+  if (!p) { bnStatus("Couldn't make one just now. Have another go.", true); return; }
+  bn = p; bn.level = level; bn.made = { start: Date.now() };
+  bnClearMarks(); bnMsg("");
+  bnStatus(`${capFirst(level)} ${n} × ${n}, with ${bn.given.filter(Boolean).length} numbers given. Exactly one answer${level === "hard" ? "" : ", no guessing needed"}.`);
+  bnRender(); bnSave();
+});
+function loadBinary(){
+  const s = store.get("bd-bn", null);
+  if (s && s.n && Array.isArray(s.cells) && s.cells.length === s.n * s.n) bn = s;
+  bnRender();
+}
+
 /* ================= COUNTDOWN: switch ================= */
 function showCd(mode){
   document.querySelectorAll("[data-cd]").forEach(b => b.setAttribute("aria-pressed", b.dataset.cd === mode));
@@ -2499,6 +3073,8 @@ renderSpots();
 loadWordSearch();
 loadSudoku();
 loadABC();
+loadNono();
+loadBinary();
 showPz(store.get("bd-pz", "crossword"));
 newLetters();
 resetNumbersUI();
