@@ -353,13 +353,19 @@ textarea.field{resize:vertical;line-height:1.5}
     </div>
 
     <div id="pz-abc" hidden>
-      <label class="btn ws-upload" for="abcFile">Photo of an ABC Logic puzzle</label>
-      <input id="abcFile" type="file" accept="image/*" hidden>
-      <p class="hint">Get the grid and the letters round the edge in shot. Or tick “Edit the clues”, tap a spot round the edge and pick its letter.</p>
-      <div class="opts">
+      <div class="opts" style="margin:0 0 10px">
         <label>Grid <select id="abcSize"><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option></select></label>
         <label>Letters <select id="abcK"><option value="3" selected>A to C</option><option value="4">A to D</option><option value="5">A to E</option><option value="6">A to F</option></select></label>
       </div>
+      <div class="row cd-controls" style="margin-top:0;margin-bottom:12px">
+        <select class="field small" id="abcLevel" style="flex:1 1 120px;width:auto" aria-label="Difficulty">
+          <option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option>
+        </select>
+        <button class="btn" id="abcNew" style="flex:2 1 160px">New puzzle to play</button>
+      </div>
+      <label class="btn ghost ws-upload" for="abcFile">Photo of an ABC Logic puzzle</label>
+      <input id="abcFile" type="file" accept="image/*" hidden>
+      <p class="hint">Get the grid and the letters round the edge in shot. Or tick “Edit the clues”, tap a spot round the edge and pick its letter.</p>
       <div class="status" id="abcStatus" role="status"></div>
       <div class="abc-grid" id="abcGrid" aria-label="ABC Logic grid"></div>
       <div class="sd-pad abc-pad" id="abcPad"></div>
@@ -1714,6 +1720,105 @@ function abcSolve(limit = 2){
   return { count, sol };
 }
 
+/* ---------- making new ABC Logic puzzles ---------- */
+// Pure logic, the way a person solves: for each row and column, keep only the layouts that still fit, and
+// narrow every square to what those layouts allow. If that alone fills the grid, no guessing is needed.
+function abcLogicSolves(){
+  const { n, k } = abc, pats = abcPatterns(n, k), full = (1 << (k + 1)) - 1;
+  const poss = Array(n * n).fill(full);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let t = 0; t < 2 * n; t++) {
+      const L = abcLine(t), u = Array(n).fill(0);
+      for (const p of pats) if (fitsEnds(p, L.first, L.last, k) && L.cells.every((i, j) => poss[i] & (1 << p[j]))) p.forEach((v, j) => u[j] |= 1 << v);
+      L.cells.forEach((i, j) => { const nv = poss[i] & u[j]; if (nv !== poss[i]) { poss[i] = nv; changed = true; } });
+      if (u.some(x => !x)) return false;
+    }
+  }
+  return poss.every(m => bits(m) === 1);
+}
+// A random finished grid: each row a random layout, checked against the columns as it goes
+function abcRandomGrid(n, k){
+  const pats = abcPatterns(n, k), grid = [], used = Array(n).fill(0), blanks = Array(n).fill(0);
+  let tries = 0;
+  return (function go(r){
+    if (r === n) return true;
+    if (++tries > 20000) return false;
+    for (const p of shuffle(pats.slice())) {
+      let ok = true;
+      for (let c = 0; c < n && ok; c++) ok = p[c] === k ? blanks[c] < n - k : !(used[c] & (1 << p[c]));
+      if (!ok) continue;
+      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]++ : used[c] |= 1 << p[c];
+      grid.push(p);
+      if (go(r + 1)) return true;
+      grid.pop();
+      for (let c = 0; c < n; c++) p[c] === k ? blanks[c]-- : used[c] &= ~(1 << p[c]);
+    }
+    return false;
+  })(0) ? grid : null;
+}
+function abcMake(n, k, level){
+  const t0 = performance.now();
+  for (let attempt = 0; attempt < 500 && performance.now() - t0 < 4000; attempt++) {
+    const g = abcRandomGrid(n, k);
+    if (!g) continue;
+    const firstLast = seq => { const s = seq.filter(v => v !== k); return [ABC_L[s[0]], ABC_L[s[s.length - 1]]]; };
+    abc = abcFresh(n, k);
+    for (let r = 0; r < n; r++) [abc.left[r], abc.right[r]] = firstLast(g[r]);
+    for (let c = 0; c < n; c++) [abc.top[c], abc.bottom[c]] = firstLast(g.map(row => row[c]));
+    if (abcSolve(2).count !== 1) continue;                 // even with every clue it's ambiguous: try another grid
+    const logicOnly = level !== "hard";
+    if (logicOnly && !abcLogicSolves()) continue;
+    // Take clues away one at a time, keeping each removal only if the puzzle still works
+    const all = [];
+    for (const side of ["top", "bottom", "left", "right"]) for (let j = 0; j < n; j++) all.push([side, j]);
+    const keepAtLeast = level === "easy" ? Math.ceil(all.length * 0.7) : 0;
+    let left = all.length;
+    for (const [side, j] of shuffle(all)) {
+      if (left <= keepAtLeast) break;
+      const was = abc[side][j];
+      abc[side][j] = "";
+      const ok = abcSolve(2).count === 1 && (!logicOnly || abcLogicSolves());
+      if (ok) left--; else abc[side][j] = was;
+    }
+    // A "hard" one should actually need some thinking beyond the row-by-row logic, if we can manage it
+    if (level === "hard" && abcLogicSolves() && performance.now() - t0 < 2000) continue;
+    return true;
+  }
+  return false;
+}
+async function abcNewPuzzle(){
+  const n = +$("abcSize").value, k = Math.min(+$("abcK").value, n - 1), level = $("abcLevel").value;
+  if (n > 6) { abcStatus("The puzzle maker goes up to 6 × 6 (bigger grids take too long to check on a phone). Set Grid to 6 or less; bigger ones from the paper can still be solved from a photo.", true); return; }
+  const hasWork = !(abc.made && abc.made.done) && abc.cells.some((ch, i) => ch && !abc.shown[i]);
+  if (hasWork && !confirm("Start a new puzzle? Your squares on this one will be cleared.")) return;
+  if (n * k > 30) abcStatus("Making a puzzle… big ones take a few seconds.");
+  await wait(20);
+  const t0 = performance.now();
+  const ok = abcMake(n, k, level);
+  if (!ok) { abc = abcFresh(n, k); abcStatus("Couldn't make a puzzle that size just now. Try again, or pick a smaller grid.", true); abcRender(); return; }
+  abc.made = { level, start: Date.now() };
+  $("abcEdit").checked = false; abcSel = null; abcClearMarks(); abcMsg("");
+  const clues = [...abc.top, ...abc.bottom, ...abc.left, ...abc.right].filter(Boolean).length;
+  abcStatus(`${capFirst(level)} ${n} × ${n} puzzle using A to ${ABC_L[k - 1]}, with ${clues} clues. Exactly one answer${level === "hard" ? "" : ", and no guessing needed"}. Tap a square to start.`);
+  abcRender(); abcSave();
+  console.debug("ABC puzzle made in", Math.round(performance.now() - t0), "ms");
+}
+function abcDoneMsg(){
+  if (!abc.made || abc.made.done) return "Solved! Every row and column checks out. 🎉";
+  abc.made.done = true;
+  const used = abc.made.helped || abc.shown.some(Boolean);
+  const secs = Math.round((Date.now() - abc.made.start) / 1000), m = Math.floor(secs / 60), t = `${m}:${String(secs % 60).padStart(2, "0")}`;
+  const best = store.get("bd-abc-best", {}), key = `${abc.n}-${abc.k}-${abc.made.level}`;
+  let extra = "";
+  if (!used) {
+    if (!best[key] || secs < best[key]) { extra = best[key] ? " New best time!" : ""; best[key] = secs; store.set("bd-abc-best", best); }
+    else { const b = best[key]; extra = ` Your best is ${Math.floor(b / 60)}:${String(b % 60).padStart(2, "0")}.`; }
+  }
+  return `Solved in ${t}${used ? " (with some help)" : ""}! 🎉${extra}`;
+}
+
 function abcRender(){
   const { n } = abc, g = $("abcGrid");
   g.style.gridTemplateColumns = g.style.gridTemplateRows = `repeat(${n + 2}, minmax(0, 1fr))`;
@@ -1758,7 +1863,7 @@ function abcPlace(v){
   abcClearMarks(); abcMsg("");
   if (abcSel.type === "cell" && abc.cells.every(Boolean)) {
     const res = abcSolve(1);
-    if (res.count && abc.cells.every((ch, i) => abcVal(ch) === res.sol[i])) abcMsg("Solved! Every row and column checks out. 🎉", "ok");
+    if (res.count && abc.cells.every((ch, i) => abcVal(ch) === res.sol[i])) abcMsg(abcDoneMsg(), "ok");
   }
   abcRender(); abcSave();
 }
@@ -1891,6 +1996,7 @@ function abcSolveAll(){
   if (abcNeedsClues()) { abcRender(); return; }
   const res = abcSolve(2);
   if (abcProblem(res)) { abcRender(); return; }
+  if (abc.made) abc.made.helped = true;
   res.sol.forEach((v, i) => { const ch = abcCh(v); if (abc.cells[i] !== ch) { abc.cells[i] = ch; abc.shown[i] = 1; } });
   abcMsg(res.count > 1 ? "Solved, but these clues allow more than one answer, so one may be missing or misread." : "Solved. The squares I filled in are in italics; ✕ means blank.", res.count > 1 ? "no" : "ok");
   abcRender(); abcSave();
@@ -1898,7 +2004,8 @@ function abcSolveAll(){
 
 function abcResize(){
   const n = +$("abcSize").value, k = Math.min(+$("abcK").value, n - 1);
-  const hasAny = abc.cells.some(Boolean) || [...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
+  const hasAny = abc.made ? abc.cells.some((ch, i) => ch && !abc.shown[i]) && !abc.made.done
+    : abc.cells.some(Boolean) || [...abc.top, ...abc.bottom, ...abc.left, ...abc.right].some(Boolean);
   if (hasAny && !confirm("Changing this clears the puzzle. Carry on?")) { abcRender(); return; }
   abc = abcFresh(n, k); abcSel = null; abcClearMarks(); abcMsg(""); abcStatus("");
   $("abcEdit").checked = true;
@@ -1920,8 +2027,9 @@ $("abcMsg").addEventListener("click", e => {
   if (e.target.id !== "abcFill" || !abcPending) return;
   const { i, v } = abcPending;
   abc.cells[i] = abcCh(v); abc.shown[i] = 1;
+  if (abc.made) abc.made.helped = true;
   abcClearMarks(); abcSel = { type: "cell", i }; abcMsg("");
-  if (abc.cells.every(Boolean)) abcMsg("Solved! 🎉", "ok");
+  if (abc.cells.every(Boolean)) abcMsg(abcDoneMsg(), "ok");
   abcRender(); abcSave();
 });
 $("abcEdit").addEventListener("change", () => { if (!$("abcEdit").checked && abcSel && abcSel.type !== "cell") abcSel = null; abcRender(); });
@@ -1929,6 +2037,7 @@ $("abcHint").addEventListener("click", abcHint);
 $("abcCheck").addEventListener("click", abcCheck);
 $("abcSolve").addEventListener("click", abcSolveAll);
 $("abcClear").addEventListener("click", () => { abc.cells.fill(""); abc.shown.fill(0); abcClearMarks(); abcMsg(""); abcRender(); abcSave(); });
+$("abcNew").addEventListener("click", abcNewPuzzle);
 $("abcBlank").addEventListener("click", () => { $("abcSize").value = String(abc.n); abcResize(); });
 $("abcSize").addEventListener("change", abcResize);
 $("abcK").addEventListener("change", abcResize);
