@@ -236,7 +236,7 @@ textarea.field{resize:vertical;line-height:1.5}
 .abc-c.peer{background:color-mix(in srgb,var(--board-2) 9%,var(--surface)) !important}
 .abc-c.hint-house{background:color-mix(in srgb,var(--good) 14%,var(--surface)) !important}
 .abc-c.hint{box-shadow:inset 0 0 0 3px var(--good)}
-.abc-c.bad{color:var(--bad)}
+.abc-c.bad,.abc-c.blank.blank.bad{color:var(--bad);font-weight:800;box-shadow:inset 0 0 0 3px var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface)) !important}
 .abc-grid .sel{background:color-mix(in srgb,var(--clock) 60%,var(--surface)) !important;color:#1c2e5a}
 .abc-pad{grid-template-columns:repeat(4,1fr)}
 .abc-c.et{border-top:2px solid var(--ink) !important}.abc-c.el{border-left:2px solid var(--ink) !important}
@@ -2324,6 +2324,7 @@ function abcCheck(){
   const mine = abc.cells.map((ch, i) => ch ? i : -1).filter(i => i >= 0);
   if (!mine.length) { abcMsg("You haven't filled any squares yet."); abcRender(); return; }
   abcWrong = new Set(mine.filter(i => abcVal(abc.cells[i]) !== res.sol[i]));
+  if (abcWrong.size) abcSel = null;
   abcMsg(abcWrong.size ? (mine.length === 1 ? "Your square is wrong (shown in red)." : `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).`) : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), abcWrong.size ? "no" : "ok");
   abcRender();
 }
