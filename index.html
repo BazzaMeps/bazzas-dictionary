@@ -43,6 +43,8 @@ header{background:var(--board);color:#fff;padding:18px 16px 0}
 .wrap{max-width:720px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand h1{margin:0;font-size:1.05rem;font-weight:600;letter-spacing:.01em;opacity:.85}
+.theme-btn{margin-left:auto;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.theme-btn:hover{background:rgba(255,255,255,.2)}
 .title-tiles{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 16px}
 
 .tile{display:inline-grid;place-items:center;width:2.1em;height:2.1em;background:var(--tile);color:var(--tile-ink);
@@ -261,7 +263,7 @@ textarea.field{resize:vertical;line-height:1.5}
 <body>
 <header>
   <div class="wrap">
-    <div class="brand"><h1>Bazza's Dictionary</h1></div>
+    <div class="brand"><h1>Bazza's Dictionary</h1><button class="theme-btn" id="themeBtn" type="button" aria-label="Colour theme">◐ Auto</button></div>
     <div class="title-tiles" aria-hidden="true">
       <span class="tile">w</span><span class="tile">o</span><span class="tile">r</span><span class="tile">d</span><span class="tile">s</span>
     </div>
@@ -328,6 +330,7 @@ textarea.field{resize:vertical;line-height:1.5}
       <input class="field small" id="cwHas" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. ae">
       <label class="lbl" for="cwNot">Letters it can't contain (grey)</label>
       <input class="field small" id="cwNot" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. stui">
+      <p class="hint" style="margin:6px 0 0">Double letters: if one E came up yellow or green and another grey, put E in both. It'll look for exactly that many Es.</p>
       <span class="lbl">Wrong spots: letters in the word but not in that position</span>
       <div class="spots" id="cwSpots"></div>
     </details>
@@ -575,6 +578,9 @@ const CACHE_NAME = "bazza-dict-lists-v1";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const wait = ms => new Promise(r => setTimeout(r, ms));
+// Long jobs call this often: it gives the phone a moment to draw and respond, so nothing freezes
+let lastBreath = 0;
+const breathe = () => { if (performance.now() - lastBreath < 40) return null; return new Promise(r => setTimeout(() => { lastBreath = performance.now(); r(); }, 0)); };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 /* ---------- storage (never fatal) ---------- */
@@ -584,24 +590,45 @@ const store = {
 };
 
 /* ---------- 30-second clock ---------- */
+// Works from the real time the round ends, not by counting ticks, so it stays right
+// even if the phone sleeps or the browser pauses the page part-way through
+const clocks = [];
 function makeClock(bar, label, secs){
-  let t = null;
-  return {
-    start(onEnd){
-      this.stop();
-      let left = secs;
-      bar.style.width = "0%"; label.textContent = left + "s";
-      t = setInterval(() => {
-        left--;
-        bar.style.width = ((secs - left) / secs * 100) + "%";
-        label.textContent = left > 0 ? left + "s" : "Time's up";
-        if (left <= 0) { this.stop(); if (onEnd) onEnd(); }
-      }, 1000);
+  let t = null, end = 0, onEnd = null;
+  const clock = {
+    tick(){
+      if (!t) return;
+      const ms = Math.max(0, end - Date.now()), left = Math.ceil(ms / 1000);
+      bar.style.width = ((secs * 1000 - ms) / (secs * 10)) + "%";
+      label.textContent = left > 0 ? left + "s" : "Time's up";
+      if (!ms) { clock.stop(); if (onEnd) onEnd(); }
+    },
+    start(done){
+      clock.stop();
+      end = Date.now() + secs * 1000; onEnd = done || null;
+      bar.style.width = "0%"; label.textContent = secs + "s";
+      t = setInterval(clock.tick, 200);
     },
     stop(){ clearInterval(t); t = null; },
-    reset(){ this.stop(); bar.style.width = "0"; label.textContent = ""; }
+    reset(){ clock.stop(); bar.style.width = "0"; label.textContent = ""; },
+    get running(){ return !!t; }
   };
+  clocks.push(clock);
+  return clock;
 }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) clocks.forEach(c => c.tick()); });
+
+/* ---------- colour theme: follows the phone unless you pick one ---------- */
+const THEMES = [["", "◐ Auto"], ["light", "☀ Light"], ["dark", "☾ Dark"]];
+function applyTheme(t){
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  $("themeBtn").textContent = THEMES.find(x => x[0] === t)[1];
+}
+applyTheme(store.get("bd-theme", ""));
+$("themeBtn").addEventListener("click", () => {
+  const cur = store.get("bd-theme", ""), next = THEMES[(THEMES.findIndex(x => x[0] === cur) + 1) % THEMES.length][0];
+  store.set("bd-theme", next); applyTheme(next);
+});
 
 /* ---------- word lists ---------- */
 let WORDS = null, WORDSET = null, RANK = null, listsPromise = null;
@@ -655,7 +682,7 @@ function renderGroups(target, results, total, opts = {}){
   if (!results.length) { target.innerHTML = `<p class="status">No words found. Try more letters, a blank (?), or a shorter minimum length.</p>`; return; }
   const groups = new Map();
   for (const r of results) { if (!groups.has(r.w.length)) groups.set(r.w.length, []); groups.get(r.w.length).push(r); }
-  let html = `<p class="status">${results.length.toLocaleString("en-GB")} words. ${opts.note || ""}${KEY_TEXT}</p>`;
+  let html = `<p class="status">${results.length.toLocaleString("en-GB")} word${results.length === 1 ? "" : "s"}. ${opts.note || ""}${KEY_TEXT}</p>`;
   let g = 0;
   for (const [len, list] of groups) {
     if (opts.maxGroups && g++ >= opts.maxGroups) break;
@@ -874,17 +901,25 @@ async function unscramble(){
   if (letters.length + blanks < 2) { out.innerHTML = `<p class="status">Enter at least 2 letters.</p>`; return; }
   if (!await needLists(out)) return;
   let results = solveLetters(letters, blanks, +$("minLen").value);
-  let note = "";
   if ($("commonOnly").checked) {
     const common = results.filter(r => r.rank !== Infinity);
-    if (common.length) results = common;
-    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+    if (!common.length && results.length) {
+      offerUncommon(out, results.length, () => renderGroups(out, results, letters.length + blanks));
+      return;
+    }
+    results = common;
   }
-  renderGroups(out, results, letters.length + blanks, { note });
+  renderGroups(out, results, letters.length + blanks);
 }
 $("unBtn").addEventListener("click", unscramble);
 $("unInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); unscramble(); } });
 ["minLen","commonOnly"].forEach(id => $(id).addEventListener("change", () => { if ($("unOut").innerHTML) unscramble(); }));
+
+function offerUncommon(out, n, show){
+  out.innerHTML = `<p class="status">No common words fit. There ${n === 1 ? "is 1 less common word" : `are ${n.toLocaleString("en-GB")} less common words`} that ${n === 1 ? "does" : "do"}.</p>
+    <button class="btn ghost" type="button">Show ${n === 1 ? "it" : "them"}</button>`;
+  out.querySelector("button").addEventListener("click", show);
+}
 
 /* ================= CROSSWORD / WORDLE ================= */
 const cleanPattern = s => s.toLowerCase().replace(/[.\-_*\s]/g, "?").replace(/[^a-z?]/g, "");
@@ -914,6 +949,14 @@ async function crossword(){
   const need = {};
   for (const c of cleanLetters($("cwHas").value)) need[c] = (need[c] || 0) + 1;
   for (const s of spots) for (const c of new Set(s)) need[c] = Math.max(need[c] || 0, 1);
+  // Green letters count too: a word needs at least as many of each as the pattern already shows
+  const green = {};
+  for (const c of p) if (c !== "?") green[c] = (green[c] || 0) + 1;
+  for (const c in green) need[c] = Math.max(need[c] || 0, green[c]);
+  // Wordle double letters: a letter that's grey AND yellow/green means "exactly this many", not "none".
+  // (Guess SPEED when the answer has one E, and one E shows yellow or green, the other grey.)
+  const most = {};
+  for (const c of [...banned]) if (need[c]) { most[c] = need[c]; banned.delete(c); }
 
   const L = p.length, results = [];
   outer: for (const w of WORDS) {
@@ -923,19 +966,22 @@ async function crossword(){
       if (p[i] !== "?") { if (c !== p[i]) continue outer; }
       else if (banned.has(c) || (spots[i] && spots[i].includes(c))) continue outer;
     }
-    for (const c in need) { let n = 0; for (const x of w) if (x === c) n++; if (n < need[c]) continue outer; }
+    for (const c in need) { let n = 0; for (const x of w) if (x === c) n++; if (n < need[c] || (most[c] && n > most[c])) continue outer; }
     results.push({ w, blanks: [], rank: rankOf(w) });
   }
   let list = results, note = "";
   if ($("cwCommon").checked) {
     const common = results.filter(r => r.rank !== Infinity);
-    if (common.length) list = common;
-    else if (results.length) note = "None of these are common words, so here's everything that fits. ";
+    if (!common.length && results.length) {
+      offerUncommon(out, results.length, () => { $("cwCommon").checked = false; crossword(); });
+      return;
+    }
+    list = common;
   }
   list.sort((a, b) => a.rank - b.rank || (a.w < b.w ? -1 : 1));
   if (!list.length) { out.innerHTML = `<p class="status">No words match. Check the pattern, or remove a clue.</p>`; return; }
   const cap = 150;
-  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} matches. ${note}${KEY_TEXT}</p>
+  out.innerHTML = `<p class="status">${list.length.toLocaleString("en-GB")} match${list.length === 1 ? "" : "es"}. ${note}${KEY_TEXT}</p>
     <div class="chips">${list.slice(0, cap).map(wordChip).join("")}</div>
     ${list.length > cap ? `<button class="btn ghost more" id="cwMoreBtn">Show all ${list.length.toLocaleString("en-GB")}</button>` : ""}`;
   if (list.length > cap) $("cwMoreBtn").addEventListener("click", e => {
@@ -1451,10 +1497,11 @@ function sdHint(){
   const b = sdBoard();
   if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first: take a photo, or tick “Fix the puzzle's numbers” and type it in. A proper sudoku has at least 17 numbers to start.", "no"); sdRender(); return; }
   if (sdConflicts(b).size) { sdMsg("There's a clash: the same number twice in a row, column or box (shown in red). Sort that out first.", "no"); sdRender(); return; }
-  const res = sdSolve(sd.given, 2);
+  const j = sdJudge(), res = j.res;
   if (!res.count) { sdMsg("The puzzle's own numbers can't all be right, as there's no answer. One was probably misread: tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  const sol = res.sol, note = res.count > 1 ? " (This puzzle has more than one answer, so a starting number may be missing or misread.)" : "";
-  const wrong = [...Array(81).keys()].filter(i => sd.user[i] && sd.user[i] !== sol[i]);
+  if (j.clash) { sdMsg("Each of your numbers could be right on its own, but they don't all fit the same answer. Try rubbing out your most recent ones.", "no"); sdRender(); return; }
+  const sol = j.sol, note = res.count > 1 ? " (This puzzle has more than one answer, so a starting number may be missing or misread.)" : "";
+  const wrong = j.wrong;
   if (wrong.length) {
     sdWrong = new Set(wrong.slice(0, 1)); sdSel = wrong[0];
     sdMsg(`${where(wrong[0])[0].toUpperCase() + where(wrong[0]).slice(1)} isn't right${wrong.length > 1 ? `, and ${wrong.length - 1} more of yours ${wrong.length === 2 ? "is" : "are"} wrong too` : ""}. Rub it out and think again.${note}`, "no");
@@ -1489,14 +1536,28 @@ function sdHint(){
   sdRender();
 }
 
+// Which of your numbers are definitely wrong? With one answer, it's simple. With several, a number
+// only counts as wrong if no answer at all has it there, so a valid alternative is never marked down.
+function sdJudge(){
+  const res = sdSolve(sd.given, 2);
+  if (!res.count) return { res };
+  const mine = [...Array(81).keys()].filter(i => sd.user[i]);
+  if (res.count === 1) return { res, mine, sol: res.sol, wrong: mine.filter(i => sd.user[i] !== res.sol[i]) };
+  const withMine = sdSolve(sdBoard(), 1);
+  if (withMine.count) return { res, mine, sol: withMine.sol, wrong: [], multi: true };
+  const wrong = mine.filter(i => { const g = sd.given.slice(); g[i] = sd.user[i]; return !sdSolve(g, 1).count; });
+  return { res, mine, sol: res.sol, wrong, multi: true, clash: !wrong.length };
+}
+const SD_MULTI = " This puzzle has more than one answer, so I've judged yours against whichever answer fits them.";
 function sdCheck(){
   sdClearMarks();
-  const res = sdSolve(sd.given, 1);
-  if (!res.count) { sdMsg("The puzzle's own numbers have no answer, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  const mine = [...Array(81).keys()].filter(i => sd.user[i]);
+  const j = sdJudge();
+  if (!j.res.count) { sdMsg("The puzzle's own numbers have no answer, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
+  const mine = j.mine;
   if (!mine.length) { sdMsg("You haven't put any numbers in yet."); sdRender(); return; }
-  sdWrong = new Set(mine.filter(i => sd.user[i] !== res.sol[i]));
-  sdMsg(sdWrong.size ? `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your numbers are right so far. 👍`, sdWrong.size ? "no" : "ok");
+  if (j.clash) { sdMsg("Each of your numbers could be right on its own, but they don't all fit the same answer. Try rubbing out your most recent ones.", "no"); sdRender(); return; }
+  sdWrong = new Set(j.wrong);
+  sdMsg((sdWrong.size ? `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your number is right so far. 👍" : `All ${mine.length} of your numbers are right so far. 👍`)) + (j.multi ? SD_MULTI : ""), sdWrong.size ? "no" : "ok");
   sdRender();
 }
 
@@ -1505,7 +1566,9 @@ function sdSolveAll(){
   if (sd.given.filter(Boolean).length < 17) { sdMsg("Add the puzzle first (at least 17 numbers).", "no"); sdRender(); return; }
   const res = sdSolve(sd.given, 2);
   if (!res.count) { sdMsg("No answer exists for these starting numbers, so one is probably misread. Tick “Fix the puzzle's numbers” and compare with the paper.", "no"); sdRender(); return; }
-  for (let i = 0; i < 81; i++) if (!sd.given[i] && sd.user[i] !== res.sol[i]) { sd.user[i] = res.sol[i]; sd.shown[i] = 1; }
+  // With several answers, finish the one that keeps your numbers if there is one
+  const keep = res.count > 1 ? sdSolve(sdBoard(), 1) : { count: 0 }, sol = keep.count ? keep.sol : res.sol;
+  for (let i = 0; i < 81; i++) if (!sd.given[i] && sd.user[i] !== sol[i]) { sd.user[i] = sol[i]; sd.shown[i] = 1; }
   sdMsg(res.count > 1 ? "Solved, but this puzzle has more than one answer, so a starting number may be missing or misread." : "Solved. The answers I filled in are in italics.", res.count > 1 ? "no" : "ok");
   sdRender(); sdSave();
 }
@@ -1776,15 +1839,18 @@ function abcLine(t){
 const abcVal = ch => ch === "x" ? abc.k : ch ? ABC_L.indexOf(ch) : -1;
 const abcCh = v => v === abc.k ? "x" : ABC_L[v];
 
-function abcSolve(limit = 2){
-  const { n, k } = abc, pats = abcPatterns(n, k);
+function abcSolve(limit = 2, budget = 0){
+  const { n, k } = abc, pats = abcPatterns(n, k), stopAt = budget ? performance.now() + budget : 0;
+  let steps = 0, gaveUp = false;
   const rows = [...Array(n)].map((_, r) => pats.filter(p => fitsEnds(p, clueIdx(abc.left[r]), clueIdx(abc.right[r]), k)));
   const top = abc.top.map(clueIdx), bottom = abc.bottom.map(clueIdx);
   const used = Array(n).fill(0), blanks = Array(n).fill(0), grid = [];
   let count = 0, sol = null;
   (function go(r){
     if (r === n) { count++; if (!sol) sol = grid.flat(); return; }
+    if (stopAt && ++steps % 256 === 0 && performance.now() > stopAt) { gaveUp = true; return; }
     for (const p of rows[r]) {
+      if (gaveUp) return;
       let ok = true;
       for (let c = 0; c < n && ok; c++) {
         const v = p[c];
@@ -1800,7 +1866,7 @@ function abcSolve(limit = 2){
       if (count >= limit) return;
     }
   })(0);
-  return { count, sol };
+  return gaveUp ? { count: Math.max(count, limit), sol, gaveUp } : { count, sol };
 }
 
 /* ---------- making new ABC Logic puzzles ---------- */
@@ -1841,16 +1907,17 @@ function abcRandomGrid(n, k){
     return false;
   })(0) ? grid : null;
 }
-function abcMake(n, k, level){
+async function abcMake(n, k, level){
   const t0 = performance.now();
   for (let attempt = 0; attempt < 500 && performance.now() - t0 < 4000; attempt++) {
+    await breathe();
     const g = abcRandomGrid(n, k);
     if (!g) continue;
     const firstLast = seq => { const s = seq.filter(v => v !== k); return [ABC_L[s[0]], ABC_L[s[s.length - 1]]]; };
     abc = abcFresh(n, k);
     for (let r = 0; r < n; r++) [abc.left[r], abc.right[r]] = firstLast(g[r]);
     for (let c = 0; c < n; c++) [abc.top[c], abc.bottom[c]] = firstLast(g.map(row => row[c]));
-    if (abcSolve(2).count !== 1) continue;                 // even with every clue it's ambiguous: try another grid
+    if (abcSolve(2, 60).count !== 1) continue;             // even with every clue it's ambiguous: try another grid
     const logicOnly = level !== "hard";
     if (logicOnly && !abcLogicSolves()) continue;
     // Take clues away one at a time, keeping each removal only if the puzzle still works
@@ -1860,9 +1927,10 @@ function abcMake(n, k, level){
     let left = all.length;
     for (const [side, j] of shuffle(all)) {
       if (left <= keepAtLeast) break;
+      await breathe();
       const was = abc[side][j];
       abc[side][j] = "";
-      const ok = abcSolve(2).count === 1 && (!logicOnly || abcLogicSolves());
+      const ok = abcSolve(2, 60).count === 1 && (!logicOnly || abcLogicSolves());   // too slow to be sure? keep the clue
       if (ok) left--; else abc[side][j] = was;
     }
     // A "hard" one should actually need some thinking beyond the row-by-row logic, if we can manage it
@@ -1876,10 +1944,12 @@ async function abcNewPuzzle(){
   if (n > 6) { abcStatus("The puzzle maker goes up to 6 × 6 (bigger grids take too long to check on a phone). Set Grid to 6 or less; bigger ones from the paper can still be solved from a photo.", true); return; }
   const hasWork = !(abc.made && abc.made.done) && abc.cells.some((ch, i) => ch && !abc.shown[i]);
   if (hasWork && !confirm("Start a new puzzle? Your squares on this one will be cleared.")) return;
-  if (n * k > 30) abcStatus("Making a puzzle… big ones take a few seconds.");
+  abcStatus("Making a puzzle…");
+  $("abcNew").disabled = true; $("abcGrid").style.pointerEvents = "none";
   await wait(20);
   const t0 = performance.now();
-  const ok = abcMake(n, k, level);
+  let ok;
+  try { ok = await abcMake(n, k, level); } finally { $("abcNew").disabled = false; $("abcGrid").style.pointerEvents = ""; }
   if (!ok) { abc = abcFresh(n, k); abcStatus("Couldn't make a puzzle that size just now. Try again, or pick a smaller grid.", true); abcRender(); return; }
   abc.made = { level, start: Date.now() };
   $("abcEdit").checked = false; abcSel = null; abcClearMarks(); abcMsg("");
@@ -2070,7 +2140,7 @@ function abcCheck(){
   const mine = abc.cells.map((ch, i) => ch ? i : -1).filter(i => i >= 0);
   if (!mine.length) { abcMsg("You haven't filled any squares yet."); abcRender(); return; }
   abcWrong = new Set(mine.filter(i => abcVal(abc.cells[i]) !== res.sol[i]));
-  abcMsg(abcWrong.size ? `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, abcWrong.size ? "no" : "ok");
+  abcMsg(abcWrong.size ? `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), abcWrong.size ? "no" : "ok");
   abcRender();
 }
 
@@ -2509,7 +2579,7 @@ $("nnCheck").addEventListener("click", () => {
   nnClearMarks();
   const mine = nn.cells.map((v, i) => v ? i : -1).filter(i => i >= 0);
   nnWrong = new Set(mine.filter(i => (nn.cells[i] === 1) !== (nn.sol[i] === 1)));
-  nnMsg(!mine.length ? "You haven't marked anything yet." : nnWrong.size ? `${nnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${nnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, nnWrong.size ? "no" : "ok");
+  nnMsg(!mine.length ? "You haven't marked anything yet." : nnWrong.size ? `${nnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${nnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), nnWrong.size ? "no" : "ok");
   nnRender();
 });
 $("nnSolve").addEventListener("click", () => {
@@ -2547,8 +2617,9 @@ function bnPatterns(n){
 const bnLine = (n, t) => t < n ? [...Array(n)].map((_, j) => t * n + j) : [...Array(n)].map((_, j) => j * n + (t - n));
 const bnName = (n, t) => t < n ? `row ${t + 1}` : `column ${t - n + 1}`;
 // Count answers (stops at `limit`); g holds -1 for unknown
-function bnCount(n, g, limit = 2){
-  const pats = bnPatterns(n);
+function bnCount(n, g, limit = 2, budget = 0){
+  const pats = bnPatterns(n), stopAt = budget ? performance.now() + budget : 0;
+  let steps = 0, gaveUp = false;
   const rows = [...Array(n)].map((_, r) => pats.filter(p => p.every((v, c) => g[r * n + c] < 0 || g[r * n + c] === v)));
   const cur = [];
   let count = 0, sol = null;
@@ -2558,7 +2629,9 @@ function bnCount(n, g, limit = 2){
       if (new Set(cols).size < n) return;
       count++; if (!sol) sol = cur.flat(); return;
     }
+    if (stopAt && ++steps % 256 === 0 && performance.now() > stopAt) { gaveUp = true; return; }
     for (const p of rows[r]) {
+      if (gaveUp) return;
       if (cur.some(q => q.every((v, j) => v === p[j]))) continue;           // no two rows the same
       let ok = true;
       for (let c = 0; c < n && ok; c++) {
@@ -2571,7 +2644,7 @@ function bnCount(n, g, limit = 2){
       if (count >= limit) return;
     }
   })(0);
-  return { count, sol };
+  return gaveUp ? { count: Math.max(count, limit), sol, gaveUp } : { count, sol };
 }
 // Simple rules a person spots: pairs, gaps, and a full count. Returns the first move found (or null).
 function bnSimpleStep(n, g){
@@ -2611,9 +2684,10 @@ function bnSolvesBy(n, g0, strong){
     g[s.i] = s.v;
   }
 }
-function bnMake(n, level){
+async function bnMake(n, level){
   const t0 = performance.now();
   while (performance.now() - t0 < 5000) {
+    await breathe();
     // A random finished grid: random row order through the legal rows
     const pats = shuffle(bnPatterns(n).slice()), cur = [];
     let tries = 0;
@@ -2640,8 +2714,9 @@ function bnMake(n, level){
     let filled = n * n;
     for (const i of shuffle([...Array(n * n).keys()])) {
       if (filled <= keep) break;
+      await breathe();
       const was = g[i]; g[i] = -1;
-      const fine = level === "easy" ? bnSolvesBy(n, g, false) : level === "medium" ? bnSolvesBy(n, g, true) : bnCount(n, g, 2).count === 1;
+      const fine = level === "easy" ? bnSolvesBy(n, g, false) : level === "medium" ? bnSolvesBy(n, g, true) : bnCount(n, g, 2, 60).count === 1;
       if (fine) filled--; else g[i] = was;
     }
     if (level === "hard" && bnSolvesBy(n, g, true) && performance.now() - t0 < 2500) continue;
@@ -2742,7 +2817,7 @@ $("bnCheck").addEventListener("click", () => {
   bnClearMarks();
   const mine = bn.cells.map((v, i) => v >= 0 && !bn.given[i] ? i : -1).filter(i => i >= 0);
   bnWrong = new Set(mine.filter(i => bn.cells[i] !== bn.sol[i]));
-  bnMsg(!mine.length ? "You haven't filled any squares yet." : bnWrong.size ? `${bnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${bnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : `All ${mine.length} of your squares are right so far. 👍`, bnWrong.size ? "no" : "ok");
+  bnMsg(!mine.length ? "You haven't filled any squares yet." : bnWrong.size ? `${bnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${bnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), bnWrong.size ? "no" : "ok");
   bnRender();
 });
 $("bnSolve").addEventListener("click", () => {
@@ -2756,9 +2831,11 @@ $("bnClear").addEventListener("click", () => { if (!bn) return; bn.cells = bn.ce
 $("bnNew").addEventListener("click", async () => {
   const n = +$("bnSize").value, level = $("bnLevel").value;
   if (bn && bn.made && !bn.made.done && bn.cells.some((v, i) => v >= 0 && !bn.given[i]) && !confirm("Start a new puzzle? This one will be cleared.")) return;
-  if (n >= 10) bnStatus("Making a puzzle…");
+  bnStatus("Making a puzzle…");
+  $("bnNew").disabled = true; $("bnBoard").style.pointerEvents = "none";
   await wait(20);
-  const p = bnMake(n, level);
+  let p;
+  try { p = await bnMake(n, level); } finally { $("bnNew").disabled = false; $("bnBoard").style.pointerEvents = ""; }
   if (!p) { bnStatus("Couldn't make one just now. Have another go.", true); return; }
   bn = p; bn.level = level; bn.made = { start: Date.now() };
   bnClearMarks(); bnMsg("");
@@ -2789,8 +2866,9 @@ let vDeck, cDeck, board;
 const makeDeck = pool => shuffle(Object.entries(pool).flatMap(([ch, n]) => Array(n).fill(ch)));
 const isVowel = c => "aeiou".includes(c);
 
+let LR = null;   // this letters round: { over, best }
 function newLetters(){
-  letterClock.reset();
+  letterClock.reset(); LR = null;
   vDeck = makeDeck(VOWEL_POOL); cDeck = makeDeck(CONS_POOL); board = [];
   $("cdPlay").hidden = true; $("cdOut").innerHTML = ""; $("cdVerdict").textContent = ""; $("cdInput").value = "";
   renderLetters();
@@ -2817,27 +2895,48 @@ function randomNine(){
   renderLetters(); startLetters();
 }
 function startLetters(){
+  LR = { over: false, best: "" };
   $("cdPlay").hidden = false;
-  letterClock.start();
+  $("cdInput").disabled = false; $("cdCheck").disabled = false; $("cdInput").value = ""; $("revealBtn").hidden = false;
+  $("cdVerdict").className = "verdict"; $("cdVerdict").textContent = ""; $("cdOut").innerHTML = "";
+  letterClock.start(() => endLetters("Time's up!"));
   $("cdInput").focus({ preventScroll: true });
+}
+const letterPoints = w => w.length === 9 ? 18 : w.length;
+function endLetters(head){
+  if (!LR || LR.over) return;
+  LR.over = true;
+  if (letterClock.running) { letterClock.stop(); $("cdTime").textContent = ""; }
+  $("cdInput").disabled = true; $("cdCheck").disabled = true; $("cdInput").blur(); $("revealBtn").hidden = true;
+  const b = LR.best, pts = b ? letterPoints(b) : 0, v = $("cdVerdict");
+  v.className = "verdict " + (b ? "ok" : "no");
+  v.textContent = `${head} ${b ? `Your best word was “${b}”: ${pts} point${pts === 1 ? "" : "s"}.` : "No valid word this round, so 0 points."} Here's what was possible:`;
+  showBestLetters();
 }
 async function checkWord(){
   const w = $("cdInput").value.trim().toLowerCase();
   const v = $("cdVerdict");
-  if (!w) return;
+  if (!w || (LR && LR.over)) return;
+  if (w.length < 3) { v.className = "verdict no"; v.textContent = "Words need at least 3 letters."; return; }
   const avail = {}; board.forEach(c => avail[c] = (avail[c] || 0) + 1);
   for (const c of w) {
     if (!avail[c]) { v.className = "verdict no"; v.textContent = `“${w}” can't be made from these letters.`; return; }
     avail[c]--;
   }
   try { await loadLists(); } catch { v.className = "verdict no"; v.textContent = "Couldn't load the word list to check it."; return; }
+  if (LR && LR.over) return;   // the clock ran out while the word list was loading
   if (WORDSET.has(w)) {
-    const pts = w.length === 9 ? 18 : w.length;
-    v.className = "verdict ok"; v.textContent = `“${w}” is valid: ${pts} point${pts === 1 ? "" : "s"}.`;
+    const pts = letterPoints(w), better = LR && w.length > LR.best.length;
+    if (better) LR.best = w;
+    v.className = "verdict ok";
+    v.textContent = `“${w}” is valid: ${pts} points.${LR && !better && LR.best !== w ? ` Your best is still “${LR.best}”.` : ""}`;
   } else { v.className = "verdict no"; v.textContent = `“${w}” isn't in the word list.`; }
 }
 async function revealLetters(){
-  letterClock.reset();
+  if (LR && !LR.over) { endLetters("Round over."); return; }
+  showBestLetters();
+}
+async function showBestLetters(){
   const out = $("cdOut");
   if (!await needLists(out)) return;
   renderGroups(out, solveLetters(board.join(""), 0, 4), 9, { cap: 40, maxGroups: 3 });
@@ -2955,7 +3054,8 @@ function resetNumbersUI(){
   $("nSolution").innerHTML = ""; $("nMsg").textContent = ""; $("ownMsg").textContent = "";
 }
 function startNumbers(nums, target, timed){
-  N = { start: nums.slice(), target, history: [], sel: null, op: null, nextId: 0, tiles: [] };
+  N = { start: nums.slice(), target, history: [], sel: null, op: null, nextId: 0, tiles: [], timed, over: false };
+  numbersLocked(false);
   N.tiles = nums.map(v => ({ id: N.nextId++, v, used: false, made: false }));
   $("nPick").hidden = true; $("nPlay").hidden = false;
   $("nSolution").innerHTML = ""; $("nMsg").textContent = "";
@@ -2966,7 +3066,7 @@ function startNumbers(nums, target, timed){
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const spin = setInterval(() => {
       $("nTarget").textContent = 101 + Math.floor(Math.random() * 899);
-      if (reduce || ++spins > 12) { clearInterval(spin); $("nTarget").textContent = target; numberClock.start(); }
+      if (reduce || ++spins > 12) { clearInterval(spin); $("nTarget").textContent = target; numberClock.start(() => endNumbers("Time's up!", true)); }
     }, 60);
   } else {
     $("nTarget").textContent = target;
@@ -2978,15 +3078,32 @@ function dealNumbers(large){
   const small = shuffle([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10]).slice(0, 6 - large);
   startNumbers([...big, ...small], 101 + Math.floor(Math.random() * 899), true);
 }
+function numbersLocked(on){
+  document.querySelectorAll("#opsRow [data-op], #nUndo, #nReset").forEach(b => b.disabled = on);
+}
+function closestTile(){
+  let best = null;
+  for (const t of N.tiles) { const d = Math.abs(t.v - N.target); if (!best || d < best.d) best = { v: t.v, d }; }
+  return best;
+}
+function endNumbers(head, reveal){
+  if (!N || N.over) return;
+  N.over = true; N.sel = null; N.op = null;
+  if (numberClock.running) { numberClock.stop(); if (head !== "Time's up!") $("nTime").textContent = ""; }
+  numbersLocked(true);
+  renderNumbers();
+  const b = closestTile(), pts = pointsFor(b.d);
+  $("nMsg").className = "verdict " + (pts ? "ok" : "no");
+  $("nMsg").textContent = b.d === 0 ? `${head} Spot on: 10 points.` : `${head} Your closest was ${b.v}, ${b.d} away: ${pts} point${pts === 1 ? "" : "s"}.`;
+  if (reveal) showSolution();
+}
 function renderNumbers(){
   $("nTiles").innerHTML = N.tiles.map(t =>
-    `<button class="ntile${t.made ? " made" : ""}${N.sel === t.id ? " sel" : ""}" data-tile="${t.id}"${t.used ? " disabled" : ""}>${t.v}</button>`
+    `<button class="ntile${t.made ? " made" : ""}${N.sel === t.id ? " sel" : ""}" data-tile="${t.id}"${t.used || N.over ? " disabled" : ""}>${t.v}</button>`
   ).join("");
   document.querySelectorAll("#opsRow [data-op]").forEach(b => b.classList.toggle("on", N.op === b.dataset.op));
   $("nSteps").innerHTML = N.history.map(h => `<li>${h.text}</li>`).join("");
-  let best = null;
-  for (const t of N.tiles) { const d = Math.abs(t.v - N.target); if (!best || d < best.d) best = { v: t.v, d }; }
-  const pts = pointsFor(best.d);
+  const best = closestTile(), pts = pointsFor(best.d);
   $("nBest").textContent = best.d === 0
     ? `Spot on! ${best.v}, 10 points.`
     : `Closest so far: ${best.v}, ${best.d} away (${pts} point${pts === 1 ? "" : "s"}).`;
@@ -2994,7 +3111,7 @@ function renderNumbers(){
 }
 function tapTile(id){
   const t = N.tiles.find(x => x.id === id);
-  if (!t || t.used) return;
+  if (!t || t.used || N.over) return;
   $("nMsg").textContent = "";
   if (N.sel === null || N.op === null || N.sel === id) { N.sel = N.sel === id && N.op === null ? null : id; renderNumbers(); return; }
   const a = N.tiles.find(x => x.id === N.sel), b = t;
@@ -3011,17 +3128,18 @@ function tapTile(id){
   N.history.push({ a: a.id, b: b.id, made: made.id, text: `${a.v} ${SYM[N.op]} ${b.v} = ${r}` });
   N.sel = made.id; N.op = null;
   renderNumbers();
-  if (r === N.target) numberClock.stop();
+  if (r === N.target && N.timed) endNumbers("Spot on!", false);
 }
 function tapOp(op){
-  if (!N) return;
+  if (!N || N.over) return;
   if (N.sel === null) { $("nMsg").className = "verdict no"; $("nMsg").textContent = "Pick a number first."; return; }
   $("nMsg").textContent = "";
   N.op = N.op === op ? null : op;
   renderNumbers();
 }
 function undoNumbers(){
-  const h = N && N.history.pop();
+  if (!N || N.over) return;
+  const h = N.history.pop();
   if (!h) return;
   N.tiles = N.tiles.filter(t => t.id !== h.made);
   N.tiles.forEach(t => { if (t.id === h.a || t.id === h.b) t.used = false; });
@@ -3029,15 +3147,14 @@ function undoNumbers(){
   renderNumbers();
 }
 function restartNumbers(){
-  if (!N) return;
+  if (!N || N.over) return;
   N.tiles = N.start.map(v => ({ id: N.nextId++, v, used: false, made: false }));
   N.history = []; N.sel = null; N.op = null; $("nMsg").textContent = "";
   renderNumbers();
 }
 function showSolution(){
   if (!N) return;
-  numberClock.stop();
-  $("nTime").textContent = "";
+  if (N.timed && !N.over) { endNumbers("Round over.", true); return; }
   $("nSolution").innerHTML = `<p class="status">Working it out…</p>`;
   setTimeout(() => {
     const s = solveNumbers(N.start, N.target);
