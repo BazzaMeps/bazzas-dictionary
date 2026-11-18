@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bazza's Dictionary</title>
+<title>Bazza's Brainbox</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='8' y='8' width='84' height='84' rx='12' fill='%23fbfaf5' stroke='%231c2e5a' stroke-width='6'/><text x='50' y='70' font-size='58' font-family='Arial' font-weight='700' text-anchor='middle' fill='%231c2e5a'>B</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@ header{background:var(--board);color:#fff;padding:18px 16px 0}
 
 .tile{display:inline-grid;place-items:center;width:2.1em;height:2.1em;background:var(--tile);color:var(--tile-ink);
   border-radius:4px;box-shadow:inset 0 -3px 0 var(--tile-edge);font-weight:800;font-size:1.15rem;text-transform:uppercase;line-height:1}
-.title-tiles .tile{font-size:1.35rem}
+.title-tiles .tile{font-size:clamp(1rem,4.6vw,1.35rem)}
 .tile.blank{background:transparent;color:var(--clock);box-shadow:inset 0 0 0 2px var(--clock)}
 .tile.empty{background:var(--board-2);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 
@@ -59,6 +59,7 @@ nav button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
 
 main{padding:20px 16px 48px}
 section[hidden]{display:none}
+[hidden]{display:none !important}
 
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .field{flex:1 1 200px;min-width:0;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--surface);font-size:1.1rem}
@@ -258,17 +259,56 @@ textarea.field{resize:vertical;line-height:1.5}
 .bn-c.hint-house:not(.z):not(.o){background:color-mix(in srgb,var(--good) 18%,var(--surface))}
 .bn-c.hint{outline:3px solid var(--good);outline-offset:-3px}
 .bn-c.bad{outline:3px solid var(--bad);outline-offset:-3px}
+/* Today */
+.today-date{font-size:.8rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card h2{margin:0;font-size:1.25rem}
+.streak{font-weight:800;font-size:.95rem}
+.dpart{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+#dailyParts{margin-top:8px}
+.dicon{font-size:1.4rem;width:1.7em;text-align:center;flex:none}
+.dtext{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dtext span{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}
+.dpart.done .dtext span{color:var(--ink);font-weight:600}
+.dpart .btn{padding:9px 18px;flex:none}
+.tick{flex:none;width:2.4em;text-align:center;font-size:1.3rem;font-weight:800;color:var(--good)}
+.stat-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.stat{background:var(--bg);border-radius:10px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:.75rem;color:var(--muted);line-height:1.2}
+.stat-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.93rem}
+.stat-table th{text-align:left;padding:14px 0 4px;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat-table td{padding:6px 0;border-bottom:1px solid var(--line)}
+.stat-table td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;padding-left:12px}
+.wotd-label{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:-6px 0 2px}
+.wotd-label .fav{margin:0}
+.wotd .headword h2{font-size:2rem}
+.wotd .pos{font-family:var(--read);font-style:italic;color:var(--muted);margin-top:2px}
+.wotd .def{font-family:var(--read);font-size:1.1rem;line-height:1.5;margin:10px 0 6px}
+.wotd .ex{font-family:var(--read);font-style:italic;color:var(--muted);margin:0 0 10px}
+.wotd .origin{font-size:.92rem;line-height:1.45;margin:0 0 14px}
+.fav{border:0;background:transparent;font-size:1.7rem;line-height:1;cursor:pointer;color:var(--muted);padding:2px 4px;margin-left:auto}
+.fav.on{color:#e0a800}
+.accent{font-size:.75rem;font-weight:800;color:var(--muted);letter-spacing:.04em}
+.muted{color:var(--muted);font-weight:400}
+.back-today{display:block;margin-top:10px}
+details.settings{margin-top:14px}
+details.settings h3{margin:18px 0 0;font-size:1rem}
+details.settings .lbl{display:block;margin:12px 0 6px}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <div class="brand"><h1>Bazza's Dictionary</h1><button class="theme-btn" id="themeBtn" type="button" aria-label="Colour theme">◐ Auto</button></div>
+    <div class="brand"><h1>Bazza's Brainbox</h1><button class="theme-btn" id="themeBtn" type="button" aria-label="Colour theme">◐ Auto</button></div>
     <div class="title-tiles" aria-hidden="true">
-      <span class="tile">w</span><span class="tile">o</span><span class="tile">r</span><span class="tile">d</span><span class="tile">s</span>
+      <span class="tile">b</span><span class="tile">r</span><span class="tile">a</span><span class="tile">i</span><span class="tile">n</span><span class="tile">b</span><span class="tile">o</span><span class="tile">x</span>
     </div>
     <nav role="tablist">
-      <button role="tab" aria-selected="true" data-tab="define">Define</button>
+      <button role="tab" aria-selected="true" data-tab="today">Today</button>
+      <button role="tab" aria-selected="false" data-tab="define">Define</button>
       <button role="tab" aria-selected="false" data-tab="unscramble">Unscramble</button>
       <button role="tab" aria-selected="false" data-tab="crossword">Puzzles</button>
       <button role="tab" aria-selected="false" data-tab="countdown">Countdown</button>
@@ -277,13 +317,59 @@ textarea.field{resize:vertical;line-height:1.5}
 </header>
 
 <main class="wrap">
+  <!-- TODAY -->
+  <section id="tab-today" hidden>
+    <div class="today-date" id="todayDate"></div>
+    <div class="card daily">
+      <div class="card-head"><h2>Daily Challenge</h2><span class="streak" id="streakBadge"></span></div>
+      <p class="hint" style="margin-top:4px">The same puzzles for everyone today. One go at each.</p>
+      <div id="dailyParts"></div>
+      <p class="sd-msg ok" id="dailyDone" hidden>All done for today. New puzzles at midnight!</p>
+      <div class="status" id="dailyStatus" role="status"></div>
+      <div class="row" id="dailyShareRow" hidden><button class="btn" id="dailyShare">Share my result</button></div>
+    </div>
+    <div class="card wotd" id="wotdCard"></div>
+    <div class="card">
+      <div class="card-head"><h2>Your stats</h2></div>
+      <div class="stat-tiles" id="statTiles"></div>
+      <details class="more"><summary>All stats and best times</summary><div id="statTable"></div></details>
+    </div>
+    <details class="more settings">
+      <summary>Settings and backup</summary>
+      <label class="lbl" for="listChoice">Word list (for Unscramble, Puzzles and Countdown)</label>
+      <select class="field small" id="listChoice" style="width:100%">
+        <option value="gb">British English (recommended)</option>
+        <option value="all">Everything: 370,000 words, American spellings and oddities included</option>
+      </select>
+      <p class="hint" id="listInfo"></p>
+      <h3>Backup</h3>
+      <p class="hint">Your stats, streaks, saved words and puzzles live in this browser. Save a backup now and then, in case you clear your browser or change phone.</p>
+      <div class="row cd-controls" style="margin-top:8px">
+        <button class="btn ghost" id="backupBtn" type="button">Save a backup</button>
+        <label class="btn ghost" for="restoreFile" style="text-align:center">Restore a backup</label>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint" id="backupMsg" role="status"></p>
+      <h3>Reset</h3>
+      <div class="row cd-controls" style="margin-top:8px">
+        <button class="btn ghost" id="resetStats" type="button">Reset stats and streaks</button>
+        <button class="btn ghost danger" id="resetAll" type="button">Reset everything</button>
+      </div>
+      <p class="hint">Word list: LibreOffice British English dictionary (LGPL). Definitions: Wiktionary (CC BY-SA) via the Free Dictionary API. Number and letter reading: Tesseract.</p>
+    </details>
+  </section>
+
   <!-- DEFINE -->
-  <section id="tab-define">
+  <section id="tab-define" hidden>
     <form class="row" autocomplete="off" onsubmit="return false">
       <input class="field" id="defineInput" type="search" placeholder="Type a word" autocapitalize="none" spellcheck="false" enterkeyhint="search">
       <button class="btn" id="defineBtn">Look up</button>
     </form>
     <div id="defineOut"></div>
+    <div class="recent" id="favWrap" hidden>
+      <h3>Your words <span class="muted" id="favCount"></span></h3>
+      <div class="chips" id="favChips"></div>
+    </div>
     <div class="recent" id="recentWrap" hidden>
       <h3>Recent</h3>
       <div class="chips" id="recentChips"></div>
@@ -575,6 +661,8 @@ const COMMON_URL = "https://raw.githubusercontent.com/first20hours/google-10000-
 const DICT_URL   = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 const WIKT_URL   = "https://en.wiktionary.org/api/rest_v1/page/definition/";
 const CACHE_NAME = "bazza-dict-lists-v1";
+// British list: from the same GitHub repo as the app, or straight from GitHub when previewing
+const GB_URLS = ["words-en-gb.txt?v=1", "https://raw.githubusercontent.com/BazzaMeps/bazzas-dictionary.html/main/words-en-gb.txt"];
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -631,7 +719,7 @@ $("themeBtn").addEventListener("click", () => {
 });
 
 /* ---------- word lists ---------- */
-let WORDS = null, WORDSET = null, RANK = null, listsPromise = null;
+let WORDS = null, WORDSET = null, RANK = null, listsPromise = null, LIST_USED = "";
 
 async function getText(url){
   if ("caches" in window) {
@@ -651,7 +739,15 @@ async function getText(url){
 }
 function loadLists(){
   if (!listsPromise) {
-    listsPromise = Promise.all([getText(WORDS_URL), getText(COMMON_URL)]).then(([all, common]) => {
+    const want = store.get("bd-list", "gb");
+    const getWords = async () => {
+      if (want === "gb") for (const u of GB_URLS) {
+        try { const t = await getText(u); if (t.length > 500000) { LIST_USED = "gb"; return t; } } catch {}
+      }
+      LIST_USED = want === "gb" ? "all-fallback" : "all";
+      return getText(WORDS_URL);
+    };
+    listsPromise = Promise.all([getWords(), getText(COMMON_URL)]).then(([all, common]) => {
       WORDS = all.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(w => /^[a-z]+$/.test(w));
       WORDSET = new Set(WORDS);
       RANK = new Map();
@@ -662,7 +758,7 @@ function loadLists(){
 }
 async function needLists(out){
   if (WORDS) return true;
-  out.innerHTML = `<p class="status">Loading the word list (about 4 MB, first time only)…</p>`;
+  out.innerHTML = `<p class="status">Loading the word list (${store.get("bd-list", "gb") === "gb" ? "about 1.5 MB" : "about 4 MB"}, first time only)…</p>`;
   try { await loadLists(); return true; }
   catch { out.innerHTML = `<p class="status err">Couldn't download the word list. Check your connection and try again.</p>`; return false; }
 }
@@ -700,11 +796,12 @@ function renderGroups(target, results, total, opts = {}){
 
 /* ---------- tabs ---------- */
 function showTab(name){
-  if (!$("tab-" + name)) name = "define";
+  if (!$("tab-" + name)) name = "today";
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  ["define","unscramble","crossword","countdown"].forEach(t => $("tab-" + t).hidden = t !== name);
+  ["today","define","unscramble","crossword","countdown"].forEach(t => $("tab-" + t).hidden = t !== name);
   store.set("bd-tab", name);
-  if (name !== "define") loadLists().catch(() => {});
+  if (name === "today") renderToday();
+  if (name !== "define") loadLists().then(() => { if (name === "today") renderListInfo(); }, () => {});
 }
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
@@ -832,7 +929,7 @@ async function define(raw){
   }
   if (seq !== defineSeq) return;
 
-  const listNote = WORDSET ? `<div class="inlist">${WORDSET.has(word) ? "Valid in the anagram word list." : "Not in the anagram word list."}</div>` : "";
+  const listNote = WORDSET ? `<div class="inlist">${WORDSET.has(word) ? "In the word list, so it counts in Countdown and Unscramble." : "Not in the word list, so it won't count in Countdown."}</div>` : "";
   if (!entry) {
     out.innerHTML = bothFailed
       ? `<p class="status err">Couldn't reach either dictionary. Check your connection and try again.</p>`
@@ -841,12 +938,13 @@ async function define(raw){
     return;
   }
   addRecent(word);
+  bump(s => s.lookups++);
 
   const nymChips = list => list.slice(0, 16).map(s => `<button class="chip" data-word="${esc(s)}">${esc(s)}</button>`).join("");
   let html = `<div class="entry"><div class="headword"><h2>${esc(entry.word)}</h2>`;
   if (entry.phon) html += `<span class="phon">${esc(entry.phon)}</span>`;
-  if (entry.audio) html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button>`;
-  html += `</div>${listNote}`;
+  if (entry.audio) html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button><span class="accent">${accentOf(entry.audio)}</span>`;
+  html += `<button class="fav" type="button" data-fav="${esc(word)}">☆</button></div>${listNote}`;
   for (const m of entry.meanings) {
     html += `<div class="pos">${esc(m.pos)}</div><ol class="defs">`;
     html += m.defs.map(d => `<li>${esc(d.text)}${d.ex ? `<span class="ex">“${esc(d.ex)}”</span>` : ""}</li>`).join("");
@@ -857,6 +955,7 @@ async function define(raw){
   if (entry.sources.length) html += `<p class="source">${entry.credit}: ${entry.sources.map(s => `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(decodeURIComponent(s.replace(/^https?:\/\//, "")))}</a>`).join(", ")}</p>`;
   html += `</div>`;
   out.innerHTML = html;
+  refreshFavButtons();
   if (entry.audio) $("playAudio").addEventListener("click", () => {
     new Audio(entry.audio.startsWith("//") ? "https:" + entry.audio : entry.audio).play().catch(() => {});
   });
@@ -1488,7 +1587,10 @@ function sdPlace(n){
   sd.shown[sdSel] = 0;
   sdClearMarks(); sdMsg("");
   const b = sdBoard();
-  if (!editing && b.every(Boolean) && !sdConflicts(b).size) sdMsg("Solved! Every row, column and box checks out. 🎉", "ok");
+  if (!editing && b.every(Boolean) && !sdConflicts(b).size) {
+    sdMsg("Solved! Every row, column and box checks out. 🎉", "ok");
+    if (!sd.counted && !sd.shown.some(Boolean)) { sd.counted = true; bump(s => s.solved.sudoku++); }
+  }
   sdRender(); sdSave();
 }
 
@@ -1557,7 +1659,7 @@ function sdCheck(){
   if (!mine.length) { sdMsg("You haven't put any numbers in yet."); sdRender(); return; }
   if (j.clash) { sdMsg("Each of your numbers could be right on its own, but they don't all fit the same answer. Try rubbing out your most recent ones.", "no"); sdRender(); return; }
   sdWrong = new Set(j.wrong);
-  sdMsg((sdWrong.size ? `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your number is right so far. 👍" : `All ${mine.length} of your numbers are right so far. 👍`)) + (j.multi ? SD_MULTI : ""), sdWrong.size ? "no" : "ok");
+  sdMsg((sdWrong.size ? (mine.length === 1 ? "Your number is wrong (shown in red)." : `${sdWrong.size} of your ${mine.length} number${mine.length === 1 ? "" : "s"} ${sdWrong.size === 1 ? "is" : "are"} wrong (shown in red).`) : (mine.length === 1 ? "Your number is right so far. 👍" : `All ${mine.length} of your numbers are right so far. 👍`)) + (j.multi ? SD_MULTI : ""), sdWrong.size ? "no" : "ok");
   sdRender();
 }
 
@@ -1795,7 +1897,7 @@ $("sdFile").addEventListener("change", async e => {
 
 function loadSudoku(){
   const saved = store.get("bd-sd", null);
-  if (saved && Array.isArray(saved.given) && saved.given.length === 81) sd = { given: saved.given, user: saved.user || Array(81).fill(0), shown: saved.shown || Array(81).fill(0) };
+  if (saved && Array.isArray(saved.given) && saved.given.length === 81) sd = { given: saved.given, user: saved.user || Array(81).fill(0), shown: saved.shown || Array(81).fill(0), counted: !!saved.counted };
   $("sdEdit").checked = !sd.given.some(Boolean);
   sdRender();
 }
@@ -1963,6 +2065,7 @@ function abcDoneMsg(){
   abc.made.done = true;
   const used = abc.made.helped || abc.shown.some(Boolean);
   const secs = Math.round((Date.now() - abc.made.start) / 1000), m = Math.floor(secs / 60), t = `${m}:${String(secs % 60).padStart(2, "0")}`;
+  afterPuzzle("abc", abc.made, secs, used);
   const best = store.get("bd-abc-best", {}), key = `${abc.n}-${abc.k}-${abc.made.level}`;
   let extra = "";
   if (!used) {
@@ -2140,7 +2243,7 @@ function abcCheck(){
   const mine = abc.cells.map((ch, i) => ch ? i : -1).filter(i => i >= 0);
   if (!mine.length) { abcMsg("You haven't filled any squares yet."); abcRender(); return; }
   abcWrong = new Set(mine.filter(i => abcVal(abc.cells[i]) !== res.sol[i]));
-  abcMsg(abcWrong.size ? `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), abcWrong.size ? "no" : "ok");
+  abcMsg(abcWrong.size ? (mine.length === 1 ? "Your square is wrong (shown in red)." : `${abcWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${abcWrong.size === 1 ? "is" : "are"} wrong (shown in red).`) : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), abcWrong.size ? "no" : "ok");
   abcRender();
 }
 
@@ -2149,7 +2252,7 @@ function abcSolveAll(){
   if (abcNeedsClues()) { abcRender(); return; }
   const res = abcSolve(2);
   if (abcProblem(res)) { abcRender(); return; }
-  if (abc.made) abc.made.helped = true;
+  if (abc.made) { abc.made.helped = true; puzzleGivenUp("abc", abc.made); abc.made.done = true; }
   res.sol.forEach((v, i) => { const ch = abcCh(v); if (abc.cells[i] !== ch) { abc.cells[i] = ch; abc.shown[i] = 1; } });
   abcMsg(res.count > 1 ? "Solved, but these clues allow more than one answer, so one may be missing or misread." : "Solved. The squares I filled in are in italics; ✕ means blank.", res.count > 1 ? "no" : "ok");
   abcRender(); abcSave();
@@ -2369,6 +2472,7 @@ function madeDoneMsg(made, key){
   if (!made || made.done) return "Solved! 🎉";
   made.done = true;
   const secs = Math.round((Date.now() - made.start) / 1000), fmt = x => `${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}`;
+  afterPuzzle(key.startsWith("nn") ? "nono" : "binary", made, secs, made.helped);
   if (made.helped) return `Solved in ${fmt(secs)} (with some help)! 🎉`;
   const best = store.get("bd-best", {});
   let extra = "";
@@ -2579,7 +2683,7 @@ $("nnCheck").addEventListener("click", () => {
   nnClearMarks();
   const mine = nn.cells.map((v, i) => v ? i : -1).filter(i => i >= 0);
   nnWrong = new Set(mine.filter(i => (nn.cells[i] === 1) !== (nn.sol[i] === 1)));
-  nnMsg(!mine.length ? "You haven't marked anything yet." : nnWrong.size ? `${nnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${nnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), nnWrong.size ? "no" : "ok");
+  nnMsg(!mine.length ? "You haven't marked anything yet." : nnWrong.size ? (mine.length === 1 ? "Your square is wrong (shown in red)." : `${nnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${nnWrong.size === 1 ? "is" : "are"} wrong (shown in red).`) : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), nnWrong.size ? "no" : "ok");
   nnRender();
 });
 $("nnSolve").addEventListener("click", () => {
@@ -2587,7 +2691,7 @@ $("nnSolve").addEventListener("click", () => {
   nnClearMarks(); nn.made && (nn.made.helped = true);
   nn.cells = nn.cells.map((v, i) => { const w = nn.sol[i] ? 1 : 2; if (v !== w) nn.shown[i] = 1; return w; });
   nnMsg(`Solved.${nn.name ? ` It's a ${nn.name}!` : ""} The squares I filled in are faded.`, "ok");
-  if (nn.made) nn.made.done = true;
+  if (nn.made) { puzzleGivenUp("nono", nn.made); nn.made.done = true; }
   nnRender(); nnSave();
 });
 $("nnClear").addEventListener("click", () => { if (!nn) return; nn.cells.fill(0); nn.shown.fill(0); nnClearMarks(); nnMsg(""); nnRender(); nnSave(); });
@@ -2817,12 +2921,12 @@ $("bnCheck").addEventListener("click", () => {
   bnClearMarks();
   const mine = bn.cells.map((v, i) => v >= 0 && !bn.given[i] ? i : -1).filter(i => i >= 0);
   bnWrong = new Set(mine.filter(i => bn.cells[i] !== bn.sol[i]));
-  bnMsg(!mine.length ? "You haven't filled any squares yet." : bnWrong.size ? `${bnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${bnWrong.size === 1 ? "is" : "are"} wrong (shown in red).` : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), bnWrong.size ? "no" : "ok");
+  bnMsg(!mine.length ? "You haven't filled any squares yet." : bnWrong.size ? (mine.length === 1 ? "Your square is wrong (shown in red)." : `${bnWrong.size} of your ${mine.length} square${mine.length === 1 ? "" : "s"} ${bnWrong.size === 1 ? "is" : "are"} wrong (shown in red).`) : (mine.length === 1 ? "Your square is right so far. 👍" : `All ${mine.length} of your squares are right so far. 👍`), bnWrong.size ? "no" : "ok");
   bnRender();
 });
 $("bnSolve").addEventListener("click", () => {
   if (!bn) return;
-  bnClearMarks(); if (bn.made) { bn.made.helped = true; bn.made.done = true; }
+  bnClearMarks(); if (bn.made) { puzzleGivenUp("binary", bn.made); bn.made.helped = true; bn.made.done = true; }
   bn.cells = bn.cells.map((v, i) => { if (v !== bn.sol[i]) bn.shown[i] = 1; return bn.sol[i]; });
   bnMsg("Solved. The squares I filled in are in italics.", "ok");
   bnRender(); bnSave();
@@ -2868,6 +2972,7 @@ const isVowel = c => "aeiou".includes(c);
 
 let LR = null;   // this letters round: { over, best }
 function newLetters(){
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "letters") { if (LR && !LR.over) endLetters("Round over."); DAILY_ACTIVE = null; }
   letterClock.reset(); LR = null;
   vDeck = makeDeck(VOWEL_POOL); cDeck = makeDeck(CONS_POOL); board = [];
   $("cdPlay").hidden = true; $("cdOut").innerHTML = ""; $("cdVerdict").textContent = ""; $("cdInput").value = "";
@@ -2911,6 +3016,7 @@ function endLetters(head){
   const b = LR.best, pts = b ? letterPoints(b) : 0, v = $("cdVerdict");
   v.className = "verdict " + (b ? "ok" : "no");
   v.textContent = `${head} ${b ? `Your best word was “${b}”: ${pts} point${pts === 1 ? "" : "s"}.` : "No valid word this round, so 0 points."} Here's what was possible:`;
+  afterLetters(b, pts);
   showBestLetters();
 }
 async function checkWord(){
@@ -2964,6 +3070,7 @@ function buildConundrums(){
   cnPool = [...RANK.keys()].filter(w => w.length === 9 && /^[a-z]+$/.test(w) && WORDSET.has(w) && count.get(sortKey(w)) === 1);
 }
 async function newConundrum(){
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "conundrum") { if (CN && !CN.done) endConundrum(false, "Skipped."); DAILY_ACTIVE = null; }
   cnClock.reset();
   if (!await needLists($("cnOut"))) return;
   $("cnOut").innerHTML = "";
@@ -2971,6 +3078,10 @@ async function newConundrum(){
   const ans = cnPool[Math.floor(Math.random() * cnPool.length)];
   let mix;
   do mix = shuffle([...ans]).join(""); while (mix === ans || WORDSET.has(mix));
+  beginConundrum(ans, mix);
+}
+function beginConundrum(ans, mix){
+  cnClock.reset(); $("cnOut").innerHTML = "";
   CN = { ans, mix, done: false };
   cnTiles(mix);
   $("cnPlay").hidden = false; $("cnReveal").hidden = false; $("cnInput").value = ""; $("cnInput").disabled = false; $("cnBuzz").disabled = false;
@@ -2983,6 +3094,7 @@ async function newConundrum(){
 }
 function endConundrum(won, msg){
   CN.done = true; cnClock.reset();
+  const secs = Math.max(1, Math.round((Date.now() - cnStart) / 1000));
   $("cnReveal").hidden = true;
   cnTiles(CN.ans, true);
   $("cnInput").disabled = true; $("cnBuzz").disabled = true;
@@ -2990,6 +3102,7 @@ function endConundrum(won, msg){
   v.className = "verdict " + (won ? "ok" : "no");
   v.innerHTML = won ? esc(msg) : `${esc(msg)} It was <b>${CN.ans.toUpperCase()}</b>.`;
   $("cnMeta").innerHTML = `<button class="chip" data-word="${CN.ans}">What does it mean?</button>`;
+  afterConundrum(won, secs);
 }
 function cnGuess(){
   if (!CN || CN.done) return;
@@ -3045,6 +3158,7 @@ function solveNumbers(nums, target){
 const pointsFor = diff => diff === 0 ? 10 : diff <= 5 ? 7 : diff <= 10 ? 5 : 0;
 
 function resetNumbersUI(){
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "numbers") { if (N && N.timed && !N.over) endNumbers("Round over.", false); DAILY_ACTIVE = null; }
   numberClock.reset();
   N = null;
   $("nTarget").textContent = "000";
@@ -3095,6 +3209,7 @@ function endNumbers(head, reveal){
   const b = closestTile(), pts = pointsFor(b.d);
   $("nMsg").className = "verdict " + (pts ? "ok" : "no");
   $("nMsg").textContent = b.d === 0 ? `${head} Spot on: 10 points.` : `${head} Your closest was ${b.v}, ${b.d} away: ${pts} point${pts === 1 ? "" : "s"}.`;
+  if (N.timed) afterNumbers(b.d, pts);
   if (reveal) showSolution();
 }
 function renderNumbers(){
@@ -3184,8 +3299,610 @@ $("nNew").addEventListener("click", resetNumbersUI);
 $("ownBtn").addEventListener("click", solveOwn);
 $("ownTarget").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); solveOwn(); } });
 
+/* ================= WORD OF THE DAY: [word, part of speech, meaning, example, origin] ================= */
+const WOTD = [
+["petrichor","noun","The pleasant, earthy smell that comes with rain after a long dry spell.","The first shower in weeks filled the garden with petrichor.","Coined in 1964 by two Australian scientists, from Greek petra (stone) + ichor (the fluid said to flow in the veins of the gods)."],
+["juggernaut","noun","A huge, overwhelming force; also a very large heavy lorry.","Juggernauts thundered along the A2 all night.","From Hindi Jagannath, a title of Krishna, whose enormous temple chariot is pulled through the streets of Puri."],
+["kerfuffle","noun","A commotion or fuss, especially one caused by a disagreement.","There was a bit of a kerfuffle over who'd booked the table.","From Scots curfuffle, early 19th century."],
+["defenestrate","verb","To throw someone or something out of a window.","He threatened to defenestrate the printer.","From Latin de- (down from) + fenestra (window); made famous by the Defenestration of Prague in 1618."],
+["gallimaufry","noun","A confused jumble or medley of things.","The loft was a gallimaufry of old toys and paperwork.","From 16th-century French galimafrée, a kind of stew or hash."],
+["serendipity","noun","The happy knack of finding good things by chance.","By pure serendipity, the café was showing the match.","Coined by Horace Walpole in 1754, after a Persian fairy tale, The Three Princes of Serendip (an old name for Sri Lanka)."],
+["collywobbles","noun","A feeling of nervousness, or a queasy stomach.","I always get the collywobbles before a job interview.","Early 19th century, probably a playful blend of colic and wobble."],
+["mellifluous","adjective","Sweet and smooth to listen to.","the mellifluous voice of the shipping forecast","From Latin mel (honey) + fluere (to flow)."],
+["codswallop","noun","Nonsense.","That story's a load of codswallop.","British slang from the 1950s, of unknown origin; the popular tale about Hiram Codd's fizzy-drink bottles is unproven."],
+["halcyon","adjective","Describing a happy, peaceful time in the past.","the halcyon days of summer holidays","From Greek halkuōn, a mythical bird said to calm the sea so it could nest on the waves at the winter solstice."],
+["pernickety","adjective","Fussy about small details.","He's very pernickety about how the dishwasher is loaded.","Originally Scots, early 19th century; Americans say persnickety."],
+["omnishambles","noun","A situation that has been mismanaged in every possible way.","The new parking system is an absolute omnishambles.","Coined in the BBC comedy The Thick of It in 2009; Oxford's UK Word of the Year in 2012."],
+["sesquipedalian","adjective","Using long words; (of a word) having many syllables.","a sesquipedalian legal letter","From Latin sesquipedalis, 'a foot and a half long', after the poet Horace mocked long-winded words."],
+["crepuscular","adjective","Relating to twilight; (of animals) most active at dawn and dusk.","Badgers are largely crepuscular.","From Latin crepusculum, 'twilight'."],
+["gobsmacked","adjective","Utterly astonished.","I was gobsmacked when the price came up.","British slang from the 1980s: gob (mouth) + smack, from clapping a hand over the mouth in surprise."],
+["quidnunc","noun","A nosy person who always wants the latest gossip.","The office quidnunc knew about the promotion before the boss did.","From Latin quid nunc?, 'what now?'; early 18th century."],
+["widdershins","adverb","Anticlockwise; in the direction opposite to the sun's course.","Walking widdershins round a church was once thought unlucky.","From Middle Low German weddersinnes, 'against the way'."],
+["lugubrious","adjective","Looking or sounding sad and dismal.","a lugubrious trumpet solo","From Latin lugubris, from lugere, 'to mourn'."],
+["curmudgeon","noun","A bad-tempered, grumpy person, especially an old one.","He's a lovable old curmudgeon really.","Late 16th century, origin unknown."],
+["chuffed","adjective","Very pleased.","I was chuffed to bits with the result.","From English dialect chuff, 'pleased'."],
+["gobbledygook","noun","Language that is meaningless or full of jargon.","The instructions were pure gobbledygook.","Coined in 1944 by US Congressman Maury Maverick, imitating the gobble of a turkey."],
+["susurration","noun","A whispering or rustling sound.","the susurration of leaves in the wind","From Latin susurrare, 'to whisper'."],
+["skulduggery","noun","Underhand or dishonest behaviour.","There was some skulduggery behind the vote.","An alteration of Scots sculduddery, mid 19th century."],
+["tintinnabulation","noun","The ringing or tinkling of bells.","the tintinnabulation of the church bells on Sunday morning","Popularised by Edgar Allan Poe in his poem The Bells (1849), from Latin tintinnabulum, 'bell'."],
+["knackered","adjective","Extremely tired; worn out.","I'm knackered after that shift.","From knacker, someone who bought worn-out horses for slaughter."],
+["ephemeral","adjective","Lasting for a very short time.","Fame on social media is ephemeral.","From Greek ephēmeros, 'lasting only a day'."],
+["bamboozle","verb","To cheat or fool someone.","They bamboozled him into buying the extended warranty.","Early 18th century, origin unknown."],
+["quintessential","adjective","Representing the most perfect example of something.","a quintessential English pub","From medieval Latin quinta essentia, 'fifth essence', the substance the heavens were thought to be made of."],
+["gubbins","noun","Odds and ends; miscellaneous bits and pieces.","a drawer full of cables and gubbins","From obsolete gobbon, 'piece, slice'; 16th century."],
+["flummox","verb","To perplex or bewilder someone.","The last clue completely flummoxed me.","Mid 19th century, probably from English dialect; origin unknown."],
+["hullabaloo","noun","A commotion; a fuss.","What's all the hullabaloo about?","Mid 18th century, a playful doubling of hallo or hullo."],
+["mollycoddle","verb","To treat someone too indulgently or protectively.","Stop mollycoddling him; he's thirty.","From molly (a soft or effeminate man) + coddle; mid 19th century."],
+["bumf","noun","Useless printed material; boring paperwork.","a pile of bumf from the council","Short for bum-fodder, meaning toilet paper; late 19th-century British slang."],
+["lackadaisical","adjective","Lacking enthusiasm and effort; careless.","a lackadaisical approach to revision","From the old exclamation lackaday, 'alas the day'."],
+["obfuscate","verb","To make something unclear or hard to understand.","The report seemed designed to obfuscate.","From Latin obfuscare, 'to darken'."],
+["perspicacious","adjective","Having a ready insight into things; shrewd.","a perspicacious judge of character","From Latin perspicax, 'seeing clearly'."],
+["pusillanimous","adjective","Showing a lack of courage; timid.","a pusillanimous refusal to take a stand","From Latin pusillus (very small) + animus (mind)."],
+["vicissitude","noun","A change of circumstances, usually for the worse.","the vicissitudes of life","From Latin vicissitudo, from vicissim, 'by turns'."],
+["sycophant","noun","A person who flatters someone important to gain advantage.","The chairman surrounded himself with sycophants.","From Greek sukophantēs, 'informer', literally 'fig-shower'; why figs is disputed."],
+["ubiquitous","adjective","Seeming to be everywhere.","the ubiquitous mobile phone","From Latin ubique, 'everywhere'."],
+["zenith","noun","The highest point; the point in the sky directly overhead.","the zenith of his career","Via Old French from Arabic samt ar-ra's, 'the path over the head', miscopied by medieval scribes."],
+["nadir","noun","The lowest point in the fortunes of someone or something.","Relegation was the nadir of the club's history.","From Arabic naẓīr, 'opposite' (that is, opposite the zenith)."],
+["sobriquet","noun","A nickname.","He earned the sobriquet 'the Gravesend Genius'.","French, originally meaning 'a tap under the chin'."],
+["smorgasbord","noun","A wide range of something; a buffet of many different dishes.","a smorgasbord of puzzles","From Swedish smörgåsbord: smörgås (bread and butter) + bord (table)."],
+["pantechnicon","noun","A large van for moving furniture.","The pantechnicon wouldn't fit down our road.","Originally the name of a London bazaar and furniture warehouse opened in 1830, from Greek pan (all) + tekhnikon (piece of art)."],
+["charabanc","noun","An early motor coach, used especially for day trips.","a charabanc outing to Margate","From French char à bancs, 'carriage with benches'."],
+["gormless","adjective","Lacking sense; foolish.","He stood there looking gormless.","From dialect gaum, 'understanding', + -less."],
+["lollop","verb","To move in an ungainly, bounding way.","The puppy lolloped across the lawn.","Probably from loll; 18th century."],
+["fartlek","noun","A form of training that mixes fast and slow running.","Thursday is fartlek in the park.","Swedish: fart (speed) + lek (play)."],
+["bibliophile","noun","A person who loves or collects books.","a bibliophile's dream of a second-hand bookshop","From Greek biblion (book) + philos (loving)."],
+["ultracrepidarian","noun","A person who gives opinions on matters beyond their knowledge.","Social media is full of ultracrepidarians.","From Latin ultra crepidam, 'beyond the sandal', after the painter Apelles told a critical cobbler to stick to shoes."],
+["verisimilitude","noun","The appearance of being true or real.","The film's period detail adds verisimilitude.","From Latin verisimilis, 'probable', from verus (true) + similis (like)."],
+["zeitgeist","noun","The defining spirit or mood of a period of history.","The song captured the zeitgeist of the nineties.","German: Zeit (time) + Geist (spirit)."],
+["schadenfreude","noun","Pleasure taken from someone else's misfortune.","a little schadenfreude when their rivals lost","German: Schaden (harm) + Freude (joy)."],
+["wanderlust","noun","A strong desire to travel.","A week of rain gave her serious wanderlust.","German: wandern (to hike) + Lust (desire)."],
+["doppelganger","noun","A double or look-alike of a living person.","I met your doppelganger in Tesco.","From German Doppelgänger, 'double-goer'."],
+["kitsch","noun","Art or objects thought tasteless, often enjoyed ironically.","Grandma's shelf of china cats is pure kitsch.","German, probably from kitschen, 'to smear'."],
+["hygge","noun","A cosy, contented mood from comfort and good company.","Candles, blankets and a pot of tea: peak hygge.","Danish, from a Norwegian word meaning 'wellbeing'."],
+["sangfroid","noun","Composure or coolness under pressure.","She took the penalty with remarkable sangfroid.","French sang-froid, 'cold blood'."],
+["raconteur","noun","A person who tells stories in a skilful and amusing way.","a natural raconteur, great at weddings","French, from raconter, 'to relate or recount'."],
+["bonhomie","noun","Cheerful friendliness.","the bonhomie of the Christmas party","French, from bonhomme, 'good fellow'."],
+["ennui","noun","A feeling of listlessness and boredom.","the ennui of a wet Sunday afternoon","French, from Latin mihi in odio est, 'it is hateful to me'."],
+["panache","noun","Flamboyant confidence of style or manner.","He finished the crossword with panache.","French, originally a plume of feathers on a helmet."],
+["hubris","noun","Excessive pride or self-confidence.","Booking the victory parade before the final was pure hubris.","Greek; in Greek tragedy, the pride that brings about a hero's downfall."],
+["nemesis","noun","A long-standing rival; something that brings about someone's downfall.","Sudoku remains my nemesis.","From Nemesis, the Greek goddess of retribution."],
+["panacea","noun","A solution or remedy for all difficulties.","There's no panacea for the housing crisis.","From Greek panakeia, from pan (all) + akos (remedy)."],
+["labyrinthine","adjective","Complicated and confusing, like a maze.","the council's labyrinthine planning rules","From the Labyrinth built to hold the Minotaur in Greek myth."],
+["stentorian","adjective","(Of a voice) very loud and powerful.","a stentorian sergeant major","From Stentor, a herald in Homer's Iliad whose voice was as loud as fifty men's."],
+["tantalise","verb","To tease someone with the sight of something they can't have.","The smell of bacon tantalised us.","From Tantalus, punished in Greek myth with food and water forever just out of reach."],
+["mentor","noun","An experienced and trusted adviser.","She was my mentor when I started in sales.","From Mentor, the adviser of Telemachus in Homer's Odyssey."],
+["maverick","noun","An unorthodox or independent-minded person.","a maverick who ignores the rules","From Samuel Maverick, a 19th-century Texas rancher who didn't brand his calves."],
+["boycott","verb","To refuse to deal with a person, company or country as a protest.","Fans boycotted the club shop.","From Captain Charles Boycott, an Irish land agent shunned by local people in 1880."],
+["cardigan","noun","A knitted jumper that fastens down the front.","a cosy cardigan with leather buttons","Named after the 7th Earl of Cardigan, who led the Charge of the Light Brigade."],
+["silhouette","noun","A dark shape and outline seen against a lighter background.","the silhouette of the Thames cranes at sunset","After Étienne de Silhouette, an 18th-century French finance minister famous for penny-pinching."],
+["quisling","noun","A traitor who collaborates with an occupying enemy.","He was branded a quisling.","From Vidkun Quisling, the Norwegian politician who collaborated with the Nazis."],
+["luddite","noun","A person opposed to new technology or ways of working.","I'm a bit of a luddite when it comes to smart speakers.","From the Luddites, early 19th-century textile workers who smashed machinery, supposedly led by Ned Ludd."],
+["bowdlerise","verb","To remove material thought improper from a book or text.","a bowdlerised version for schools","After Thomas Bowdler, who published a censored Family Shakespeare in 1818."],
+["shibboleth","noun","A custom or principle that marks out a group; a test word.","Pronouncing 'scone' became a social shibboleth.","Hebrew; in the Bible it was used to catch out Ephraimites, who couldn't say 'sh'."],
+["jeremiad","noun","A long, mournful complaint.","a jeremiad about the state of the trains","From the biblical prophet Jeremiah and his Lamentations."],
+["mesmerise","verb","To capture someone's complete attention.","The kids were mesmerised by the magician.","After Franz Mesmer, an 18th-century Austrian doctor who promoted 'animal magnetism'."],
+["galvanise","verb","To shock or excite someone into action.","The half-time talk galvanised the team.","After Luigi Galvani, who made frogs' legs twitch with electricity."],
+["malapropism","noun","Using a wrong word in place of a similar-sounding one.","'Dancing the flamingo' is a classic malapropism.","From Mrs Malaprop, a character in Sheridan's play The Rivals (1775)."],
+["spoonerism","noun","Swapping the first sounds of words, as in 'you have hissed all my mystery lectures'.","He announced a toast to 'our queer old dean'.","After the Revd William Spooner of New College, Oxford, said to be prone to them."],
+["pyrrhic","adjective","(Of a victory) won at such a cost that it is hardly worth it.","a pyrrhic victory in the planning dispute","After King Pyrrhus of Epirus, who beat the Romans in 279 BC but lost much of his army."],
+["draconian","adjective","Excessively harsh and severe.","draconian parking fines","After Draco, a 7th-century BC Athenian lawgiver whose laws were notoriously harsh."],
+["sardonic","adjective","Grimly mocking or cynical.","a sardonic smile","From Greek sardonios, 'of Sardinia', after a plant said to twist the face as if in bitter laughter."],
+["laconic","adjective","Using very few words.","his laconic reply: 'No.'","From Laconia, the region around Sparta, whose people were famed for their brevity."],
+["byzantine","adjective","Excessively complicated, often with devious scheming.","the byzantine rules of the pension scheme","From Byzantium, whose imperial court was famously intricate."],
+["bucolic","adjective","Relating to the pleasant aspects of country life.","a bucolic scene of sheep and hedgerows","From Greek boukolos, 'herdsman'."],
+["clandestine","adjective","Kept secret or done secretly.","a clandestine trip to the biscuit tin","From Latin clandestinus, from clam, 'secretly'."],
+["surreptitious","adjective","Kept secret, especially because it wouldn't be approved of.","a surreptitious glance at his phone","From Latin surrepticius, 'obtained secretly'."],
+["insouciant","adjective","Showing a casual lack of concern.","his insouciant attitude to deadlines","French, from in- (not) + soucier (to care)."],
+["ebullient","adjective","Cheerful and full of energy.","in ebullient mood after the win","From Latin ebullire, 'to boil up'."],
+["obsequious","adjective","Too eager to please or obey.","an obsequious waiter","From Latin obsequi, 'to follow or comply with'."],
+["truculent","adjective","Eager to argue or fight; aggressively defiant.","a truculent teenager","From Latin truculentus, from trux, 'fierce'."],
+["recalcitrant","adjective","Uncooperative towards authority.","a recalcitrant printer that refuses to print","From Latin recalcitrare, 'to kick out with the heels'."],
+["indefatigable","adjective","Tireless; never giving up.","an indefatigable fundraiser","From Latin in- (not) + defatigare (to wear out)."],
+["procrastinate","verb","To keep putting off doing something.","I'll stop procrastinating tomorrow.","From Latin procrastinare, from pro- (forward) + crastinus (belonging to tomorrow)."],
+["quixotic","adjective","Extremely idealistic; noble but impractical.","a quixotic attempt to clear the inbox","From Don Quixote, the hero of Cervantes' novel."],
+["mercurial","adjective","Subject to sudden changes of mood.","a mercurial genius on the wing","From the planet Mercury, once thought to make people volatile, and the fast-moving metal."],
+["saturnine","adjective","Gloomy and brooding.","a saturnine expression","From the planet Saturn, which astrologers thought caused gloominess."],
+["jovial","adjective","Cheerful and friendly.","a jovial landlord","From Jove (Jupiter); being born under that planet was thought to make people happy."],
+["palindrome","noun","A word or phrase that reads the same backwards, like 'level' or 'rotator'.","'Was it a car or a cat I saw?' is a palindrome.","From Greek palindromos, 'running back again'."],
+["anagram","noun","A word made by rearranging the letters of another, like 'listen' and 'silent'.","'Dormitory' is an anagram of 'dirty room'.","From Greek ana- (back, anew) + gramma (letter)."],
+["lexicon","noun","The vocabulary of a language or a person.","'Gobsmacked' entered the British lexicon in the 1980s.","From Greek lexikon (biblion), 'book of words'."],
+["conundrum","noun","A confusing and difficult problem; a riddle.","the conundrum of where to park","Late 16th century, origin unknown; possibly a mock-Latin Oxford University joke."],
+["abecedarian","adjective","Arranged alphabetically; relating to the alphabet.","an abecedarian list of capitals","From Late Latin abecedarius, from the letters A, B, C, D."],
+["eureka","exclamation","A cry of joy on discovering something.","Eureka! Found the car keys.","Greek heurēka, 'I have found it', said to have been shouted by Archimedes in his bath."],
+["epiphany","noun","A moment of sudden revelation or insight.","I had an epiphany halfway through the Sudoku.","From Greek epiphaneia, 'manifestation'."],
+["cogitate","verb","To think deeply about something.","Let me cogitate on that over a cuppa.","From Latin cogitare, 'to consider'."],
+["ruminate","verb","To think deeply; (of cattle) to chew the cud.","He ruminated on the offer all weekend.","From Latin ruminari, 'to chew over'."],
+["perambulate","verb","To walk or travel through or around a place.","We perambulated round the park.","From Latin perambulare; it's where 'pram' (perambulator) comes from."],
+["peripatetic","adjective","Travelling from place to place; working in several places.","a peripatetic music teacher","From Greek peripatein, 'to walk up and down', after Aristotle's habit of teaching while walking."],
+["dilettante","noun","A person who dabbles in a subject without real commitment.","a dilettante who's started six hobbies this year","Italian, from dilettare, 'to delight'."],
+["aficionado","noun","A person who knows a lot about a subject and is very keen on it.","a crossword aficionado","Spanish, 'amateur', from aficionar, 'to become fond of'."],
+["connoisseur","noun","An expert judge in matters of taste.","a connoisseur of real ale","From Old French, from Latin cognoscere, 'to know'."],
+["polymath","noun","A person of wide-ranging knowledge or learning.","Leonardo da Vinci, the ultimate polymath","From Greek polumathēs, 'having learned much'."],
+["autodidact","noun","A self-taught person.","an autodidact who learned to code from library books","From Greek autodidaktos, 'self-taught'."],
+["factotum","noun","An employee who does all kinds of work.","the office factotum, fixing everything from the kettle to the payroll","From Latin fac! (do!) + totum (the whole thing)."],
+["sinecure","noun","A job that pays well but needs little work.","an honorary post that was little more than a sinecure","From Latin sine cura, 'without care'."],
+["gerrymander","verb","To rig the boundaries of an electoral area to favour one party.","The districts had clearly been gerrymandered.","From US governor Elbridge Gerry + salamander, after a lizard-shaped district drawn in 1812."],
+["filibuster","noun","Long speeches made to delay or block a decision in a parliament.","a three-hour filibuster","Via Spanish filibustero from Dutch vrijbuiter, 'freebooter'."],
+["doggerel","noun","Comic verse that is badly written or irregular.","a birthday card full of doggerel","Late Middle English, perhaps from dog, used scornfully."],
+["onomatopoeia","noun","Making a word from the sound it describes, like 'sizzle' or 'cuckoo'.","Comic books love onomatopoeia: KAPOW!","From Greek onoma (name) + poiein (to make)."],
+["oxymoron","noun","A phrase combining contradictory terms, like 'deafening silence'.","'Working holiday' is a bit of an oxymoron.","From Greek oxumōros, 'pointedly foolish'."],
+["tautology","noun","Saying the same thing twice in different words, like 'free gift'.","'Past history' is a tautology.","From Greek tautologos, 'repeating what has been said'."],
+["euphemism","noun","A mild word used in place of one thought too blunt.","'Between jobs' is a euphemism for unemployed.","From Greek eu (well) + phēmē (speaking)."],
+["hyperbole","noun","Deliberate exaggeration.","'I've told you a million times' is hyperbole.","From Greek huperbolē, 'excess'."],
+["ambrosia","noun","Something delicious; in Greek myth, the food of the gods.","Mum's crumble is pure ambrosia.","From Greek ambrosia, 'elixir of life'."],
+["umami","noun","A savoury taste, one of the five basic tastes.","Parmesan is packed with umami.","Japanese, 'deliciousness'."],
+["smithereens","noun","Small pieces.","The vase was smashed to smithereens.","Probably from Irish smidirín, 'fragment'."],
+["scallywag","noun","A mischievous person, especially a child.","Which scallywag ate the last biscuit?","Mid 19th century, origin unknown."],
+["ragamuffin","noun","A child in ragged, dirty clothes.","a gang of ragamuffins","Probably from rag + a fanciful ending; Middle English."],
+["plethora","noun","A large or excessive amount of something.","a plethora of puzzle types","From Greek plēthōrē, 'fullness'."],
+["myriad","noun","A countless or extremely large number.","a myriad of stars","From Greek murias, 'ten thousand'."],
+["zephyr","noun","A soft, gentle breeze.","a warm zephyr off the estuary","From Greek Zephuros, god of the west wind."],
+["gloaming","noun","Twilight; dusk.","walking home in the gloaming","From Old English glōmung, from glōm, 'twilight'."],
+["murmuration","noun","A huge flock of starlings swooping and swirling together.","a murmuration over the marshes at dusk","From murmur; late Middle English."],
+["dreich","adjective","(Scottish) Dreary and bleak, especially of the weather.","a dreich November afternoon","Scots, from Middle English dreigh, 'enduring, tedious'."],
+["mizzle","noun","Light rain; drizzle.","not proper rain, just mizzle","Late Middle English, probably from Low German or Dutch."],
+["hirsute","adjective","Hairy.","a hirsute rugby forward","From Latin hirsutus, 'rough, shaggy'."],
+["pulchritude","noun","Beauty.","a vision of pulchritude","From Latin pulcher, 'beautiful'."],
+["nugatory","adjective","Of no value or importance.","The difference in price is nugatory.","From Latin nugatorius, from nugari, 'to trifle'."],
+["jejune","adjective","Naive and simplistic; dull.","a jejune argument","From Latin jejunus, 'fasting, barren'."],
+["obstreperous","adjective","Noisy and difficult to control.","an obstreperous toddler","From Latin obstrepere, 'to make a noise against'."],
+["rumbustious","adjective","Boisterous or unruly.","a rumbustious game of five-a-side","Probably an alteration of robustious; 18th century."],
+["cantankerous","adjective","Bad-tempered and argumentative.","a cantankerous old goat","Mid 18th century, origin uncertain."],
+["canoodle","verb","To kiss and cuddle.","caught canoodling on the big screen","Mid 19th century, origin unknown."],
+["bombastic","adjective","High-sounding but with little meaning; pompous.","a bombastic speech","From bombast, cotton padding once used to stuff clothes."],
+["whippersnapper","noun","A young and inexperienced person thought to be cheeky.","a young whippersnapper telling me how to use my phone","Late 17th century, perhaps from whipster."],
+["mumpsimus","noun","A custom or belief people stick to even after it's shown to be wrong.","Insisting on two spaces after a full stop is a mumpsimus.","From the tale of a priest who kept saying 'mumpsimus' instead of 'sumpsimus' in the Mass, even after being corrected."],
+["quagmire","noun","A soft, boggy area; an awkward, complicated situation.","a legal quagmire","From quag (marsh) + mire."],
+["imbroglio","noun","An extremely confused or complicated situation.","a diplomatic imbroglio","Italian, from imbrogliare, 'to confuse'."],
+["fracas","noun","A noisy disturbance or quarrel.","a fracas outside the chip shop","French, from Italian fracassare, 'to make an uproar'."],
+["donnybrook","noun","A heated argument or brawl.","The meeting turned into a donnybrook.","After Donnybrook Fair near Dublin, notorious for its brawls."],
+["bedlam","noun","A scene of uproar and confusion.","It was bedlam at the Boxing Day sales.","From Bethlem (Bedlam), the old London hospital for the mentally ill."],
+["pandemonium","noun","Wild and noisy disorder.","Pandemonium broke out when the winner scored.","Coined by Milton in Paradise Lost (1667) as the capital of Hell: 'all the demons'."],
+["utopia","noun","An imagined perfect place.","a utopia with no traffic","Coined by Sir Thomas More in 1516, from Greek ou (not) + topos (place)."],
+["robot","noun","A machine able to carry out complex tasks automatically.","a robot that sorts parcels","From Czech robota, 'forced labour'; coined for Karel Čapek's play R.U.R. (1920)."],
+["googol","noun","The number 1 followed by a hundred zeros.","There are fewer than a googol atoms in the universe.","Coined by the young nephew of US mathematician Edward Kasner; it inspired the name Google."],
+["sonorous","adjective","(Of a sound) deep and full.","the sonorous chimes of Big Ben","From Latin sonorus, from sonor, 'sound'."],
+["cacophony","noun","A harsh, jarring mixture of sounds.","a cacophony of car alarms","From Greek kakos (bad) + phōnē (sound)."],
+["brouhaha","noun","A noisy, overexcited reaction or fuss.","the brouhaha over the new logo","French, late 19th century, origin uncertain."],
+["skedaddle","verb","To run away in a hurry.","We skedaddled before the rain came.","Mid 19th-century American slang, origin unknown."],
+["nincompoop","noun","A foolish or stupid person.","Some nincompoop parked across my drive.","Late 17th century, origin unknown."],
+["shenanigans","noun","Secret or dishonest activity; high-spirited mischief.","office Christmas party shenanigans","Mid 19th century, origin unknown."],
+["flibbertigibbet","noun","A frivolous, flighty or overly talkative person.","a giggling flibbertigibbet","Late Middle English, probably imitating the sound of chatter."],
+["ineffable","adjective","Too great or extreme to be described in words.","the ineffable joy of a cancelled meeting","From Latin ineffabilis, 'unutterable'."],
+["callipygian","adjective","Having shapely buttocks.","a callipygian statue of Venus","From Greek kallos (beauty) + pugē (buttocks)."],
+["discombobulate","verb","To confuse or disconcert someone.","The one-way system completely discombobulated me.","Mid 19th-century American invention, perhaps based on discompose."],
+["hobbledehoy","noun","A clumsy or awkward youth.","a gangly hobbledehoy of fifteen","Mid 16th century, origin unknown."],
+["tiddler","noun","A small fish; a small child or thing.","catching tiddlers in a jam jar","Perhaps from tiddly, 'little'."],
+["littoral","adjective","Relating to the shore of a sea or lake.","the littoral marshes of the Thames","From Latin litus, 'shore'."],
+["riparian","adjective","Relating to the banks of a river.","riparian woodland along the Medway","From Latin ripa, 'bank'."],
+["sylvan","adjective","Relating to woods; pleasantly wooded.","a sylvan walk through Cobham woods","From Latin silva, 'wood'."],
+["nonchalant","adjective","Appearing casually calm and relaxed.","a nonchalant shrug","French, from non- + chaloir, 'to be concerned'."],
+["effervescent","adjective","Bubbly; lively and enthusiastic.","an effervescent host","From Latin effervescere, 'to boil up'."],
+["plenipotentiary","noun","A diplomat given full power to act on behalf of a government.","the British plenipotentiary at the treaty talks","From Latin plenus (full) + potentia (power)."],
+["antediluvian","adjective","Ridiculously old-fashioned; literally, from before the biblical Flood.","an antediluvian fax machine","From Latin ante (before) + diluvium (flood)."],
+["argy-bargy","noun","Noisy quarrelling.","a bit of argy-bargy in the car park","Originally Scots, a playful doubling of argue."],
+["gazump","verb","To raise the price after agreeing to sell a house to someone.","We were gazumped at the last minute.","1920s slang, origin unknown; it became a British property word in the 1970s."],
+["wassail","noun","Spiced ale drunk at Christmas; the custom of going from house to house singing.","a wassail in the orchard on Twelfth Night","From Old English wæs hæil, 'be in good health', influenced by Old Norse ves heill."],
+["yuletide","noun","The Christmas season.","yuletide cheer","From Old English geōl, a midwinter festival, + tide (time)."],
+["hogmanay","noun","(Scottish) New Year's Eve and its celebrations.","first-footing at Hogmanay","Scots, probably from Old French aguillanneuf, a New Year's gift."]
+];
+function wotdFor(date){
+  const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(2026, 0, 1)) / 864e5);
+  return WOTD[((day % WOTD.length) + WOTD.length) % WOTD.length];
+}
+
+/* ================= DATES & SEEDED RANDOM (so the Daily Challenge is the same for everyone) ================= */
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const keyToDate = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const fmtSecs = x => `${Math.floor(x / 60)}:${String(x % 60).padStart(2, "0")}`;
+function rngFrom(str){
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909);
+  let a = (h ^ h >>> 16) >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+// The puzzle makers use Math.random, so for daily puzzles we swap in the date-seeded version while they run
+function withRandom(rng, fn){ const real = Math.random; Math.random = rng; try { return fn(); } finally { Math.random = real; } }
+async function withRandomAsync(rng, fn){ const real = Math.random; Math.random = rng; try { return await fn(); } finally { Math.random = real; } }
+
+/* ================= STATISTICS ================= */
+const STATS0 = () => ({
+  letters: { played: 0, points: 0, best: 0, nines: 0, longest: "" },
+  numbers: { played: 0, exact: 0, points: 0, dist: 0 },
+  conundrum: { played: 0, solved: 0, best: 0 },
+  solved: { sudoku: 0, abc: 0, nono: 0, binary: 0 },
+  lookups: 0, since: dayKey()
+});
+function stats(){
+  const s = store.get("bd-stats", null), d = STATS0();
+  if (!s) return d;
+  for (const k in d) {
+    if (d[k] && typeof d[k] === "object") d[k] = { ...d[k], ...(s[k] || {}) };
+    else if (s[k] !== undefined) d[k] = s[k];
+  }
+  return d;
+}
+function bump(fn){ const s = stats(); fn(s); store.set("bd-stats", s); if (!$("tab-today").hidden) renderToday(); }
+
+/* ================= DAILY CHALLENGE ================= */
+const DAILY_PARTS = ["letters", "numbers", "conundrum", "bonus"];
+const BONUS_NAME = { binary: "Binary", nono: "Nonogram", abc: "ABC Logic" };
+let DAILY_ACTIVE = null;          // { key, part } while a daily round is being played
+const dailyCache = {};
+const dailyAll = () => store.get("bd-daily", {});
+const dailyGet = (k = dayKey()) => dailyAll()[k] || {};
+function dailySet(part, val, key){
+  const all = dailyAll();
+  all[key] = { ...(all[key] || {}), [part]: val };
+  const keys = Object.keys(all).sort();
+  while (keys.length > 400) delete all[keys.shift()];
+  store.set("bd-daily", all);
+}
+// A timed round that was started but never finished (app closed mid-round) counts as played, with no score
+function partState(rec){
+  if (!rec) return "todo";
+  if (rec.done) return "done";
+  if (rec.timed && Date.now() - rec.started > 45000) return "missed";
+  return "started";
+}
+const dayComplete = rec => DAILY_PARTS.every(p => ["done", "missed"].includes(partState((rec || {})[p])));
+function streaks(){
+  const all = dailyAll();
+  let d = new Date(), cur = 0;
+  if (!dayComplete(all[dayKey(d)])) d.setDate(d.getDate() - 1);
+  while (dayComplete(all[dayKey(d)])) { cur++; d.setDate(d.getDate() - 1); }
+  const days = Object.keys(all).filter(k => dayComplete(all[k])).sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of days) {
+    const dt = keyToDate(k);
+    run = prev && Math.round((dt - prev) / 864e5) === 1 ? run + 1 : 1;
+    best = Math.max(best, run); prev = dt;
+  }
+  return { cur, best, total: days.length };
+}
+
+// Build today's puzzles from the date alone, so every phone gets the same ones
+async function dailyPuzzles(key){
+  if (dailyCache[key]) return dailyCache[key];
+  await loadLists();
+  const out = {};
+  for (let t = 0; t < 40; t++) {                      // letters with at least a 7-letter word in them
+    const L = withRandom(rngFrom(`${key}|letters|${t}`), () => {
+      const v = makeDeck(VOWEL_POOL), c = makeDeck(CONS_POOL), nv = 3 + Math.floor(Math.random() * 3);
+      return shuffle([...Array(nv).fill(1), ...Array(9 - nv).fill(0)]).map(x => x ? v.pop() : c.pop());
+    });
+    const best = solveLetters(L.join(""), 0, 3)[0];
+    out.letters = L; out.lettersMax = best ? best.w.length : 0;
+    if (out.lettersMax >= 7) break;
+  }
+  for (let t = 0; t < 60; t++) {                      // numbers where the target can be hit exactly
+    out.numbers = withRandom(rngFrom(`${key}|numbers|${t}`), () => {
+      const large = [0, 1, 1, 2, 2, 2, 3, 4][Math.floor(Math.random() * 8)];
+      const big = shuffle([25, 50, 75, 100]).slice(0, large);
+      const small = shuffle([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10]).slice(0, 6 - large);
+      return { nums: [...big, ...small], target: 101 + Math.floor(Math.random() * 899) };
+    });
+    if (solveNumbers(out.numbers.nums, out.numbers.target).diff === 0) break;
+    await breathe();
+  }
+  if (!cnPool) buildConundrums();
+  withRandom(rngFrom(`${key}|conundrum`), () => {
+    const ans = cnPool[Math.floor(Math.random() * cnPool.length)];
+    let mix, n = 0;
+    do mix = shuffle([...ans]).join(""); while ((mix === ans || WORDSET.has(mix)) && ++n < 50);
+    out.conundrum = { ans, mix };
+  });
+  const di = Math.round((keyToDate(key) - new Date(2026, 0, 1)) / 864e5);
+  out.bonus = ["binary", "nono", "abc"][((di % 3) + 3) % 3];
+  return dailyCache[key] = out;
+}
+
+function backToToday(el){
+  if (!el || el.querySelector(".back-today")) return;
+  const b = document.createElement("button");
+  b.className = "btn ghost back-today"; b.type = "button"; b.textContent = "Back to Today";
+  el.appendChild(b);
+}
+document.addEventListener("click", e => { if (e.target.closest(".back-today")) { showTab("today"); window.scrollTo({ top: 0 }); } });
+
+async function playDaily(part){
+  const key = dayKey(), rec = dailyGet(key)[part];
+  if (rec && rec.done) return;
+  $("dailyStatus").textContent = "Getting today's puzzles ready…";
+  let P;
+  try { P = await dailyPuzzles(key); }
+  catch { $("dailyStatus").textContent = "Couldn't load the word list. Check your connection and try again."; return; }
+  $("dailyStatus").textContent = "";
+  if (part === "letters") {
+    showTab("countdown"); showCd("letters"); newLetters();
+    DAILY_ACTIVE = { key, part };
+    board = P.letters.slice(); renderLetters();
+    dailySet("letters", { started: Date.now(), timed: true }, key);
+    startLetters();
+    $("cdCounts").textContent = "Daily Challenge · one go only";
+  } else if (part === "numbers") {
+    showTab("countdown"); showCd("numbers"); resetNumbersUI();
+    DAILY_ACTIVE = { key, part };
+    dailySet("numbers", { started: Date.now(), timed: true }, key);
+    startNumbers(P.numbers.nums, P.numbers.target, true);
+    $("nMeta").textContent = "Daily Challenge · one go only";
+  } else if (part === "conundrum") {
+    showTab("countdown"); showCd("conundrum");
+    if (CN && !CN.done) endConundrum(false, "Skipped.");
+    DAILY_ACTIVE = { key, part };
+    dailySet("conundrum", { started: Date.now(), timed: true }, key);
+    beginConundrum(P.conundrum.ans, P.conundrum.mix);
+    $("cnMeta").textContent = "Daily Challenge · one go only";
+  } else await playDailyBonus(P.bonus, key, rec);
+  window.scrollTo({ top: 0 });
+}
+async function playDailyBonus(kind, key, rec){
+  const cur = kind === "binary" ? bn : kind === "nono" ? nn : abc;
+  const already = cur && cur.made && cur.made.daily === key && !cur.made.done;
+  const busy = cur && cur.made && !cur.made.done && !cur.made.daily;
+  showTab("crossword"); showPz(kind);
+  if (already) return;                                   // carry on with the one in progress
+  if (busy && !confirm(`Start today's ${BONUS_NAME[kind]} puzzle? The one you're doing now will be cleared.`)) return;
+  const rng = rngFrom(`${key}|bonus`), status = { binary: bnStatus, nono: nnStatus, abc: abcStatus }[kind];
+  status("Making today's puzzle…");
+  if (kind === "binary") {
+    const p = await withRandomAsync(rng, () => bnMake(8, "medium"));
+    bn = p; bn.level = "medium"; bn.made = { start: Date.now(), daily: key };
+    bnClearMarks(); bnMsg(""); bnRender(); bnSave();
+  } else if (kind === "nono") {
+    const p = await withRandomAsync(rng, async () => nnRandom(10));
+    nn = p; nn.kind = "10"; nn.made = { start: Date.now(), daily: key };
+    nnClearMarks(); nnMsg(""); nnRender(); nnSave();
+  } else {
+    $("abcSize").value = "5"; $("abcK").value = "3"; $("abcLevel").value = "medium";
+    await withRandomAsync(rng, () => abcMake(5, 3, "medium"));
+    abc.made = { level: "medium", start: Date.now(), daily: key };
+    $("abcEdit").checked = false; abcSel = null; abcClearMarks(); abcMsg(""); abcRender(); abcSave();
+  }
+  DAILY_ACTIVE = { key, part: "bonus" };
+  if (!rec) dailySet("bonus", { started: Date.now(), kind }, key);
+  status(`Daily Challenge bonus: today's ${BONUS_NAME[kind]}. The clock's running!`);
+}
+
+/* ---------- what happens when a round or puzzle finishes ---------- */
+function afterLetters(word, pts){
+  bump(s => { s.letters.played++; s.letters.points += pts; s.letters.best = Math.max(s.letters.best, pts);
+    if (word.length === 9) s.letters.nines++; if (word.length > (s.letters.longest || "").length) s.letters.longest = word; });
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "letters") {
+    const P = dailyCache[DAILY_ACTIVE.key];
+    dailySet("letters", { done: true, word, pts, max: P ? P.lettersMax : 0 }, DAILY_ACTIVE.key);
+    DAILY_ACTIVE = null;
+    backToToday($("cdVerdict"));
+  }
+}
+function afterNumbers(d, pts){
+  bump(s => { s.numbers.played++; s.numbers.points += pts; s.numbers.dist += d; if (!d) s.numbers.exact++; });
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "numbers") {
+    dailySet("numbers", { done: true, d, pts }, DAILY_ACTIVE.key);
+    DAILY_ACTIVE = null;
+    backToToday($("nMsg"));
+  }
+}
+function afterConundrum(won, secs){
+  bump(s => { s.conundrum.played++; if (won) { s.conundrum.solved++; s.conundrum.best = s.conundrum.best ? Math.min(s.conundrum.best, secs) : secs; } });
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "conundrum") {
+    dailySet("conundrum", { done: true, won, secs }, DAILY_ACTIVE.key);
+    DAILY_ACTIVE = null;
+    backToToday($("cnVerdict"));
+  }
+}
+const PUZZLE_MSG = { binary: "bnMsg", nono: "nnMsg", abc: "abcMsg" };
+function afterPuzzle(kind, made, secs, helped){
+  bump(s => { s.solved[kind] = (s.solved[kind] || 0) + 1; });
+  if (made && made.daily) {
+    dailySet("bonus", { done: true, secs, helped: !!helped, kind }, made.daily);
+    if (DAILY_ACTIVE && DAILY_ACTIVE.part === "bonus") DAILY_ACTIVE = null;
+    setTimeout(() => backToToday($(PUZZLE_MSG[kind])), 0);
+  }
+}
+function puzzleGivenUp(kind, made){
+  if (!made || !made.daily) return;
+  const rec = dailyGet(made.daily).bonus;
+  if (rec && rec.done) return;
+  dailySet("bonus", { done: true, gaveUp: true, kind }, made.daily);
+  if (DAILY_ACTIVE && DAILY_ACTIVE.part === "bonus") DAILY_ACTIVE = null;
+  setTimeout(() => backToToday($(PUZZLE_MSG[kind])), 0);
+}
+
+/* ---------- sharing a result, no spoilers ---------- */
+function shareText(key){
+  const r = dailyGet(key), st = streaks(), L = r.letters || {}, Nm = r.numbers || {}, C = r.conundrum || {}, B = r.bonus || {};
+  const date = keyToDate(key).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const kind = B.kind || (dailyCache[key] || {}).bonus;
+  return [
+    `Bazza's Brainbox · Daily Challenge · ${date}`,
+    `🔤 Letters: ${L.done ? (L.word ? `${L.word.length} letters` : "no word") + (L.max ? ` (best possible ${L.max})` : "") : "missed"}`,
+    `🔢 Numbers: ${Nm.done ? (Nm.d === 0 ? "exact ✅" : `${Nm.d} away`) : "missed"}`,
+    `🧩 Conundrum: ${C.done ? (C.won ? `solved in ${C.secs}s ✅` : "not solved ❌") : "missed"}`,
+    `⭐ ${BONUS_NAME[kind] || "Bonus"}: ${B.done ? (B.gaveUp ? "gave up" : fmtSecs(B.secs) + (B.helped ? " (with help)" : " ✅")) : "missed"}`,
+    `🔥 Streak: ${st.cur} day${st.cur === 1 ? "" : "s"}`
+  ].join("\n");
+}
+async function shareDaily(){
+  const text = shareText(dayKey());
+  try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(text); $("dailyStatus").textContent = "Copied! Paste it wherever you like."; return; } catch {}
+  const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+  try { document.execCommand("copy"); $("dailyStatus").textContent = "Copied! Paste it wherever you like."; } catch { $("dailyStatus").textContent = text; }
+  t.remove();
+}
+
+/* ================= FAVOURITES ================= */
+let favs = store.get("bd-favs", []);
+const isFav = w => favs.some(f => f.w === w);
+function refreshFavButtons(){
+  document.querySelectorAll("[data-fav]").forEach(b => {
+    const on = isFav(b.dataset.fav);
+    b.textContent = on ? "★" : "☆"; b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on); b.setAttribute("aria-label", on ? "Remove from your words" : "Save to your words");
+  });
+}
+function renderFavs(){
+  $("favWrap").hidden = !favs.length;
+  $("favCount").textContent = favs.length ? `(${favs.length})` : "";
+  $("favChips").innerHTML = favs.map(f => `<button class="chip" data-word="${esc(f.w)}">${esc(f.w)}</button>`).join("");
+}
+function toggleFav(w){
+  favs = isFav(w) ? favs.filter(f => f.w !== w) : [{ w, t: Date.now() }, ...favs];
+  store.set("bd-favs", favs); renderFavs(); refreshFavButtons();
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-fav]"); if (b) { e.preventDefault(); toggleFav(b.dataset.fav); } });
+const accentOf = url => /-uk\.mp3$/i.test(url) ? "UK" : /-us\.mp3$/i.test(url) ? "US" : /-au\.mp3$/i.test(url) ? "Aus" : /-ca\.mp3$/i.test(url) ? "Can" : "";
+
+/* ================= TODAY TAB ================= */
+let wotdShown = "";
+function renderWotd(){
+  const now = new Date(), [w, pos, def, ex, origin] = wotdFor(now);
+  if (wotdShown === dayKey(now) + w) { refreshFavButtons(); return; }
+  wotdShown = dayKey(now) + w;
+  $("wotdCard").innerHTML = `
+    <div class="wotd-label"><span>Word of the day</span><button class="fav" type="button" data-fav="${esc(w)}">☆</button></div>
+    <div class="headword"><h2>${esc(w)}</h2><span class="phon" id="wotdPhon"></span>
+      <button class="audio" id="wotdAudio" aria-label="Play pronunciation" hidden>▶</button><span class="accent" id="wotdAccent"></span></div>
+    <div class="pos">${esc(pos)}</div>
+    <p class="def">${esc(def)}</p>
+    ${ex ? `<p class="ex">“${esc(ex)}”</p>` : ""}
+    <p class="origin"><b>Origin:</b> ${esc(origin)}</p>
+    <button class="btn ghost" data-word="${esc(w)}">Full dictionary entry</button>`;
+  refreshFavButtons();
+  // Pronunciation is a bonus: fetch it quietly if we can
+  const show = e => {
+    if (!e) return;
+    if (e.phon) $("wotdPhon").textContent = e.phon;
+    if (e.audio) { const a = $("wotdAudio"); a.hidden = false; a.onclick = () => new Audio(e.audio).play().catch(() => {}); $("wotdAccent").textContent = accentOf(e.audio); }
+  };
+  if (defCache[w]) show(defCache[w]);
+  else if (!/-/.test(w)) fromFreeDict(w).then(e => { if (e) { cacheDef(w, e); show(e); } }).catch(() => {});
+}
+function dailyLine(part, rec, P){
+  const st = partState(rec);
+  if (st === "missed") return "Didn't finish, no score";
+  if (st === "started") return part === "bonus" ? "In progress" : "In progress…";
+  if (st === "todo") return "Not played yet";
+  if (part === "letters") return rec.word ? `${rec.word.toUpperCase()} · ${rec.pts} pts${rec.max ? ` (best possible: ${rec.max} letters)` : ""}` : "No word, 0 pts";
+  if (part === "numbers") return rec.d === 0 ? "Spot on · 10 pts" : `${rec.d} away · ${rec.pts} pts`;
+  if (part === "conundrum") return rec.won ? `Solved in ${rec.secs}s · 10 pts` : "Not solved";
+  return rec.gaveUp ? "Gave up" : `Solved in ${fmtSecs(rec.secs)}${rec.helped ? " (with help)" : ""}`;
+}
+function renderToday(){
+  const now = new Date(), key = dayKey(now), rec = dailyGet(key), st = streaks(), P = dailyCache[key];
+  const bonusKind = P ? P.bonus : ["binary", "nono", "abc"][((Math.round((keyToDate(key) - new Date(2026, 0, 1)) / 864e5) % 3) + 3) % 3];
+  $("todayDate").textContent = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  $("streakBadge").textContent = st.cur ? `🔥 ${st.cur}-day streak` : "";
+  const parts = [["letters", "🔤", "Letters"], ["numbers", "🔢", "Numbers"], ["conundrum", "🧩", "Conundrum"], ["bonus", "⭐", `Bonus: ${BONUS_NAME[bonusKind]}`]];
+  $("dailyParts").innerHTML = parts.map(([p, icon, name]) => {
+    const s = partState(rec[p]), done = s === "done" || s === "missed";
+    const btn = done ? `<span class="tick" aria-label="Done">✓</span>`
+      : `<button class="btn" data-daily="${p}">${s === "started" && p === "bonus" ? "Carry on" : "Play"}</button>`;
+    return `<div class="dpart${done ? " done" : ""}"><span class="dicon" aria-hidden="true">${icon}</span>
+      <div class="dtext"><b>${esc(name)}</b><span>${esc(dailyLine(p, rec[p], P || { bonus: bonusKind }))}</span></div>${btn}</div>`;
+  }).join("");
+  const complete = dayComplete(rec);
+  $("dailyShareRow").hidden = !complete;
+  $("dailyDone").hidden = !complete;
+  renderWotd();
+  // Stats
+  const s = stats(), solvedTotal = Object.values(s.solved).reduce((a, b) => a + b, 0);
+  $("statTiles").innerHTML = [
+    [st.cur, "Day streak"], [st.best, "Best streak"], [st.total, "Daily challenges"],
+    [s.letters.best, "Best letters score"], [s.numbers.exact, "Numbers spot on"], [solvedTotal, "Puzzles solved"]
+  ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+  const best = store.get("bd-best", {}), abcBest = store.get("bd-abc-best", {});
+  const avg = (a, b) => b ? (a / b).toFixed(1) : "–";
+  const rows = [
+    ["Countdown letters"],
+    ["Rounds played", s.letters.played], ["Average score", avg(s.letters.points, s.letters.played)],
+    ["Nine-letter words", s.letters.nines], ["Longest word", s.letters.longest ? s.letters.longest.toUpperCase() : "–"],
+    ["Countdown numbers"],
+    ["Rounds played", s.numbers.played], ["Spot on", s.numbers.exact], ["Average distance from target", avg(s.numbers.dist, s.numbers.played)],
+    ["Conundrum"],
+    ["Played", s.conundrum.played], ["Solved", s.conundrum.solved], ["Fastest", s.conundrum.best ? `${s.conundrum.best}s` : "–"],
+    ["Puzzles solved"],
+    ["Sudoku", s.solved.sudoku], ["ABC Logic", s.solved.abc], ["Nonogram", s.solved.nono], ["Binary", s.solved.binary]
+  ];
+  const nnNames = { "nn-pic": "Hidden picture", "nn-5": "Quick 5 × 5", "nn-10": "Random 10 × 10", "nn-15": "Big 15 × 15" };
+  const times = [
+    ...Object.entries(abcBest).map(([k, v]) => { const [n, kk, lvl] = k.split("-"); return [`ABC Logic ${n} × ${n}, A–${ABC_L[kk - 1]}, ${lvl}`, v]; }),
+    ...Object.entries(best).filter(([k]) => k.startsWith("nn-")).map(([k, v]) => [`Nonogram ${nnNames[k] || k}`, v]),
+    ...Object.entries(best).filter(([k]) => k.startsWith("bn-")).map(([k, v]) => { const [, n, lvl] = k.split("-"); return [`Binary ${n} × ${n}, ${lvl}`, v]; })
+  ].sort((a, b) => a[0].localeCompare(b[0]));
+  if (times.length) rows.push(["Best times (no help)"], ...times.map(([l, v]) => [l, fmtSecs(v)]));
+  rows.push(["Dictionary"], ["Words looked up", s.lookups], ["Your saved words", favs.length]);
+  $("statTable").innerHTML = `<table class="stat-table">${rows.map(r => r.length === 1 ? `<tr><th colspan="2">${esc(r[0])}</th></tr>` : `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>
+    <p class="hint">Counting since ${keyToDate(s.since).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.</p>`;
+  renderListInfo();
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-daily]"); if (b) playDaily(b.dataset.daily); });
+$("dailyShare").addEventListener("click", shareDaily);
+// Roll over to a new day if the app is left open past midnight
+let lastDay = dayKey();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && dayKey() !== lastDay) { lastDay = dayKey(); if (!$("tab-today").hidden) renderToday(); } });
+
+/* ================= SETTINGS: word list, backup, reset ================= */
+function renderListInfo(){
+  const el = $("listInfo"); if (!el) return;
+  $("listChoice").value = store.get("bd-list", "gb");
+  if (!WORDS) { el.textContent = "The word list loads when you first need it."; return; }
+  const n = WORDS.length.toLocaleString("en-GB");
+  el.textContent = LIST_USED === "gb" ? `Using British English: ${n} words from the LibreOffice British English dictionary (checked against Oxford Dictionaries). No names, no American spellings; both -ise and -ize are allowed, as in Oxford.`
+    : LIST_USED === "all-fallback" ? `Couldn't find the British list (words-en-gb.txt in your GitHub repo), so the big list is being used for now: ${n} words.`
+    : `Using the big list: ${n} words, including American spellings, names and some oddities.`;
+}
+$("listChoice").addEventListener("change", e => {
+  store.set("bd-list", e.target.value);
+  WORDS = WORDSET = null; listsPromise = null; cnPool = null;
+  for (const k in dailyCache) delete dailyCache[k];
+  $("listInfo").textContent = "Loading the new word list…";
+  loadLists().then(renderListInfo, () => { $("listInfo").textContent = "Couldn't load that word list. Check your connection."; });
+});
+function backupData(){
+  const data = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("bd-") && k !== "bd-defs") data[k] = localStorage.getItem(k); } } catch {}
+  return { app: "bazzas-brainbox", version: 1, saved: new Date().toISOString(), data };
+}
+$("backupBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(backupData(), null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `brainbox-backup-${dayKey()}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  $("backupMsg").textContent = "Backup saved to your downloads. Keep it somewhere safe (Google Drive is handy).";
+});
+$("restoreFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  let b;
+  try { b = JSON.parse(await f.text()); } catch { $("backupMsg").textContent = "That file isn't a Brainbox backup."; return; }
+  if (!b || b.app !== "bazzas-brainbox" || !b.data || typeof b.data !== "object") { $("backupMsg").textContent = "That file isn't a Brainbox backup."; return; }
+  const when = b.saved ? new Date(b.saved).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "an unknown date";
+  if (!confirm(`Restore the backup from ${when}? It replaces your current progress, stats and saved words.`)) return;
+  try {
+    const old = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("bd-") && k !== "bd-defs") old.push(k); }
+    old.forEach(k => localStorage.removeItem(k));
+    for (const [k, v] of Object.entries(b.data)) if (k.startsWith("bd-") && typeof v === "string") localStorage.setItem(k, v);
+  } catch { $("backupMsg").textContent = "Couldn't restore: the browser wouldn't let me save."; return; }
+  location.reload();
+});
+$("resetStats").addEventListener("click", () => {
+  if (!confirm("Reset your stats, best times and Daily Challenge history (including streaks)? Your saved words and puzzles in progress are kept.")) return;
+  ["bd-stats", "bd-best", "bd-abc-best", "bd-daily"].forEach(k => { try { localStorage.removeItem(k); } catch {} });
+  renderToday(); $("backupMsg").textContent = "Stats reset.";
+});
+$("resetAll").addEventListener("click", () => {
+  if (!confirm("Reset EVERYTHING: stats, streaks, saved words, history, puzzles in progress and settings? This can't be undone, unless you have a backup.")) return;
+  try { const ks = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("bd-")) ks.push(k); } ks.forEach(k => localStorage.removeItem(k)); } catch {}
+  location.reload();
+});
+
 /* ---------- start ---------- */
 renderRecent();
+renderFavs();
 renderSpots();
 loadWordSearch();
 loadSudoku();
@@ -3196,7 +3913,7 @@ showPz(store.get("bd-pz", "crossword"));
 newLetters();
 resetNumbersUI();
 showCd(store.get("bd-cd", "letters"));
-showTab(store.get("bd-tab", "define"));
+showTab("today");
 })();
 </script>
 </body>
