@@ -84,6 +84,9 @@ section[hidden]{display:none}
 .headword h2{margin:0;font-size:2.4rem;font-weight:800;line-height:1.05;word-break:break-word}
 .phon{font-family:var(--read);color:var(--muted);font-size:1.1rem}
 .audio{border:2px solid var(--line);background:var(--surface);border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:1rem}
+.audio.busy{opacity:.5;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.9)}}
+@media (prefers-reduced-motion: reduce){.audio.busy{animation:none}}
 .pos{margin:24px 0 6px;font-family:var(--read);font-style:italic;font-size:1.15rem;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
 ol.defs{margin:0;padding-left:1.6em;font-family:var(--read);line-height:1.6;max-width:65ch}
 ol.defs li{margin:10px 0}
@@ -94,6 +97,13 @@ ol.defs .ex{display:block;color:var(--muted);font-style:italic}
 .source a{color:inherit}
 .inlist{font-size:.9rem;color:var(--muted);margin-top:6px}
 .recent{margin-top:24px}
+.recent-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.recent-head h3{margin:0 !important}
+#recentClear{width:auto;flex:none;max-width:60%;font:inherit;font-size:.85rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}
+.chip-x-wrap{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:999px;background:var(--surface);overflow:hidden}
+.chip-x-wrap .chip{border:0;border-radius:0;padding-right:6px}
+.chip-x{border:0;border-left:1px solid var(--line);background:transparent;color:var(--muted);font-size:1.05rem;line-height:1;padding:0 10px;cursor:pointer}
+.chip-x:hover{color:var(--bad)}
 .recent h3,.opts h3{font-size:.95rem;font-weight:600;color:var(--muted);margin:0 0 8px}
 
 /* Unscramble */
@@ -134,7 +144,9 @@ details.more, details.more *{box-sizing:border-box}
 details.more summary{cursor:pointer;font-weight:600}
 .spots{display:grid;gap:6px}
 .spots label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.8rem;color:var(--muted)}
-.spots input{width:100%;min-width:0;text-align:center;padding:8px 2px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:lowercase}
+.spots input{width:100%;min-width:0;text-align:center;padding:8px 2px;border:2px solid var(--line);border-radius:8px;background:var(--bg);text-transform:uppercase;font-weight:700}
+#cwHas,#cwNot{text-transform:uppercase;letter-spacing:.08em}
+#cwHas::placeholder,#cwNot::placeholder{text-transform:none;letter-spacing:normal}
 .spots input:disabled{opacity:.35}
 
 /* Word search */
@@ -371,7 +383,14 @@ details.settings .lbl{display:block;margin:12px 0 6px}
       <div class="chips" id="favChips"></div>
     </div>
     <div class="recent" id="recentWrap" hidden>
-      <h3>Recent</h3>
+      <div class="recent-head"><h3>Recent</h3>
+        <select id="recentClear" aria-label="Clear recent look-ups">
+          <option value="">Clear…</option>
+          <option value="1">Older than a day</option>
+          <option value="7">Older than a week</option>
+          <option value="30">Older than a month</option>
+          <option value="all">Clear them all</option>
+        </select></div>
       <div class="chips" id="recentChips"></div>
     </div>
   </section>
@@ -413,9 +432,9 @@ details.settings .lbl{display:block;margin:12px 0 6px}
     <details class="more" id="cwMore">
       <summary>More clues (handy for Wordle)</summary>
       <label class="lbl" for="cwHas">Letters it must contain (yellow)</label>
-      <input class="field small" id="cwHas" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. ae">
+      <input class="field small" id="cwHas" type="text" autocapitalize="characters" spellcheck="false" placeholder="e.g. AE">
       <label class="lbl" for="cwNot">Letters it can't contain (grey)</label>
-      <input class="field small" id="cwNot" type="text" autocapitalize="none" spellcheck="false" placeholder="e.g. stui">
+      <input class="field small" id="cwNot" type="text" autocapitalize="characters" spellcheck="false" placeholder="e.g. STUI">
       <p class="hint" style="margin:6px 0 0">Double letters: if one E came up yellow or green and another grey, put E in both. It'll look for exactly that many Es.</p>
       <span class="lbl">Wrong spots: letters in the word but not in that position</span>
       <div class="spots" id="cwSpots"></div>
@@ -815,15 +834,28 @@ document.addEventListener("click", e => {
 });
 
 /* ================= DEFINE ================= */
-let recent = store.get("bd-recent", []);
+// Each look-up remembers when it was made, so old ones can be cleared (older saves had words only)
+let recent = store.get("bd-recent", []).map(r => typeof r === "string" ? { w: r, t: Date.now() } : r);
 function renderRecent(){
   $("recentWrap").hidden = !recent.length;
-  $("recentChips").innerHTML = recent.map(w => `<button class="chip" data-word="${esc(w)}">${esc(w)}</button>`).join("");
+  $("recentChips").innerHTML = recent.map(r => `<span class="chip-x-wrap"><button class="chip" data-word="${esc(r.w)}">${esc(r.w)}</button><button class="chip-x" type="button" data-unrecent="${esc(r.w)}" aria-label="Remove ${esc(r.w)}">×</button></span>`).join("");
 }
+function saveRecent(){ store.set("bd-recent", recent); renderRecent(); }
 function addRecent(w){
-  recent = [w, ...recent.filter(x => x !== w)].slice(0, 20);
-  store.set("bd-recent", recent); renderRecent();
+  recent = [{ w, t: Date.now() }, ...recent.filter(x => x.w !== w)].slice(0, 20);
+  saveRecent();
 }
+document.addEventListener("click", e => {
+  const x = e.target.closest("[data-unrecent]");
+  if (x) { recent = recent.filter(r => r.w !== x.dataset.unrecent); saveRecent(); }
+});
+$("recentClear").addEventListener("change", e => {
+  const v = e.target.value; e.target.value = "";
+  if (!v) return;
+  const cutoff = v === "all" ? Infinity : Date.now() - +v * 864e5;
+  recent = v === "all" ? [] : recent.filter(r => r.t >= cutoff);
+  saveRecent();
+});
 
 // Saved definitions, so repeat look-ups are instant
 let defCache = store.get("bd-defs", {});
@@ -943,7 +975,7 @@ async function define(raw){
   const nymChips = list => list.slice(0, 16).map(s => `<button class="chip" data-word="${esc(s)}">${esc(s)}</button>`).join("");
   let html = `<div class="entry"><div class="headword"><h2>${esc(entry.word)}</h2>`;
   if (entry.phon) html += `<span class="phon">${esc(entry.phon)}</span>`;
-  if (entry.audio) html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button><span class="accent">${accentOf(entry.audio)}</span>`;
+  html += `<button class="audio" id="playAudio" aria-label="Play pronunciation">▶</button><span class="accent" id="defAccent">${accentOf(entry.audio)}</span>`;
   html += `<button class="fav" type="button" data-fav="${esc(word)}">☆</button></div>${listNote}`;
   for (const m of entry.meanings) {
     html += `<div class="pos">${esc(m.pos)}</div><ol class="defs">`;
@@ -956,12 +988,61 @@ async function define(raw){
   html += `</div>`;
   out.innerHTML = html;
   refreshFavButtons();
-  if (entry.audio) $("playAudio").addEventListener("click", () => {
-    new Audio(entry.audio.startsWith("//") ? "https:" + entry.audio : entry.audio).play().catch(() => {});
-  });
+  $("playAudio").addEventListener("click", () => sayWord(entry.word || word, entry.audio, $("playAudio"), $("defAccent")));
 }
 $("defineBtn").addEventListener("click", () => define($("defineInput").value));
 $("defineInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); define($("defineInput").value); } });
+
+/* ---------- pronunciation: dictionary recording, then Wiktionary's, then the phone's own voice ---------- */
+const pronCache = {};
+// Wiktionary pages list their sound files; British ones are named like En-uk-word.ogg or En-gb-word.ogg
+async function wiktionaryAudio(word){
+  if (word in pronCache) return pronCache[word];
+  let found = [];
+  try {
+    const { ok, data } = await fetchJSON(`https://en.wiktionary.org/w/api.php?action=query&format=json&origin=*&prop=images&imlimit=100&titles=${encodeURIComponent(word)}`, 6000);
+    const pages = ok && data && data.query ? Object.values(data.query.pages || {}) : [];
+    const files = pages.flatMap(pg => (pg.images || []).map(im => im.title.replace(/^File:/, "")))
+      .filter(f => /\.(ogg|oga|mp3|wav|opus)$/i.test(f) && /^(en|LL-Q1860)/i.test(f));
+    const score = f => /en-(uk|gb)|\(eng\).*(uk|gb|england)|-uk-|-gb-/i.test(f) ? 0 : /en-au|en-nz/i.test(f) ? 1 : /en-us|en-ca/i.test(f) ? 3 : 2;
+    found = files.sort((a, b) => score(a) - score(b)).slice(0, 3).map(f => ({
+      url: "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(f),
+      accent: ["UK", "Aus", "", "US"][score(f)]
+    }));
+  } catch {}
+  return pronCache[word] = found;
+}
+function playUrl(url){
+  return new Promise((ok, fail) => {
+    const a = new Audio(url.startsWith("//") ? "https:" + url : url);
+    const t = setTimeout(() => { a.pause(); fail(new Error("timeout")); }, 8000);
+    a.onerror = () => { clearTimeout(t); fail(new Error("load")); };
+    a.play().then(() => { clearTimeout(t); ok(); }, e => { clearTimeout(t); fail(e); });
+  });
+}
+function speak(word){
+  return new Promise((ok, fail) => {
+    if (!("speechSynthesis" in window)) return fail(new Error("no voice"));
+    const u = new SpeechSynthesisUtterance(word);
+    const voices = speechSynthesis.getVoices();
+    u.voice = voices.find(v => /en[-_]GB/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+    u.lang = u.voice ? u.voice.lang : "en-GB"; u.rate = 0.9;
+    u.onstart = () => ok(); u.onerror = e => fail(e);
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    setTimeout(() => fail(new Error("timeout")), 4000);
+  });
+}
+async function sayWord(word, url, btn, accentEl){
+  if (btn.classList.contains("busy")) return;
+  btn.classList.add("busy");
+  const setAccent = a => { if (accentEl) accentEl.textContent = a; };
+  try {
+    if (url) { try { await playUrl(url); setAccent(accentOf(url)); return; } catch {} }
+    for (const f of await wiktionaryAudio(word)) { try { await playUrl(f.url); setAccent(f.accent); return; } catch {} }
+    try { await speak(word); setAccent("Voice"); return; } catch {}
+    setAccent("No sound");
+  } finally { btn.classList.remove("busy"); }
+}
 
 /* ================= UNSCRAMBLE ================= */
 function solveLetters(letters, blanks, minLen){
@@ -1030,7 +1111,7 @@ function renderSpots(){
   const old = [...wrap.querySelectorAll("input")].map(i => i.value);
   wrap.style.gridTemplateColumns = `repeat(${Math.max(p.length, 1)}, minmax(0, 1fr))`;
   wrap.innerHTML = p ? [...p].map((c, i) =>
-    `<label>${c === "?" ? i + 1 : c.toUpperCase()}<input type="text" maxlength="6" autocapitalize="none" spellcheck="false" aria-label="Letters not in position ${i + 1}" value="${esc(old[i] || "")}"${c === "?" ? "" : " disabled"}></label>`
+    `<label>${c === "?" ? i + 1 : c.toUpperCase()}<input type="text" maxlength="6" autocapitalize="characters" spellcheck="false" aria-label="Letters not in position ${i + 1}" value="${esc(old[i] || "")}"${c === "?" ? "" : " disabled"}></label>`
   ).join("") : `<span class="hint" style="margin:0">Type a pattern first.</span>`;
   $("cwPreview").innerHTML = [...p].map(c => c === "?" ? `<span class="tile empty"></span>` : `<span class="tile">${c}</span>`).join("");
 }
@@ -3764,7 +3845,7 @@ function renderWotd(){
   $("wotdCard").innerHTML = `
     <div class="wotd-label"><span>Word of the day</span><button class="fav" type="button" data-fav="${esc(w)}">☆</button></div>
     <div class="headword"><h2>${esc(w)}</h2><span class="phon" id="wotdPhon"></span>
-      <button class="audio" id="wotdAudio" aria-label="Play pronunciation" hidden>▶</button><span class="accent" id="wotdAccent"></span></div>
+      <button class="audio" id="wotdAudio" aria-label="Play pronunciation">▶</button><span class="accent" id="wotdAccent"></span></div>
     <div class="pos">${esc(pos)}</div>
     <p class="def">${esc(def)}</p>
     ${ex ? `<p class="ex">“${esc(ex)}”</p>` : ""}
@@ -3772,10 +3853,12 @@ function renderWotd(){
     <button class="btn ghost" data-word="${esc(w)}">Full dictionary entry</button>`;
   refreshFavButtons();
   // Pronunciation is a bonus: fetch it quietly if we can
+  let wAudio = "";
+  $("wotdAudio").onclick = () => sayWord(w, wAudio, $("wotdAudio"), $("wotdAccent"));
   const show = e => {
     if (!e) return;
     if (e.phon) $("wotdPhon").textContent = e.phon;
-    if (e.audio) { const a = $("wotdAudio"); a.hidden = false; a.onclick = () => new Audio(e.audio).play().catch(() => {}); $("wotdAccent").textContent = accentOf(e.audio); }
+    if (e.audio) { wAudio = e.audio; $("wotdAccent").textContent = accentOf(e.audio); }
   };
   if (defCache[w]) show(defCache[w]);
   else if (!/-/.test(w)) fromFreeDict(w).then(e => { if (e) { cacheDef(w, e); show(e); } }).catch(() => {});
