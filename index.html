@@ -1247,9 +1247,18 @@ async function photoToBinary(file){
     const id = ctx.getImageData(0, 0, W, H), d = id.data;
     const g = new Float64Array(W * H);
     for (let i = 0; i < W * H; i++) g[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
-    // Light letters on a dark background (dark-mode screenshots): flip it so the letters are dark
-    const sample = []; for (let i = 0; i < W * H; i += 97) sample.push(g[i]);
-    if (median(sample) < 110) for (let i = 0; i < W * H; i++) g[i] = 255 - g[i];
+    // Light letters on a dark background (dark-mode screenshots)? Decide patch by patch, so a shadow
+    // across a newspaper can't fool it: on paper, most of each patch is near its brightest.
+    let votes = 0;
+    for (let ty = 0; ty < 8; ty++) for (let tx = 0; tx < 8; tx++) {
+      const vals = [];
+      for (let y = Math.floor(ty * H / 8); y < (ty + 1) * H / 8; y += 3) for (let x = Math.floor(tx * W / 8); x < (tx + 1) * W / 8; x += 3) vals.push(g[y * W + x]);
+      vals.sort((a, b) => a - b);
+      const p5 = vals[Math.floor(vals.length * 0.05)], p50 = vals[Math.floor(vals.length / 2)], p95 = vals[Math.floor(vals.length * 0.95)];
+      if (p95 - p5 < 40) continue;                       // a plain patch says nothing
+      votes += (p50 - p5) > (p95 - p50) ? 1 : -1;
+    }
+    if (votes < 0) for (let i = 0; i < W * H; i++) g[i] = 255 - g[i];
     // Bradley adaptive threshold using an integral image
     const I = new Float64Array((W + 1) * (H + 1));
     for (let y = 0; y < H; y++) { let row = 0; for (let x = 0; x < W; x++) { row += g[y*W + x]; I[(y+1)*(W+1) + x + 1] = I[y*(W+1) + x + 1] + row; } }
@@ -1284,24 +1293,173 @@ function lattice(values, gap, minCount){
   return best;
 }
 
+// Frames and grid lines: a letter never has a straight run of ink much longer than its own height,
+// so any longer run is a line. Remove just those pixels; letters touching the line survive.
+function removeLines(cv){
+  const W = cv.width, H = cv.height, ctx = cv.getContext("2d", { willReadFrequently: true });
+  const id = ctx.getImageData(0, 0, W, H), d = id.data, ink = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) ink[i] = d[i * 4] < 128 ? 1 : 0;
+  const hs = blobs(ink, W, H).list.filter(b => b.n >= 30).map(b => b.y1 - b.y0 + 1).filter(h => h >= 8 && h < H / 4);
+  if (hs.length < 9) return 0;
+  const L = Math.round(median(hs) * 2.6), kill = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) {
+    let start = -1;
+    for (let x = 0; x <= W; x++) {
+      const on = x < W && ink[y * W + x];
+      if (on && start < 0) start = x;
+      if (!on && start >= 0) { if (x - start >= L) for (let k = start; k < x; k++) kill[y * W + k] = 1; start = -1; }
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    let start = -1;
+    for (let y = 0; y <= H; y++) {
+      const on = y < H && ink[y * W + x];
+      if (on && start < 0) start = y;
+      if (!on && start >= 0) { if (y - start >= L) for (let k = start; k < y; k++) kill[k * W + x] = 1; start = -1; }
+    }
+  }
+  // Also take the fuzzy edges of each line (2 pixels either side)
+  let removed = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!kill[y * W + x]) continue;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+      const i = yy * W + xx;
+      if (ink[i]) { ink[i] = 0; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = 255; removed++; }
+    }
+  }
+  ctx.putImageData(id, 0, 0);
+  return removed;
+}
+
+// Find the letters by their shapes: blobs of ink about the same height, sitting on a regular grid
+function letterBlobs(cv){
+  const W = cv.width, H = cv.height, d = cv.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data;
+  const ink = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) ink[i] = d[i * 4] < 128 ? 1 : 0;
+  const list = blobs(ink, W, H).list.filter(b => b.n >= 20 && b.y1 - b.y0 >= 7 && b.y1 - b.y0 < H / 4);
+  if (list.length < 9) return [];
+  const med = median(list.map(b => b.y1 - b.y0 + 1));
+  return list.filter(b => {
+    const h = b.y1 - b.y0 + 1, w = b.x1 - b.x0 + 1;
+    return h > med * 0.7 && h < med * 1.35 && w < med * 1.6 && b.n > med * med * 0.04;
+  }).map(b => ({ x: (b.x0 + b.x1) / 2, y: (b.y0 + b.y1) / 2, w: b.x1 - b.x0 + 1, h: b.y1 - b.y0 + 1 }));
+}
+
+// How far is the grid tilted? Try angles until the letters line up in the sharpest rows
+function skewOf(syms, h){
+  const angles = [0]; for (let a = 0.25; a <= 12; a += 0.25) angles.push(a, -a);
+  let best = 0, bestScore = -1;
+  for (const a of angles) {
+    const r = a * Math.PI / 180, sn = Math.sin(r), cs = Math.cos(r), bins = new Map();
+    for (const p of syms) { const k = Math.round((p.y * cs - p.x * sn) / (h * 0.3)); bins.set(k, (bins.get(k) || 0) + 1); }
+    let score = 0; for (const v of bins.values()) score += v * v;
+    if (score > bestScore * 1.02) { bestScore = score; best = a; }
+  }
+  return best;
+}
+function rotateCanvas(cv, deg){
+  const r = deg * Math.PI / 180, W = cv.width, H = cv.height;
+  const W2 = Math.ceil(Math.abs(W * Math.cos(r)) + Math.abs(H * Math.sin(r))), H2 = Math.ceil(Math.abs(W * Math.sin(r)) + Math.abs(H * Math.cos(r)));
+  const out = document.createElement("canvas"); out.width = W2; out.height = H2;
+  const x = out.getContext("2d", { willReadFrequently: true });
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W2, H2);
+  x.translate(W2 / 2, H2 / 2); x.rotate(-r); x.drawImage(cv, -W / 2, -H / 2);
+  return out;
+}
+// Group the letters into rows (by height) and then columns, letting each row drift a little,
+// so a photo taken at a slight angle still lines up. Returns the centre of every cell.
+function gridFromBlobs(syms){
+  if (syms.length < 9) return null;
+  const near = syms.map(a => { let b = Infinity; for (const s of syms) if (s !== a) { const d = Math.hypot(s.x - a.x, s.y - a.y); if (d < b) b = d; } return b; });
+  const sp = median(near);
+  // Rows are where the letters bunch up vertically; a stray mark between two rows can't join them
+  const bw = sp / 8, allY = syms.map(t => t.y), y0 = Math.min(...allY), nb = Math.ceil((Math.max(...allY) - y0) / bw) + 5;
+  const hist = new Float32Array(nb), dens = new Float32Array(nb);
+  for (const y of allY) hist[Math.round((y - y0) / bw) + 2]++;
+  for (let i = 2; i < nb - 2; i++) dens[i] = hist[i - 2] + 2 * hist[i - 1] + 3 * hist[i] + 2 * hist[i + 1] + hist[i + 2];
+  const top = Math.max(...dens), peaks = [];
+  for (const i of [...dens.keys()].sort((a, b) => dens[b] - dens[a])) {
+    if (dens[i] < top * 0.2) break;
+    if (peaks.every(k => Math.abs(k - i) * bw > sp * 0.6)) peaks.push(i);
+  }
+  const centresY = peaks.map(i => y0 + (i - 2) * bw).sort((a, b) => a - b);
+  const rows = centresY.map(() => []);
+  for (const t of syms) {
+    let k = -1, bd = sp * 0.35;
+    centresY.forEach((cy, j) => { const d = Math.abs(t.y - cy); if (d < bd) { bd = d; k = j; } });
+    if (k >= 0) rows[k].push(t);
+  }
+  if (rows.filter(r => r.length).length < 3) return null;
+  // Within each row, keep the longest evenly spaced run (drops stray text beside the grid)
+  const tidy = rows.filter(r => r.length).map(r => {
+    r.sort((a, b) => a.x - b.x);
+    let best = [r[0]], cur = [r[0]];
+    for (let i = 1; i < r.length; i++) { const gap = r[i].x - r[i - 1].x; if (gap < sp * 1.6) cur.push(r[i]); else cur = [r[i]]; if (cur.length > best.length) best = cur.slice(); }
+    return best;
+  });
+  const typical = median(tidy.filter(r => r.length >= 3).map(r => r.length) || [0]);
+  let kept = tidy.filter(r => r.length >= Math.max(3, typical * 0.5));
+  if (kept.length < 3) return null;
+  // Keep the longest run of rows with regular spacing
+  const ys = kept.map(r => median(r.map(s => s.y))), steps = ys.slice(1).map((y, i) => y - ys[i]), rs = median(steps);
+  let bi = 0, bl = 1, ci = 0;
+  for (let i = 1; i < kept.length; i++) { if (Math.abs(steps[i - 1] - rs) > rs * 0.4) ci = i; if (i - ci + 1 > bl) { bl = i - ci + 1; bi = ci; } }
+  kept = kept.slice(bi, bi + bl);
+  if (kept.length < 3) return null;
+  const counts = {}; kept.forEach(r => counts[r.length] = (counts[r.length] || 0) + 1);
+  const C = +Object.entries(counts).sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0];
+  const full = kept.map((r, i) => r.length === C ? i : -1).filter(i => i >= 0);
+  if (!full.length) return null;
+  // Where each column sits in row i: from the nearest full rows above and below
+  const predict = i => {
+    const lo = [...full].reverse().find(k => k <= i), hi = full.find(k => k >= i);
+    const a = lo !== undefined ? lo : hi, b = hi !== undefined ? hi : lo;
+    return [...Array(C)].map((_, c) => {
+      const pa = kept[a][c], pb = kept[b][c], t = a === b ? 0 : (i - a) / (b - a);
+      return { x: pa.x + (pb.x - pa.x) * t, y: median(kept[i].map(s => s.y)) + ((pa.y - median(kept[a].map(s => s.y))) * (1 - t) + (pb.y - median(kept[b].map(s => s.y))) * t) };
+    });
+  };
+  const centres = kept.map((r, i) => {
+    if (r.length === C) return r.map(s => [s.x, s.y]);
+    const want = predict(i), out = want.map(p => [p.x, p.y]), used = new Set();
+    for (let c = 0; c < C; c++) {
+      let bestS = null, bd = sp * 0.45;
+      for (const s of r) { if (used.has(s)) continue; const d = Math.hypot(s.x - want[c].x, s.y - want[c].y); if (d < bd) { bd = d; bestS = s; } }
+      if (bestS) { used.add(bestS); out[c] = [bestS.x, bestS.y]; }
+    }
+    return out;
+  });
+  return { R: centres.length, C, centres, sp };
+}
+
 async function readWordSearch(file){
   wsStatus("Loading the text reader (about 5 MB, first time only)…");
   try { await getWorker(); } catch { wsStatus("Couldn't download the text reader. Check your connection and try again.", true); return; }
   wsStatus("Cleaning up the photo…");
-  const bin = await photoToBinary(file);
+  let bin = await photoToBinary(file);
+  removeLines(bin);
 
   wsStatus("Finding the grid…");
-  let syms = await ocr(bin, 6);
+  let syms = letterBlobs(bin);
+  // Straighten a tilted photo first
+  if (syms.length >= 9) {
+    const tilt = skewOf(syms, median(syms.map(s => s.h)));
+    if (Math.abs(tilt) >= 0.5) { bin = rotateCanvas(bin, tilt); removeLines(bin); syms = letterBlobs(bin); }
+  }
+  const fitted = gridFromBlobs(syms);
+  if (syms.length < 9) syms = await ocr(bin, 6);
   if (syms.length < 9) { wsStatus("Couldn't find a grid of letters in that photo. Try a closer, straighter shot, or type the grid in.", true); $("wsFix").open = true; return; }
   const h = median(syms.map(s => s.h));
   syms = syms.filter(s => s.h < 1.6 * h && s.h > 0.4 * h);
-  const rowsY = lattice(syms.map(s => s.y), h * 0.6, 3);
-  const colsX = lattice(syms.map(s => s.x), h * 0.6, Math.max(2, rowsY.length / 3));
+  const rowsY = fitted ? fitted.centres.map(r => median(r.map(p => p[1]))) : lattice(syms.map(s => s.y), h * 0.6, 3);
+  const colsX = fitted ? fitted.centres[0].map(p => p[0]) : lattice(syms.map(s => s.x), h * 0.6, Math.max(2, rowsY.length / 3));
   if (rowsY.length < 3 || colsX.length < 3) { wsStatus("Couldn't line up the rows and columns. Try a straighter photo, or type the grid in.", true); $("wsFix").open = true; return; }
 
   // Re-draw every cell, evenly spaced and the same size, then read them all in one go
   wsStatus(`Reading ${rowsY.length * colsX.length} letters…`);
-  const sp = Math.min(median(colsX.slice(1).map((c, i) => c - colsX[i])), median(rowsY.slice(1).map((c, i) => c - rowsY[i])));
+  const sp = fitted ? fitted.sp : Math.min(median(colsX.slice(1).map((c, i) => c - colsX[i])), median(rowsY.slice(1).map((c, i) => c - rowsY[i])));
   const half = sp * 0.42, scale = 40 / h, cw = Math.max(16, Math.round(2 * half * scale)), G = cw;
   const R = rowsY.length, C = colsX.length;
   const re = document.createElement("canvas");
@@ -1311,6 +1469,7 @@ async function readWordSearch(file){
   rx.imageSmoothingEnabled = true;
   // Photos are rarely perfectly flat, so centre each cell on the nearest letter actually seen there
   const centreOf = (r, c) => {
+    if (fitted) return fitted.centres[r][c];
     let best = null, bd = sp * 0.35;
     for (const s of syms) { const d = Math.hypot(s.x - colsX[c], s.y - rowsY[r]); if (d < bd) { bd = d; best = s; } }
     return best ? [best.x, best.y] : [colsX[c], rowsY[r]];
@@ -1336,6 +1495,16 @@ async function readWordSearch(file){
     let ink = 0;
     for (let i = 0; i < cw * cw; i++) if (dark(i)) ink++;
     if (ink < cw * cw * 0.01) q.set(orig); // wiped the letter itself, so put it back
+    // Specks of dirt or print noise: drop any blob much smaller than the biggest one (the letter)
+    const cellInk = new Uint8Array(cw * cw);
+    for (let i = 0; i < cw * cw; i++) cellInk[i] = dark(i) ? 1 : 0;
+    const { lab, list } = blobs(cellInk, cw, cw);
+    const main = list.reduce((m, b) => !m || b.n > m.n ? b : m, null), pad = cw * 0.1;
+    // a speck is small AND away from the letter (so a Q's tail or a broken stroke is kept)
+    const tiny = new Set(list.filter(b => main && b !== main && b.n < main.n * 0.25 && (
+      (b.x0 + b.x1) / 2 < main.x0 - pad || (b.x0 + b.x1) / 2 > main.x1 + pad ||
+      (b.y0 + b.y1) / 2 < main.y0 - pad || (b.y0 + b.y1) / 2 > main.y1 + pad)).map(b => b.id));
+    if (tiny.size) for (let i = 0; i < cw * cw; i++) if (tiny.has(lab[i])) q[i*4] = q[i*4+1] = q[i*4+2] = 255;
     rx.putImageData(im, X, Y);
   }
   const grid = Array.from({ length: R }, () => Array(C).fill("?"));
@@ -1394,6 +1563,28 @@ async function readWordSearch(file){
       if (best && best !== grid[r][c]) { grid[r][c] = best; changed++; }
     }
     if (!changed) break;
+  }
+
+  // A letter that appears only once can't be cross-checked against itself, so read it again on its own.
+  // If that second read names a letter seen elsewhere in the grid, and the shapes match, believe it.
+  {
+    const counts = {}, sums = {};
+    for (const { r, c, v } of vecs) { const l = grid[r][c]; if (l === "?") continue; counts[l] = (counts[l] || 0) + 1;
+      const t = sums[l] || (sums[l] = new Float32Array(N * N)); for (let i = 0; i < t.length; i++) t[i] += v[i]; }
+    const unit = t => { let n = 0; for (const x of t) n += x * x; n = Math.sqrt(n) || 1; return t.map(x => x / n); };
+    const lonely = vecs.filter(({ r, c }) => grid[r][c] !== "?" && counts[grid[r][c]] === 1);
+    if (lonely.length && lonely.length <= 12) wsStatus(`Double-checking ${lonely.length} rare letter${lonely.length === 1 ? "" : "s"}…`);
+    for (const { r, c, v } of lonely.length <= 12 ? lonely : []) {
+      const X = G + c * (cw + G), Y = G + r * (cw + G);
+      const one = document.createElement("canvas"); one.width = one.height = cw + 40;
+      const ox = one.getContext("2d"); ox.fillStyle = "#fff"; ox.fillRect(0, 0, one.width, one.height);
+      ox.drawImage(re, X, Y, cw, cw, 20, 20, cw, cw);
+      const got = await ocr(one, 10);
+      const t = got.length && got[0].t;
+      if (!t || t === grid[r][c] || !counts[t]) continue;
+      const tm = unit(sums[t]); let d = 0; for (let i = 0; i < v.length; i++) d += v[i] * tm[i];
+      if (d > 0.6) grid[r][c] = t;
+    }
   }
 
   const missing = [];
